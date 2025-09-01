@@ -128,9 +128,9 @@
     <ItemGroup Condition=" '$(Configuration)' == 'Release' ">
         <!-- SourceLink allows step-through debugging for source hosted on GitHub. -->
         <!-- https://github.com/dotnet/sourcelink -->
-        <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All" />
+        <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All"/>
 
-        <None Include="$(RepoRoot)icon.png" Link="icon.png" Pack="true" PackagePath="." Visible="false" />
+        <None Include="$(RepoRoot)icon.png" Link="icon.png" Pack="true" PackagePath="." Visible="false"/>
     </ItemGroup>
 
     <!-- ###### NUGET END ################ -->

@@ -11,6 +11,7 @@ internal static class StringExtensions
         return endpoint.TrimEnd('/') + '/';
     }
 
+
     public static string CleanUrlPath(this string path)
     {
         if (string.IsNullOrWhiteSpace(path)) { path = "/"; }

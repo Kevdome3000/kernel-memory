@@ -128,6 +128,7 @@ public class MemoryPlugin
     /// </summary>
     private readonly IKernelMemory _memory;
 
+
     /// <summary>
     /// Create new instance using MemoryWebClient pointed at the given endpoint.
     /// </summary>
@@ -149,7 +150,7 @@ public class MemoryPlugin
         List<string>? defaultIngestionSteps = null,
         bool waitForIngestionToComplete = false)
         : this(
-            new MemoryWebClient(endpoint.AbsoluteUri, apiKey: apiKey, apiKeyHeader: apiKeyHeader),
+            new MemoryWebClient(endpoint.AbsoluteUri, apiKey, apiKeyHeader),
             defaultIndex,
             defaultIngestionTags,
             defaultRetrievalTags,
@@ -157,6 +158,7 @@ public class MemoryPlugin
             waitForIngestionToComplete)
     {
     }
+
 
     /// <summary>
     /// Create new instance using MemoryWebClient pointed at the given endpoint.
@@ -169,11 +171,12 @@ public class MemoryPlugin
         string apiKey = "",
         bool waitForIngestionToComplete = false)
         : this(
-            endpoint: new Uri(serviceUrl),
-            apiKey: apiKey,
+            new Uri(serviceUrl),
+            apiKey,
             waitForIngestionToComplete: waitForIngestionToComplete)
     {
     }
+
 
     /// <summary>
     /// Create a new instance using a custom IKernelMemory implementation.
@@ -192,13 +195,14 @@ public class MemoryPlugin
         List<string>? defaultIngestionSteps = null,
         bool waitForIngestionToComplete = false)
     {
-        this._memory = memoryClient;
-        this._defaultIndex = defaultIndex;
-        this._defaultIngestionTags = defaultIngestionTags;
-        this._defaultRetrievalTags = defaultRetrievalTags;
-        this._defaultIngestionSteps = defaultIngestionSteps;
-        this._waitForIngestionToComplete = waitForIngestionToComplete;
+        _memory = memoryClient;
+        _defaultIndex = defaultIndex;
+        _defaultIngestionTags = defaultIngestionTags;
+        _defaultRetrievalTags = defaultRetrievalTags;
+        _defaultIngestionSteps = defaultIngestionSteps;
+        _waitForIngestionToComplete = waitForIngestionToComplete;
     }
+
 
     /// <summary>
     /// Store text information in long term memory.
@@ -220,34 +224,35 @@ public class MemoryPlugin
     /// {{memory.save $input }}
     /// </example>
     /// <returns>Document ID</returns>
-    [KernelFunction, Description("Store in memory the given text")]
+    [KernelFunction] [Description("Store in memory the given text")]
     public async Task<string> SaveAsync(
         [Description("The text to save in memory")]
         string input,
-        [ /*SKName(DocumentIdParam),*/ Description("The document ID associated with the information to save"), DefaultValue(null)]
+        [Description("The document ID associated with the information to save")] [DefaultValue(null)]
         string? documentId = null,
-        [ /*SKName(IndexParam),*/ Description("Memories index associated with the information to save"), DefaultValue(null)]
+        [Description("Memories index associated with the information to save")] [DefaultValue(null)]
         string? index = null,
-        [ /*SKName(TagsParam),*/ Description("Memories index associated with the information to save"), DefaultValue(null)]
+        [Description("Memories index associated with the information to save")] [DefaultValue(null)]
         TagCollectionWrapper? tags = null,
-        [ /*SKName(StepsParam),*/ Description("Steps to parse the information and store in memory"), DefaultValue(null)]
+        [Description("Steps to parse the information and store in memory")] [DefaultValue(null)]
         ListOfStringsWrapper? steps = null,
         ILoggerFactory? loggerFactory = null,
         CancellationToken cancellationToken = default)
     {
-        string id = await this._memory.ImportTextAsync(
-                text: input,
-                documentId: documentId,
-                index: index ?? this._defaultIndex,
-                tags: tags ?? this._defaultIngestionTags,
-                steps: steps ?? this._defaultIngestionSteps,
+        string id = await _memory.ImportTextAsync(
+                input,
+                documentId,
+                index: index ?? _defaultIndex,
+                tags: tags ?? _defaultIngestionTags,
+                steps: steps ?? _defaultIngestionSteps,
                 cancellationToken: cancellationToken)
             .ConfigureAwait(false);
 
-        await this.WaitForDocumentReadinessAsync(id, cancellationToken).ConfigureAwait(false);
+        await WaitForDocumentReadinessAsync(id, cancellationToken).ConfigureAwait(false);
 
         return id;
     }
+
 
     /// <summary>
     /// Store a file content in long term memory.
@@ -269,34 +274,35 @@ public class MemoryPlugin
     /// {{memory.saveFile $input }}
     /// </example>
     /// <returns>Document ID</returns>
-    [KernelFunction, Description("Store in memory the information extracted from a file")]
+    [KernelFunction] [Description("Store in memory the information extracted from a file")]
     public async Task<string> SaveFileAsync(
         [ /*SKName(FilePathParam),*/ Description("Path of the file to save in memory")]
         string filePath,
-        [ /*SKName(DocumentIdParam),*/ Description("The document ID associated with the information to save"), DefaultValue(null)]
+        [Description("The document ID associated with the information to save")] [DefaultValue(null)]
         string? documentId = null,
-        [ /*SKName(IndexParam),*/ Description("Memories index associated with the information to save"), DefaultValue(null)]
+        [Description("Memories index associated with the information to save")] [DefaultValue(null)]
         string? index = null,
-        [ /*SKName(TagsParam),*/ Description("Memories index associated with the information to save"), DefaultValue(null)]
+        [Description("Memories index associated with the information to save")] [DefaultValue(null)]
         TagCollectionWrapper? tags = null,
-        [ /*SKName(StepsParam),*/ Description("Steps to parse the information and store in memory"), DefaultValue(null)]
+        [Description("Steps to parse the information and store in memory")] [DefaultValue(null)]
         ListOfStringsWrapper? steps = null,
         ILoggerFactory? loggerFactory = null,
         CancellationToken cancellationToken = default)
     {
-        var id = await this._memory.ImportDocumentAsync(
-                filePath: filePath,
-                documentId: documentId,
-                tags: tags ?? this._defaultIngestionTags,
-                index: index ?? this._defaultIndex,
-                steps: steps ?? this._defaultIngestionSteps,
+        var id = await _memory.ImportDocumentAsync(
+                filePath,
+                documentId,
+                tags ?? _defaultIngestionTags,
+                index ?? _defaultIndex,
+                steps ?? _defaultIngestionSteps,
                 cancellationToken: cancellationToken)
             .ConfigureAwait(false);
 
-        await this.WaitForDocumentReadinessAsync(id, cancellationToken).ConfigureAwait(false);
+        await WaitForDocumentReadinessAsync(id, cancellationToken).ConfigureAwait(false);
 
         return id;
     }
+
 
     /// <summary>
     /// Store in memory the information extracted from a web page
@@ -309,34 +315,35 @@ public class MemoryPlugin
     /// <param name="loggerFactory">Logging factory</param>
     /// <param name="cancellationToken">Async task cancellation token</param>
     /// <returns>Document ID</returns>
-    [KernelFunction, Description("Store in memory the information extracted from a web page")]
+    [KernelFunction] [Description("Store in memory the information extracted from a web page")]
     public async Task<string> SaveWebPageAsync(
         [ /*SKName(UrlParam),*/ Description("Complete URL of the web page to save")]
         string url,
-        [ /*SKName(DocumentIdParam),*/ Description("The document ID associated with the information to save"), DefaultValue(null)]
+        [Description("The document ID associated with the information to save")] [DefaultValue(null)]
         string? documentId = null,
-        [ /*SKName(IndexParam),*/ Description("Memories index containing the information to save"), DefaultValue(null)]
+        [Description("Memories index containing the information to save")] [DefaultValue(null)]
         string? index = null,
-        [ /*SKName(TagsParam),*/ Description("Tas/Labels associated with the information to save"), DefaultValue(null)]
+        [Description("Tas/Labels associated with the information to save")] [DefaultValue(null)]
         TagCollectionWrapper? tags = null,
-        [ /*SKName(StepsParam),*/ Description("Steps to parse the information and store in memory"), DefaultValue(null)]
+        [Description("Steps to parse the information and store in memory")] [DefaultValue(null)]
         ListOfStringsWrapper? steps = null,
         ILoggerFactory? loggerFactory = null,
         CancellationToken cancellationToken = default)
     {
-        var id = await this._memory.ImportWebPageAsync(
-                url: url,
-                documentId: documentId,
-                tags: tags ?? this._defaultIngestionTags,
-                index: index ?? this._defaultIndex,
-                steps: steps ?? this._defaultIngestionSteps,
+        var id = await _memory.ImportWebPageAsync(
+                url,
+                documentId,
+                tags ?? _defaultIngestionTags,
+                index ?? _defaultIndex,
+                steps ?? _defaultIngestionSteps,
                 cancellationToken: cancellationToken)
             .ConfigureAwait(false);
 
-        await this.WaitForDocumentReadinessAsync(id, cancellationToken).ConfigureAwait(false);
+        await WaitForDocumentReadinessAsync(id, cancellationToken).ConfigureAwait(false);
 
         return id;
     }
+
 
     /// <summary>
     /// Return up to N memories related to the input text
@@ -348,28 +355,29 @@ public class MemoryPlugin
     /// <param name="tags">Memories key-value tags to filter information</param>
     /// <param name="cancellationToken">Async task cancellation token</param>
     /// <returns>JSON string containing the list of memories</returns>
-    [KernelFunction, Description("Return up to N memories related to the input text")]
+    [KernelFunction] [Description("Return up to N memories related to the input text")]
     public async Task<string> SearchAsync(
         [ /*SKName(QueryParam),*/ Description("The text to search in memory")]
         string query,
-        [ /*SKName(IndexParam),*/ Description("Memories index container to search for information"), DefaultValue("")]
+        [Description("Memories index container to search for information")] [DefaultValue("")]
         string? index = null,
-        [ /*SKName(MinRelevanceParam),*/ Description("Minimum relevance of the memories to return"), DefaultValue(0d)]
+        [Description("Minimum relevance of the memories to return")] [DefaultValue(0d)]
         double minRelevance = 0,
-        [ /*SKName(LimitParam),*/ Description("Maximum number of memories to return"), DefaultValue(1)]
+        [Description("Maximum number of memories to return")] [DefaultValue(1)]
         int limit = 1,
-        [ /*SKName(TagsParam),*/ Description("Memories key-value tags to filter information"), DefaultValue(null)]
+        [Description("Memories key-value tags to filter information")] [DefaultValue(null)]
         TagCollectionWrapper? tags = null,
         CancellationToken cancellationToken = default)
     {
-        SearchResult result = await this._memory
+        SearchResult result = await _memory
             .SearchAsync(
-                query: query,
-                index: index ?? this._defaultIndex,
-                filter: TagsToMemoryFilter(tags ?? this._defaultRetrievalTags),
+                query,
+                index ?? _defaultIndex,
+                TagsToMemoryFilter(tags ?? _defaultRetrievalTags),
                 minRelevance: minRelevance,
                 limit: limit,
-                cancellationToken: cancellationToken).ConfigureAwait(false);
+                cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
 
         if (result.Results.Count == 0)
         {
@@ -382,67 +390,71 @@ public class MemoryPlugin
             : JsonSerializer.Serialize(result.Results.Select(x => x.Partitions.First().Text));
     }
 
+
     /// <summary>
     /// Answer a question using the information stored in long term memory.
     ///
     /// Usage from prompts: '{{memory.ask ...}}'
     /// </summary>
     /// <returns>The answer returned by the memory.</returns>
-    [KernelFunction, Description("Use long term memory to answer a question")]
+    [KernelFunction] [Description("Use long term memory to answer a question")]
     public async Task<string> AskAsync(
         [ /*SKName(QuestionParam),*/ Description("The question to answer")]
         string question,
-        [ /*SKName(IndexParam),*/ Description("Memories index to search for answers"), DefaultValue("")]
+        [Description("Memories index to search for answers")] [DefaultValue("")]
         string? index = null,
-        [ /*SKName(MinRelevanceParam),*/ Description("Minimum relevance of the sources to consider"), DefaultValue(0d)]
+        [Description("Minimum relevance of the sources to consider")] [DefaultValue(0d)]
         double minRelevance = 0,
-        [ /*SKName(TagsParam),*/ Description("Memories tags to search for information"), DefaultValue(null)]
+        [Description("Memories tags to search for information")] [DefaultValue(null)]
         TagCollectionWrapper? tags = null,
         ILoggerFactory? loggerFactory = null,
         CancellationToken cancellationToken = default)
     {
-        MemoryAnswer answer = await this._memory.AskAsync(
-            question: question,
-            index: index ?? this._defaultIndex,
-            options: new SearchOptions { Stream = false },
-            filter: TagsToMemoryFilter(tags ?? this._defaultRetrievalTags),
-            minRelevance: minRelevance,
-            cancellationToken: cancellationToken).ConfigureAwait(false);
+        MemoryAnswer answer = await _memory.AskAsync(
+                question,
+                index ?? _defaultIndex,
+                options: new SearchOptions { Stream = false },
+                filter: TagsToMemoryFilter(tags ?? _defaultRetrievalTags),
+                minRelevance: minRelevance,
+                cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
         return answer.Result;
     }
+
 
     /// <summary>
     /// Remove from memory all the information extracted from the given document ID
     ///
     /// Usage from prompts: '{{memory.delete ...}}'
     /// </summary>
-    [KernelFunction, Description("Remove from memory all the information extracted from the given document ID")]
+    [KernelFunction] [Description("Remove from memory all the information extracted from the given document ID")]
     public Task DeleteAsync(
         [ /*SKName(DocumentIdParam),*/ Description("The document to delete")]
         string documentId,
-        [ /*SKName(IndexParam),*/ Description("Memories index where the document is stored"), DefaultValue("")]
+        [Description("Memories index where the document is stored")] [DefaultValue("")]
         string? index = null,
         CancellationToken cancellationToken = default)
     {
-        return this._memory.DeleteDocumentAsync(
-            documentId: documentId,
-            index: index ?? this._defaultIndex,
-            cancellationToken: cancellationToken);
+        return _memory.DeleteDocumentAsync(
+            documentId,
+            index ?? _defaultIndex,
+            cancellationToken);
     }
+
 
     private async Task WaitForDocumentReadinessAsync(string documentId, CancellationToken cancellationToken = default)
     {
-        if (!this._waitForIngestionToComplete)
+        if (!_waitForIngestionToComplete)
         {
             return;
         }
 
-        using var timedTokenSource = new CancellationTokenSource(this._maxIngestionWait);
+        using var timedTokenSource = new CancellationTokenSource(_maxIngestionWait);
         using var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(timedTokenSource.Token, cancellationToken);
 
         try
         {
-            while (!await this._memory.IsDocumentReadyAsync(documentId: documentId, cancellationToken: linkedTokenSource.Token).ConfigureAwait(false))
+            while (!await _memory.IsDocumentReadyAsync(documentId, cancellationToken: linkedTokenSource.Token).ConfigureAwait(false))
             {
                 await Task.Delay(TimeSpan.FromMilliseconds(500), linkedTokenSource.Token).ConfigureAwait(false);
             }
@@ -452,6 +464,7 @@ public class MemoryPlugin
             // Nothing to do
         }
     }
+
 
     private static MemoryFilter? TagsToMemoryFilter(TagCollection? tags)
     {

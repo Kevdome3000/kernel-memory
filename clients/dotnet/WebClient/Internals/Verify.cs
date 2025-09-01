@@ -12,17 +12,7 @@ internal static class Verify
         bool allowReservedIp,
         bool allowQuery)
     {
-        static bool IsReservedIpAddress(string host)
-        {
-            return host.StartsWith("0.", StringComparison.Ordinal) ||
-                   host.StartsWith("10.", StringComparison.Ordinal) ||
-                   host.StartsWith("127.", StringComparison.Ordinal) ||
-                   host.StartsWith("169.254.", StringComparison.Ordinal) ||
-                   host.StartsWith("192.0.0.", StringComparison.Ordinal) ||
-                   host.StartsWith("192.88.99.", StringComparison.Ordinal) ||
-                   host.StartsWith("192.168.", StringComparison.Ordinal) ||
-                   host.StartsWith("255.255.255.255", StringComparison.Ordinal);
-        }
+        static bool IsReservedIpAddress(string host) => host.StartsWith("0.", StringComparison.Ordinal) || host.StartsWith("10.", StringComparison.Ordinal) || host.StartsWith("127.", StringComparison.Ordinal) || host.StartsWith("169.254.", StringComparison.Ordinal) || host.StartsWith("192.0.0.", StringComparison.Ordinal) || host.StartsWith("192.88.99.", StringComparison.Ordinal) || host.StartsWith("192.168.", StringComparison.Ordinal) || host.StartsWith("255.255.255.255", StringComparison.Ordinal);
 
         ArgumentNullExceptionEx.ThrowIfNullOrEmpty(url, nameof(url), "The URL is empty");
 
@@ -37,6 +27,7 @@ internal static class Verify
         }
 
         bool result = Uri.TryCreate(url, UriKind.Absolute, out Uri? uri);
+
         if (!result || string.IsNullOrEmpty(uri?.Host))
         {
             throw new ArgumentException($"The URL `{url}` is not valid");

@@ -9,12 +9,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\..\service\Abstractions\Abstractions.csproj" />
-        <ProjectReference Include="..\WebClient\WebClient.csproj" />
+        <ProjectReference Include="..\..\..\service\Abstractions\Abstractions.csproj"/>
+        <ProjectReference Include="..\WebClient\WebClient.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.SemanticKernel.Abstractions" />
+        <PackageReference Include="Microsoft.SemanticKernel.Abstractions"/>
     </ItemGroup>
 
     <PropertyGroup>
@@ -27,7 +27,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <None Include="../../../README.md" Link="README.md" Pack="true" PackagePath="." Visible="false" />
+        <None Include="../../../README.md" Link="README.md" Pack="true" PackagePath="." Visible="false"/>
     </ItemGroup>
 
 </Project>
