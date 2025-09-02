@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Diagnostics.CodeAnalysis;
@@ -21,11 +21,13 @@ public sealed class MsExcelDecoder : IContentDecoder
     private readonly MsExcelDecoderConfig _config;
     private readonly ILogger<MsExcelDecoder> _log;
 
+
     public MsExcelDecoder(MsExcelDecoderConfig? config = null, ILoggerFactory? loggerFactory = null)
     {
-        this._config = config ?? new MsExcelDecoderConfig();
-        this._log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<MsExcelDecoder>();
+        _config = config ?? new MsExcelDecoderConfig();
+        _log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<MsExcelDecoder>();
     }
+
 
     /// <inheritdoc />
     public bool SupportsMimeType(string mimeType)
@@ -33,39 +35,45 @@ public sealed class MsExcelDecoder : IContentDecoder
         return mimeType != null && mimeType.StartsWith(MimeTypes.MsExcelX, StringComparison.OrdinalIgnoreCase);
     }
 
+
     /// <inheritdoc />
     public Task<FileContent> DecodeAsync(string filename, CancellationToken cancellationToken = default)
     {
         using var stream = File.OpenRead(filename);
-        return this.DecodeAsync(stream, cancellationToken);
+        return DecodeAsync(stream, cancellationToken);
     }
+
 
     /// <inheritdoc />
     public Task<FileContent> DecodeAsync(BinaryData data, CancellationToken cancellationToken = default)
     {
         using var stream = data.ToStream();
-        return this.DecodeAsync(stream, cancellationToken);
+        return DecodeAsync(stream, cancellationToken);
     }
+
 
     /// <inheritdoc />
     public Task<FileContent> DecodeAsync(Stream data, CancellationToken cancellationToken = default)
     {
-        this._log.LogDebug("Extracting text from MS Excel file");
+        _log.LogDebug("Extracting text from MS Excel file");
 
         var result = new FileContent(MimeTypes.PlainText);
         using var workbook = new XLWorkbook(data);
         var sb = new StringBuilder();
 
         var worksheetNumber = 0;
+
         foreach (var worksheet in workbook.Worksheets)
         {
             worksheetNumber++;
-            if (this._config.WithWorksheetNumber)
+
+            if (_config.WithWorksheetNumber)
             {
-                sb.AppendLineNix(this._config.WorksheetNumberTemplate.Replace("{number}", $"{worksheetNumber}", StringComparison.OrdinalIgnoreCase));
+                sb.AppendLineNix(_config.WorksheetNumberTemplate.Replace("{number}", $"{worksheetNumber}", StringComparison.OrdinalIgnoreCase));
             }
 
             var rowsUsed = worksheet.RangeUsed()?.RowsUsed();
+
             if (rowsUsed == null)
             {
                 continue;
@@ -77,7 +85,8 @@ public sealed class MsExcelDecoder : IContentDecoder
 
                 var cells = row.Cells().ToList();
 
-                sb.Append(this._config.RowPrefix);
+                sb.Append(_config.RowPrefix);
+
                 for (var i = 0; i < cells.Count; i++)
                 {
                     IXLCell? cell = cells[i];
@@ -91,30 +100,35 @@ public sealed class MsExcelDecoder : IContentDecoder
                      * - Time: "12:55"                      => "12/31/1899"
                      * - Currency symbols are not extracted
                      */
-                    if (this._config.WithQuotes)
+                    if (_config.WithQuotes)
                     {
                         sb.Append('"');
+
                         if (cell == null || cell.Value.IsBlank)
                         {
-                            sb.Append(this._config.BlankCellValue);
+                            sb.Append(_config.BlankCellValue);
                         }
                         else if (cell.Value.IsTimeSpan)
                         {
-                            sb.Append(cell.Value.GetTimeSpan().ToString(this._config.TimeSpanFormat, this._config.TimeSpanProvider));
+                            sb.Append(cell.Value.GetTimeSpan().ToString(_config.TimeSpanFormat, _config.TimeSpanProvider));
                         }
                         else if (cell.Value.IsDateTime)
                         {
                             // TODO: check cell.Style.DateFormat.Format
-                            sb.Append(cell.Value.GetDateTime().ToString(this._config.DateFormat, this._config.DateFormatProvider));
+                            sb.Append(cell.Value.GetDateTime().ToString(_config.DateFormat, _config.DateFormatProvider));
                         }
                         else if (cell.Value.IsBoolean)
                         {
-                            sb.Append(cell.Value.GetBoolean() ? this._config.BooleanTrueValue : this._config.BooleanFalseValue);
+                            sb.Append(cell.Value.GetBoolean()
+                                ? _config.BooleanTrueValue
+                                : _config.BooleanFalseValue);
                         }
                         else if (cell.Value.IsText)
                         {
                             var value = cell.Value.GetText().Replace("\"", "\"\"", StringComparison.Ordinal);
-                            sb.Append(string.IsNullOrEmpty(value) ? this._config.BlankCellValue : value);
+                            sb.Append(string.IsNullOrEmpty(value)
+                                ? _config.BlankCellValue
+                                : value);
                         }
                         else if (cell.Value.IsNumber)
                         {
@@ -134,26 +148,28 @@ public sealed class MsExcelDecoder : IContentDecoder
                     }
                     else
                     {
-                        sb.Append(cell.Value.IsBlank ? this._config.BlankCellValue : cell.Value);
+                        sb.Append(cell.Value.IsBlank
+                            ? _config.BlankCellValue
+                            : cell.Value);
                     }
 
                     if (i < cells.Count - 1)
                     {
-                        sb.Append(this._config.ColumnSeparator);
+                        sb.Append(_config.ColumnSeparator);
                     }
                 }
 
-                sb.AppendLineNix(this._config.RowSuffix);
+                sb.AppendLineNix(_config.RowSuffix);
             }
 
-            if (this._config.WithEndOfWorksheetMarker)
+            if (_config.WithEndOfWorksheetMarker)
             {
-                sb.AppendLineNix(this._config.EndOfWorksheetMarkerTemplate.Replace("{number}", $"{worksheetNumber}", StringComparison.OrdinalIgnoreCase));
+                sb.AppendLineNix(_config.EndOfWorksheetMarkerTemplate.Replace("{number}", $"{worksheetNumber}", StringComparison.OrdinalIgnoreCase));
             }
 
             string worksheetContent = sb.ToString().NormalizeNewlines(true);
             sb.Clear();
-            result.Sections.Add(new Chunk(worksheetContent, worksheetNumber, Chunk.Meta(sentencesAreComplete: true)));
+            result.Sections.Add(new Chunk(worksheetContent, worksheetNumber, Chunk.Meta(true)));
         }
 
         return Task.FromResult(result);

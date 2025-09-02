@@ -1,7 +1,8 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
+using Microsoft.KernelMemory.Models;
 
 namespace Microsoft.KernelMemory.Evaluation.TestSet;
 
@@ -19,5 +20,5 @@ public sealed class TestSetItem
 
     public ICollection<MemoryFilter> Filters { get; set; } = Array.Empty<MemoryFilter>();
 
-    public string ContextString => string.Join("\n", this.Context);
+    public string ContextString => string.Join("\n", Context);
 }

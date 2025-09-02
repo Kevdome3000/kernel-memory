@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Net.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -39,14 +39,15 @@ public static partial class KernelMemoryBuilderExtensions
         {
             builder.AddIngestionEmbeddingGenerator(
                 new AzureOpenAITextEmbeddingGenerator(
-                    config: config ?? new AzureOpenAIConfig(),
-                    textTokenizer: textTokenizer,
-                    loggerFactory: loggerFactory,
+                    config ?? new AzureOpenAIConfig(),
+                    textTokenizer,
+                    loggerFactory,
                     httpClient));
         }
 
         return builder;
     }
+
 
     /// <summary>
     /// Use Azure OpenAI to generate text, e.g. answers and summaries.
@@ -66,6 +67,7 @@ public static partial class KernelMemoryBuilderExtensions
         return builder;
     }
 }
+
 
 /// <summary>
 /// .NET IServiceCollection dependency injection extensions.
@@ -89,10 +91,11 @@ public static partial class DependencyInjection
         return services
             .AddSingleton<ITextEmbeddingGenerator>(serviceProvider => new AzureOpenAITextEmbeddingGenerator(
                 config,
-                textTokenizer: textTokenizer,
-                loggerFactory: serviceProvider.GetService<ILoggerFactory>(),
+                textTokenizer,
+                serviceProvider.GetService<ILoggerFactory>(),
                 httpClient));
     }
+
 
     public static IServiceCollection AddAzureOpenAITextGeneration(
         this IServiceCollection services,
@@ -110,9 +113,9 @@ public static partial class DependencyInjection
 
         return services
             .AddSingleton<ITextGenerator>(serviceProvider => new AzureOpenAITextGenerator(
-                config: config,
-                textTokenizer: textTokenizer,
-                loggerFactory: serviceProvider.GetService<ILoggerFactory>(),
-                httpClient: httpClient));
+                config,
+                textTokenizer,
+                serviceProvider.GetService<ILoggerFactory>(),
+                httpClient));
     }
 }

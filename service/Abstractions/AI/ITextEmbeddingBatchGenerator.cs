@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Collections.Generic;
 using System.Threading;
@@ -18,6 +18,7 @@ public interface ITextEmbeddingBatchGenerator
     /// The value depends on the service and the model used, and is configurable on each class.
     /// </summary>
     int MaxBatchSize { get; }
+
 
     /// <summary>
     /// Generates embeddings for a list of text chunks.

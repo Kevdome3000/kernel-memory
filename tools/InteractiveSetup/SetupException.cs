@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 
@@ -11,10 +11,12 @@ public class SetupException : Exception
     {
     }
 
+
     /// <inheritdoc />
     public SetupException(string? message) : base(message)
     {
     }
+
 
     /// <inheritdoc />
     public SetupException(string? message, Exception? innerException) : base(message, innerException)

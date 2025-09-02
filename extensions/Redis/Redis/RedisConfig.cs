@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft.All rights reserved.
 
 using NRedisStack.Search;
 
@@ -44,8 +44,9 @@ public class RedisConfig
         { Constants.ReservedFileIdTag, '|' },
         { Constants.ReservedFilePartitionTag, '|' },
         { Constants.ReservedFileSectionNumberTag, '|' },
-        { Constants.ReservedFileTypeTag, '|' },
+        { Constants.ReservedFileTypeTag, '|' }
     };
+
 
     /// <summary>
     /// Initializes an instance of RedisMemoryConfiguration.
@@ -54,13 +55,13 @@ public class RedisConfig
     /// <param name="tags">The collection of tags you want to be able to search on. The key</param>
     public RedisConfig(string appPrefix = DefaultIndexPrefix, Dictionary<string, char?>? tags = null)
     {
-        this.AppPrefix = appPrefix;
+        AppPrefix = appPrefix;
 
         if (tags is not null)
         {
             foreach (var tag in tags)
             {
-                this.Tags[tag.Key] = tag.Value;
+                Tags[tag.Key] = tag.Value;
             }
         }
     }

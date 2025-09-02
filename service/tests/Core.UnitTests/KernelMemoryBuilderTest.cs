@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.KernelMemory;
@@ -18,6 +18,7 @@ public class KernelMemoryBuilderTest : BaseUnitTestCase
     public KernelMemoryBuilderTest(ITestOutputHelper output) : base(output)
     {
     }
+
 
     [Fact]
     [Trait("Category", "UnitTest")]
@@ -45,6 +46,7 @@ public class KernelMemoryBuilderTest : BaseUnitTestCase
         // Assert
         Assert.True(memory is MemoryServerless);
     }
+
 
     [Fact]
     [Trait("Category", "UnitTest")]
@@ -77,6 +79,7 @@ public class KernelMemoryBuilderTest : BaseUnitTestCase
         Assert.True(memory is MemoryService);
     }
 
+
     [Fact]
     [Trait("Category", "UnitTest")]
     public void ItDetectsMissingEmbeddingGenerator()
@@ -95,6 +98,7 @@ public class KernelMemoryBuilderTest : BaseUnitTestCase
 
         // Act + Assert
         Exception? e = null;
+
         try
         {
             target.Build();
@@ -112,6 +116,7 @@ public class KernelMemoryBuilderTest : BaseUnitTestCase
         Assert.Contains("Embedding generator", e.Message, StringComparison.OrdinalIgnoreCase);
     }
 
+
     [Fact]
     [Trait("Category", "UnitTest")]
     public void ItCanMixPersistentAndVolatileStorageIfNeeded()
@@ -127,6 +132,7 @@ public class KernelMemoryBuilderTest : BaseUnitTestCase
             .Build<MemoryServerless>(kmbOptions);
     }
 
+
     [Fact]
     [Trait("Category", "UnitTest")]
     public void ItCanMixPersistentAndVolatileStorageIfNeeded2()
@@ -138,19 +144,21 @@ public class KernelMemoryBuilderTest : BaseUnitTestCase
 
         // Act - Assert no exception occurs
         serviceCollection1.AddKernelMemory(builder =>
-        {
-            builder
-                .WithOpenAIDefaults("key")
-                .WithSimpleFileStorage(SimpleFileStorageConfig.Volatile)
-                .WithPostgresMemoryDb("Host=localhost;Port=5432;Username=public;Password=;Database=public");
-        }, kmbOptions);
+            {
+                builder
+                    .WithOpenAIDefaults("key")
+                    .WithSimpleFileStorage(SimpleFileStorageConfig.Volatile)
+                    .WithPostgresMemoryDb("Host=localhost;Port=5432;Username=public;Password=;Database=public");
+            },
+            kmbOptions);
 
         serviceCollection2.AddKernelMemory<MemoryServerless>(builder =>
-        {
-            builder
-                .WithOpenAIDefaults("key")
-                .WithSimpleFileStorage(SimpleFileStorageConfig.Volatile)
-                .WithPostgresMemoryDb("Host=localhost;Port=5432;Username=public;Password=;Database=public");
-        }, kmbOptions);
+            {
+                builder
+                    .WithOpenAIDefaults("key")
+                    .WithSimpleFileStorage(SimpleFileStorageConfig.Volatile)
+                    .WithPostgresMemoryDb("Host=localhost;Port=5432;Username=public;Password=;Database=public");
+            },
+            kmbOptions);
     }
 }

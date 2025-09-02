@@ -1,8 +1,10 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
-
+﻿// Copyright (c) Microsoft.All rights reserved.
 using System.Runtime.CompilerServices;
 using Microsoft.KernelMemory;
 using Microsoft.KernelMemory.AI;
+using Microsoft.KernelMemory.Models;
+
+namespace _104_dotnet_custom_LLM;
 
 public static class Program
 {
@@ -11,15 +13,15 @@ public static class Program
         var customModelConfig = new CustomModelConfig
         {
             MaxToken = 4096,
-            ModelPath = "...",
+            ModelPath = "..."
         };
 
         var azureOpenAIEmbeddingConfig = new AzureOpenAIConfig();
 
         new ConfigurationBuilder()
             .AddJsonFile("appsettings.json")
-            .AddJsonFile("appsettings.development.json", optional: true)
-            .AddJsonFile("appsettings.Development.json", optional: true)
+            .AddJsonFile("appsettings.development.json", true)
+            .AddJsonFile("appsettings.Development.json", true)
             .Build()
             .BindSection("KernelMemory:Services:AzureOpenAIEmbedding", azureOpenAIEmbeddingConfig);
 
@@ -32,24 +34,29 @@ public static class Program
     }
 }
 
+
 public class CustomModelConfig
 {
     public string ModelPath { get; set; } = "";
     public int MaxToken { get; set; } = 4096;
 }
 
+
 public class CustomModelTextGeneration : ITextGenerator
 {
     private readonly CustomModelConfig _config;
 
+
     public CustomModelTextGeneration(CustomModelConfig config)
     {
-        this._config = config;
-        this.MaxTokenTotal = config.MaxToken;
+        _config = config;
+        MaxTokenTotal = config.MaxToken;
     }
+
 
     /// <inheritdoc />
     public int MaxTokenTotal { get; }
+
 
     /// <inheritdoc />
     public int CountTokens(string text)
@@ -59,6 +66,7 @@ public class CustomModelTextGeneration : ITextGenerator
         throw new NotImplementedException();
     }
 
+
     /// <inheritdoc/>
     public IReadOnlyList<string> GetTokens(string text)
     {
@@ -66,6 +74,7 @@ public class CustomModelTextGeneration : ITextGenerator
 
         throw new NotImplementedException();
     }
+
 
     /// <inheritdoc />
     public async IAsyncEnumerable<GeneratedTextContent> GenerateTextAsync(

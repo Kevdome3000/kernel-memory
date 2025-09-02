@@ -1,8 +1,8 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Text.Json.Serialization;
 
-namespace Microsoft.KernelMemory.MemoryDb.Qdrant.Client.Http;
+namespace Microsoft.KernelMemory.MemoryDb.Qdrant.Internals.Http;
 
 internal sealed class UpsertVectorResponse : QdrantResponse
 {
@@ -22,11 +22,13 @@ internal sealed class UpsertVectorResponse : QdrantResponse
         public string Status { get; set; } = string.Empty;
     }
 
+
     /// <summary>
     /// Upsert result information object
     /// </summary>
     [JsonPropertyName("result")]
     public UpdateResult Result { get; set; }
+
 
     /// <summary>
     /// Constructor
@@ -35,6 +37,6 @@ internal sealed class UpsertVectorResponse : QdrantResponse
     [JsonConstructor]
     public UpsertVectorResponse(UpdateResult result)
     {
-        this.Result = result;
+        Result = result;
     }
 }

@@ -1,4 +1,6 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
+
+using Xunit.Abstractions;
 
 namespace Microsoft.KM.TestHelpers;
 
@@ -6,28 +8,32 @@ public abstract class BaseUnitTestCase : IDisposable
 {
     private readonly RedirectConsole _output;
 
+
     protected BaseUnitTestCase(ITestOutputHelper output)
     {
-        this._output = new RedirectConsole(output);
-        Console.SetOut(this._output);
+        _output = new RedirectConsole(output);
+        Console.SetOut(_output);
     }
+
 
     public void Dispose()
     {
-        this.Dispose(true);
+        Dispose(true);
         GC.SuppressFinalize(this);
     }
 
+
     protected void Log(string text)
     {
-        this._output.WriteLine(text);
+        _output.WriteLine(text);
     }
+
 
     protected virtual void Dispose(bool disposing)
     {
         if (disposing)
         {
-            this._output.Dispose();
+            _output.Dispose();
         }
     }
 }

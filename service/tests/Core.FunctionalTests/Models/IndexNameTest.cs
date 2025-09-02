@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.KernelMemory.Models;
 
@@ -24,6 +24,7 @@ public class IndexNameTest
     {
         Assert.Equal(expected, IndexName.CleanName(name, defaultName));
     }
+
 
     [Theory]
     [Trait("Category", "UnitTest")]

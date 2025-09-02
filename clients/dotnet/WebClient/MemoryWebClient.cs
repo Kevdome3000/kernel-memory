@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 using Microsoft.KernelMemory.Context;
 using Microsoft.KernelMemory.HTTP;
 using Microsoft.KernelMemory.Internals;
+using Microsoft.KernelMemory.Models;
 
 namespace Microsoft.KernelMemory;
 

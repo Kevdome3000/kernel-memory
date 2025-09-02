@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -28,6 +28,7 @@ public class OllamaTextEmbeddingGenerator : ITextEmbeddingGenerator, ITextEmbedd
 
     public int MaxBatchSize { get; }
 
+
     public OllamaTextEmbeddingGenerator(
         IOllamaApiClient ollamaClient,
         OllamaModelConfig modelConfig,
@@ -35,25 +36,27 @@ public class OllamaTextEmbeddingGenerator : ITextEmbeddingGenerator, ITextEmbedd
         IContextProvider? contextProvider = null,
         ILoggerFactory? loggerFactory = null)
     {
-        this._client = ollamaClient;
-        this._modelConfig = modelConfig;
-        this.MaxBatchSize = modelConfig.MaxBatchSize;
-        this._log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<OllamaTextEmbeddingGenerator>();
+        _client = ollamaClient;
+        _modelConfig = modelConfig;
+        MaxBatchSize = modelConfig.MaxBatchSize;
+        _log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<OllamaTextEmbeddingGenerator>();
 
         textTokenizer ??= TokenizerFactory.GetTokenizerForEncoding(modelConfig.Tokenizer);
+
         if (textTokenizer == null)
         {
             textTokenizer = new CL100KTokenizer();
-            this._log.LogWarning(
+            _log.LogWarning(
                 "Tokenizer not specified, will use {0}. The token count might be incorrect, causing unexpected errors",
                 textTokenizer.GetType().FullName);
         }
 
-        this._textTokenizer = textTokenizer;
-        this._contextProvider = contextProvider ?? new RequestContextProvider();
+        _textTokenizer = textTokenizer;
+        _contextProvider = contextProvider ?? new RequestContextProvider();
 
-        this.MaxTokens = modelConfig.MaxTokenTotal ?? MaxTokensIfUndefined;
+        MaxTokens = modelConfig.MaxTokenTotal ?? MaxTokensIfUndefined;
     }
+
 
     public OllamaTextEmbeddingGenerator(
         OllamaConfig config,
@@ -68,6 +71,7 @@ public class OllamaTextEmbeddingGenerator : ITextEmbeddingGenerator, ITextEmbedd
             loggerFactory)
     {
     }
+
 
     public OllamaTextEmbeddingGenerator(
         HttpClient httpClient,
@@ -84,28 +88,32 @@ public class OllamaTextEmbeddingGenerator : ITextEmbeddingGenerator, ITextEmbedd
     {
     }
 
+
     public int CountTokens(string text)
     {
-        return this._textTokenizer.CountTokens(text);
+        return _textTokenizer.CountTokens(text);
     }
+
 
     public IReadOnlyList<string> GetTokens(string text)
     {
-        return this._textTokenizer.GetTokens(text);
+        return _textTokenizer.GetTokens(text);
     }
+
 
     public async Task<Embedding> GenerateEmbeddingAsync(
         string text,
         CancellationToken cancellationToken = default)
     {
-        this._log.LogTrace("Generating embedding, text length {0} chars", text.Length);
+        _log.LogTrace("Generating embedding, text length {0} chars", text.Length);
 
-        Embedding[] result = await this.GenerateEmbeddingBatchAsync([text], cancellationToken).ConfigureAwait(false);
+        Embedding[] result = await GenerateEmbeddingBatchAsync([text], cancellationToken).ConfigureAwait(false);
         var embeddding = result.First();
-        this._log.LogTrace("Embedding ready, vector length {0}", embeddding.Length);
+        _log.LogTrace("Embedding ready, vector length {0}", embeddding.Length);
 
         return embeddding;
     }
+
 
     public async Task<Embedding[]> GenerateEmbeddingBatchAsync(
         IEnumerable<string> textList,
@@ -113,8 +121,8 @@ public class OllamaTextEmbeddingGenerator : ITextEmbeddingGenerator, ITextEmbedd
     {
         var list = textList.ToList();
 
-        string modelName = this._contextProvider.GetContext().GetCustomEmbeddingGenerationModelNameOrDefault(this._client.SelectedModel);
-        this._log.LogTrace("Generating embeddings batch, size {0} texts, with model {1}", list.Count, modelName);
+        string modelName = _contextProvider.GetContext().GetCustomEmbeddingGenerationModelNameOrDefault(_client.SelectedModel);
+        _log.LogTrace("Generating embeddings batch, size {0} texts, with model {1}", list.Count, modelName);
 
         var request = new EmbedRequest
         {
@@ -123,26 +131,26 @@ public class OllamaTextEmbeddingGenerator : ITextEmbeddingGenerator, ITextEmbedd
             Options = new RequestOptions
             {
                 // Global settings
-                MiroStat = this._modelConfig.MiroStat,
-                MiroStatEta = this._modelConfig.MiroStatEta,
-                MiroStatTau = this._modelConfig.MiroStatTau,
-                NumCtx = this._modelConfig.NumCtx,
-                NumGqa = this._modelConfig.NumGqa,
-                NumGpu = this._modelConfig.NumGpu,
-                NumThread = this._modelConfig.NumThread,
-                RepeatLastN = this._modelConfig.RepeatLastN,
-                Seed = this._modelConfig.Seed,
-                TfsZ = this._modelConfig.TfsZ,
-                NumPredict = this._modelConfig.NumPredict,
-                TopK = this._modelConfig.TopK,
-                MinP = this._modelConfig.MinP,
+                MiroStat = _modelConfig.MiroStat,
+                MiroStatEta = _modelConfig.MiroStatEta,
+                MiroStatTau = _modelConfig.MiroStatTau,
+                NumCtx = _modelConfig.NumCtx,
+                NumGqa = _modelConfig.NumGqa,
+                NumGpu = _modelConfig.NumGpu,
+                NumThread = _modelConfig.NumThread,
+                RepeatLastN = _modelConfig.RepeatLastN,
+                Seed = _modelConfig.Seed,
+                TfsZ = _modelConfig.TfsZ,
+                NumPredict = _modelConfig.NumPredict,
+                TopK = _modelConfig.TopK,
+                MinP = _modelConfig.MinP
             }
         };
 
-        EmbedResponse response = await this._client.EmbedAsync(request, cancellationToken).ConfigureAwait(false);
+        EmbedResponse response = await _client.EmbedAsync(request, cancellationToken).ConfigureAwait(false);
         Embedding[] result = response.Embeddings.Select(x => new Embedding(x)).ToArray();
 
-        this._log.LogTrace("Embeddings batch ready, size {0} texts", result.Length);
+        _log.LogTrace("Embeddings batch ready, size {0} texts", result.Length);
 
         return result;
     }

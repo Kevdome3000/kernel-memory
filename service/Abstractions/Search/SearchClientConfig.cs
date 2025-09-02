@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Collections.Generic;
 
@@ -116,49 +116,50 @@ public class SearchClientConfig
     /// </summary>
     public string ModeratedAnswer { get; set; } = "Sorry, the generated content contains unsafe or inappropriate information.";
 
+
     /// <summary>
     /// Verify that the current state is valid.
     /// </summary>
     public void Validate()
     {
-        if (this.MaxAskPromptSize is > 0 and < 1024)
+        if (MaxAskPromptSize is > 0 and < 1024)
         {
-            throw new ConfigurationException($"SearchClient: {nameof(this.MaxAskPromptSize)} cannot be less than 1024");
+            throw new ConfigurationException($"SearchClient: {nameof(MaxAskPromptSize)} cannot be less than 1024");
         }
 
-        if (this.MaxMatchesCount < 1)
+        if (MaxMatchesCount < 1)
         {
-            throw new ConfigurationException($"SearchClient: {nameof(this.MaxMatchesCount)} cannot be less than 1");
+            throw new ConfigurationException($"SearchClient: {nameof(MaxMatchesCount)} cannot be less than 1");
         }
 
-        if (this.AnswerTokens < 1)
+        if (AnswerTokens < 1)
         {
-            throw new ConfigurationException($"SearchClient: {nameof(this.AnswerTokens)} cannot be less than 1");
+            throw new ConfigurationException($"SearchClient: {nameof(AnswerTokens)} cannot be less than 1");
         }
 
-        if (this.EmptyAnswer.Length > 256)
+        if (EmptyAnswer.Length > 256)
         {
-            throw new ConfigurationException($"SearchClient: {nameof(this.EmptyAnswer)} is too long, consider something shorter");
+            throw new ConfigurationException($"SearchClient: {nameof(EmptyAnswer)} is too long, consider something shorter");
         }
 
-        if (this.Temperature is < 0 or > 2)
+        if (Temperature is < 0 or > 2)
         {
-            throw new ConfigurationException($"SearchClient: {nameof(this.Temperature)} must be between 0 and 2");
+            throw new ConfigurationException($"SearchClient: {nameof(Temperature)} must be between 0 and 2");
         }
 
-        if (this.TopP is < 0 or > 2)
+        if (TopP is < 0 or > 2)
         {
-            throw new ConfigurationException($"SearchClient: {nameof(this.TopP)} must be between 0 and 2");
+            throw new ConfigurationException($"SearchClient: {nameof(TopP)} must be between 0 and 2");
         }
 
-        if (this.PresencePenalty is < -2 or > 2)
+        if (PresencePenalty is < -2 or > 2)
         {
-            throw new ConfigurationException($"SearchClient: {nameof(this.PresencePenalty)} must be between -2 and 2");
+            throw new ConfigurationException($"SearchClient: {nameof(PresencePenalty)} must be between -2 and 2");
         }
 
-        if (this.FrequencyPenalty is < -2 or > 2)
+        if (FrequencyPenalty is < -2 or > 2)
         {
-            throw new ConfigurationException($"SearchClient: {nameof(this.FrequencyPenalty)} must be between -2 and 2");
+            throw new ConfigurationException($"SearchClient: {nameof(FrequencyPenalty)} must be between -2 and 2");
         }
     }
 }

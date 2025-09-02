@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft.All rights reserved.
 
 namespace Microsoft.KernelMemory.AI.Ollama;
 
@@ -114,18 +114,21 @@ public class OllamaModelConfig
     /// </summary>
     public int MaxBatchSize { get; set; } = 1;
 
+
     public OllamaModelConfig()
     {
     }
 
+
     public OllamaModelConfig(string modelName)
     {
-        this.ModelName = modelName;
+        ModelName = modelName;
     }
+
 
     public OllamaModelConfig(string modelName, int maxToken)
     {
-        this.ModelName = modelName;
-        this.MaxTokenTotal = maxToken;
+        ModelName = modelName;
+        MaxTokenTotal = maxToken;
     }
 }

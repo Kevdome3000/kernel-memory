@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 #define DEBUGCHUNKS__
 #define DEBUGFRAGMENTS__
@@ -37,8 +37,9 @@ public class PlainTextChunker
         WeakSeparator1,
         WeakSeparator2,
         WeakSeparator3,
-        NotASeparator,
+        NotASeparator
     }
+
 
     // Do not allow chunks smaller than this size, to avoid unnecessary computation.
     // Realistically, a chunk should be at least 1000 tokens long.
@@ -62,7 +63,7 @@ public class PlainTextChunker
         ".", "?", "!", "⁉", "⁈", "⁇", "…",
         // Chinese punctuation
         "。", "？", "！", "；", "："
-]);
+    ]);
 
     // Prioritized list of characters to split inside a sentence.
     private static readonly SeparatorTrie s_potentialSeparators = new([
@@ -105,10 +106,12 @@ public class PlainTextChunker
         "·", "—", "～"
     ]);
 
+
     public PlainTextChunker(ITextTokenizer? tokenizer = null)
     {
-        this._tokenizer = tokenizer ?? new CL100KTokenizer();
+        _tokenizer = tokenizer ?? new CL100KTokenizer();
     }
+
 
     /// <summary>
     /// Split plain text into chunks of text.
@@ -118,8 +121,9 @@ public class PlainTextChunker
     /// <returns>List of chunks.</returns>
     public List<string> Split(string text, int maxTokensPerChunk)
     {
-        return this.Split(text, new PlainTextChunkerOptions { MaxTokensPerChunk = maxTokensPerChunk });
+        return Split(text, new PlainTextChunkerOptions { MaxTokensPerChunk = maxTokensPerChunk });
     }
+
 
     /// <summary>
     /// Split plain text into blocks.
@@ -141,14 +145,18 @@ public class PlainTextChunker
         text = text.NormalizeNewlines(true);
 
         // Calculate chunk size leaving room for the optional chunk header
-        int maxChunk1Size = options.MaxTokensPerChunk - this.TokenCount(options.ChunkHeader);
-        int maxChunkNSize = options.MaxTokensPerChunk - this.TokenCount(options.ChunkHeader) - options.Overlap;
+        int maxChunk1Size = options.MaxTokensPerChunk - TokenCount(options.ChunkHeader);
+        int maxChunkNSize = options.MaxTokensPerChunk - TokenCount(options.ChunkHeader) - options.Overlap;
         maxChunk1Size = Math.Max(MinChunkSize, maxChunk1Size);
         maxChunkNSize = Math.Max(MinChunkSize, maxChunkNSize);
 
         // Chunk using recursive logic, starting with explicit separators and moving to weaker ones if needed
         bool firstChunkDone = false;
-        var chunks = this.RecursiveSplit(text, maxChunk1Size, maxChunkNSize, SeparatorTypes.ExplicitSeparator, ref firstChunkDone);
+        var chunks = RecursiveSplit(text,
+            maxChunk1Size,
+            maxChunkNSize,
+            SeparatorTypes.ExplicitSeparator,
+            ref firstChunkDone);
 
         // Add overlapping tokens. Note: won't copy more than maxChunkSize (no exceptions thrown)
         if (options.Overlap > 0 && chunks.Count > 1)
@@ -158,7 +166,7 @@ public class PlainTextChunker
             for (int index = 1; index < chunks.Count; index++)
             {
                 // Tokenize the previous chunk, and copy last N tokens into the next chunk
-                IReadOnlyList<string> previousChunkTokens = this._tokenizer.GetTokens(chunks[index - 1]);
+                IReadOnlyList<string> previousChunkTokens = _tokenizer.GetTokens(chunks[index - 1]);
                 IEnumerable<string> overlapTokens = previousChunkTokens.Skip(previousChunkTokens.Count - options.Overlap);
                 newChunks.Add($"{string.Join("", overlapTokens)}{chunks[index]}");
             }
@@ -179,6 +187,7 @@ public class PlainTextChunker
         return chunks;
     }
 
+
     internal static SeparatorTypes NextSeparatorType(SeparatorTypes separatorType)
     {
         switch (separatorType)
@@ -191,6 +200,7 @@ public class PlainTextChunker
             default: throw new ArgumentOutOfRangeException(nameof(SeparatorTypes.NotASeparator) + " doesn't have a next separator type.");
         }
     }
+
 
     /// <summary>
     /// Greedy algorithm aggregating fragments into chunks separated by a specific separator type.
@@ -216,25 +226,33 @@ public class PlainTextChunker
         if (string.IsNullOrEmpty(text)) { return []; }
 
         // Edge case: text is already short enough
-        var maxChunkSize = firstChunkDone ? maxChunkNSize : maxChunk1Size;
-        if (this.TokenCount(text) <= maxChunkSize) { return [text]; }
+        var maxChunkSize = firstChunkDone
+            ? maxChunkNSize
+            : maxChunk1Size;
+
+        if (TokenCount(text) <= maxChunkSize) { return [text]; }
 
         // Important: 'SplitToFragments' splits content in words and delimiters, using logic specific to plain text.
         //            These are different from LLM tokens, which are based on the tokenizer used to train the model.
         // Recursive logic exit clause: when separator type is NotASeparator, count each char as a fragment
         List<Chunk> fragments = separatorType switch
         {
-            SeparatorTypes.ExplicitSeparator => this.SplitToFragments(text, s_explicitSeparators),
-            SeparatorTypes.PotentialSeparator => this.SplitToFragments(text, s_potentialSeparators),
-            SeparatorTypes.WeakSeparator1 => this.SplitToFragments(text, s_weakSeparators1),
-            SeparatorTypes.WeakSeparator2 => this.SplitToFragments(text, s_weakSeparators2),
-            SeparatorTypes.WeakSeparator3 => this.SplitToFragments(text, s_weakSeparators3),
-            SeparatorTypes.NotASeparator => this.SplitToFragments(text, null),
+            SeparatorTypes.ExplicitSeparator => SplitToFragments(text, s_explicitSeparators),
+            SeparatorTypes.PotentialSeparator => SplitToFragments(text, s_potentialSeparators),
+            SeparatorTypes.WeakSeparator1 => SplitToFragments(text, s_weakSeparators1),
+            SeparatorTypes.WeakSeparator2 => SplitToFragments(text, s_weakSeparators2),
+            SeparatorTypes.WeakSeparator3 => SplitToFragments(text, s_weakSeparators3),
+            SeparatorTypes.NotASeparator => SplitToFragments(text, null),
             _ => throw new ArgumentOutOfRangeException(nameof(separatorType), separatorType, null)
         };
 
-        return this.GenerateChunks(fragments, maxChunk1Size, maxChunkNSize, separatorType, ref firstChunkDone);
+        return GenerateChunks(fragments,
+            maxChunk1Size,
+            maxChunkNSize,
+            separatorType,
+            ref firstChunkDone);
     }
+
 
     internal List<string> GenerateChunks(
         List<Chunk> fragments,
@@ -258,8 +276,10 @@ public class PlainTextChunker
             if (!fragment.IsSeparator) { continue; }
 
             string nextSentence = chunk.NextSentence.ToString();
-            int nextSentenceSize = this.TokenCount(nextSentence);
-            maxChunkSize = firstChunkDone ? maxChunkNSize : maxChunk1Size;
+            int nextSentenceSize = TokenCount(nextSentence);
+            maxChunkSize = firstChunkDone
+                ? maxChunkNSize
+                : maxChunk1Size;
 
             // Detect current state
             // 1:
@@ -275,13 +295,18 @@ public class PlainTextChunker
             // - the current chunk is NOT empty
             // - the next sentence is complete and is TOO LONG
             int state;
+
             if (chunk.FullContent.Length == 0)
             {
-                state = (nextSentenceSize <= maxChunkSize) ? 1 : 2;
+                state = nextSentenceSize <= maxChunkSize
+                    ? 1
+                    : 2;
             }
             else
             {
-                state = (nextSentenceSize <= maxChunkSize) ? 3 : 4;
+                state = nextSentenceSize <= maxChunkSize
+                    ? 3
+                    : 4;
             }
 
             switch (state)
@@ -300,7 +325,11 @@ public class PlainTextChunker
                 // - the next sentence is complete and is TOO LONG
                 case 2:
                 {
-                    var moreChunks = this.RecursiveSplit(nextSentence, maxChunk1Size, maxChunkNSize, NextSeparatorType(separatorType), ref firstChunkDone);
+                    var moreChunks = RecursiveSplit(nextSentence,
+                        maxChunk1Size,
+                        maxChunkNSize,
+                        NextSeparatorType(separatorType),
+                        ref firstChunkDone);
                     chunks.AddRange(moreChunks.Take(moreChunks.Count - 1));
                     chunk.NextSentence.Clear().Append(moreChunks.Last());
                     continue;
@@ -311,7 +340,8 @@ public class PlainTextChunker
                 case 3:
                 {
                     var chunkPlusSentence = $"{chunk.FullContent}{chunk.NextSentence}";
-                    if (this.TokenCount(chunkPlusSentence) <= maxChunkSize)
+
+                    if (TokenCount(chunkPlusSentence) <= maxChunkSize)
                     {
                         // Move next sentence to current chunk
                         chunk.FullContent.Append(chunk.NextSentence);
@@ -333,7 +363,11 @@ public class PlainTextChunker
                 {
                     AddChunk(chunks, chunk.FullContent, ref firstChunkDone);
 
-                    var moreChunks = this.RecursiveSplit(nextSentence, maxChunk1Size, maxChunkNSize, NextSeparatorType(separatorType), ref firstChunkDone);
+                    var moreChunks = RecursiveSplit(nextSentence,
+                        maxChunk1Size,
+                        maxChunkNSize,
+                        NextSeparatorType(separatorType),
+                        ref firstChunkDone);
                     chunks.AddRange(moreChunks.Take(moreChunks.Count - 1));
                     chunk.NextSentence.Clear().Append(moreChunks.Last());
                     continue;
@@ -344,11 +378,13 @@ public class PlainTextChunker
         // If there's something left in the buffers
         string fullSentenceLeft = chunk.FullContent.ToString();
         string nextSentenceLeft = chunk.NextSentence.ToString();
-        maxChunkSize = firstChunkDone ? maxChunkNSize : maxChunk1Size;
+        maxChunkSize = firstChunkDone
+            ? maxChunkNSize
+            : maxChunk1Size;
 
         if (fullSentenceLeft.Length > 0 || nextSentenceLeft.Length > 0)
         {
-            if (this.TokenCount($"{fullSentenceLeft}{nextSentenceLeft}") <= maxChunkSize)
+            if (TokenCount($"{fullSentenceLeft}{nextSentenceLeft}") <= maxChunkSize)
             {
                 AddChunk(chunks, $"{fullSentenceLeft}{nextSentenceLeft}", ref firstChunkDone);
             }
@@ -361,13 +397,17 @@ public class PlainTextChunker
 
                 if (nextSentenceLeft.Length > 0)
                 {
-                    if (this.TokenCount(nextSentenceLeft) < maxChunkSize)
+                    if (TokenCount(nextSentenceLeft) < maxChunkSize)
                     {
                         AddChunk(chunks, nextSentenceLeft, ref firstChunkDone);
                     }
                     else
                     {
-                        var moreChunks = this.RecursiveSplit(nextSentenceLeft, maxChunk1Size, maxChunkNSize, NextSeparatorType(separatorType), ref firstChunkDone);
+                        var moreChunks = RecursiveSplit(nextSentenceLeft,
+                            maxChunk1Size,
+                            maxChunkNSize,
+                            NextSeparatorType(separatorType),
+                            ref firstChunkDone);
                         chunks.AddRange(moreChunks);
                     }
                 }
@@ -376,6 +416,7 @@ public class PlainTextChunker
 
         return chunks;
     }
+
 
     /// <summary>
     /// Split text into fragments using a list of separators.
@@ -394,6 +435,7 @@ public class PlainTextChunker
         var fragments = new List<Chunk>();
         var fragmentBuilder = new StringBuilder();
         int index = 0;
+
         while (index < text.Length)
         {
             string? foundSeparator = separators.MatchLongest(text, index);
@@ -428,12 +470,14 @@ public class PlainTextChunker
         return fragments;
     }
 
+
     private int TokenCount(string? input)
     {
         if (input == null) { return 0; }
 
-        return this._tokenizer.CountTokens(input);
+        return _tokenizer.CountTokens(input);
     }
+
 
     private static void AddChunk(List<string> chunks, StringBuilder chunk, ref bool firstChunkDone)
     {
@@ -442,11 +486,13 @@ public class PlainTextChunker
         firstChunkDone = true;
     }
 
+
     private static void AddChunk(List<string> chunks, string chunk, ref bool firstChunkDone)
     {
         chunks.Add(chunk);
         firstChunkDone = true;
     }
+
 
     #region internals
 
@@ -488,4 +534,6 @@ public class PlainTextChunker
 #endif
 
     #endregion
+
+
 }

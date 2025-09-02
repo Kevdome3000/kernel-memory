@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.KernelMemory.Extensions;
 using Microsoft.KM.TestHelpers;
@@ -10,6 +10,7 @@ public class BinaryDataExtensionsTest : BaseUnitTestCase
     public BinaryDataExtensionsTest(ITestOutputHelper output) : base(output)
     {
     }
+
 
     [Fact]
     [Trait("Category", "UnitTest")]

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.KernelMemory.InteractiveSetup.UI;
 
@@ -13,14 +13,14 @@ internal static class KMService
         SetupUI.AskQuestionWithOptions(new QuestionWithOptions
         {
             Title = "How should Kernel Memory service run and handle memory and documents ingestion?",
-            Description = "KM provides a HTTP web service for uploading documents, searching, asking questions, etc. The " +
-                          "service can be configured to run ingestion (loading documents) asynchronously or synchronously. " +
-                          "When running asynchronously, handlers run in the background and use distributed queues to enable " +
-                          "long running tasks, to retry in case of errors, and to allow scaling the service horizontally. " +
-                          "The web service can also be disabled in case the queued jobs are populated differently.",
+            Description = "KM provides a HTTP web service for uploading documents, searching, asking questions, etc. The "
+                + "service can be configured to run ingestion (loading documents) asynchronously or synchronously. "
+                + "When running asynchronously, handlers run in the background and use distributed queues to enable "
+                + "long running tasks, to retry in case of errors, and to allow scaling the service horizontally. "
+                + "The web service can also be disabled in case the queued jobs are populated differently.",
             Options =
             [
-                new("Web Service with Asynchronous Ingestion Handlers (better for retry logic and long operations)",
+                new Answer("Web Service with Asynchronous Ingestion Handlers (better for retry logic and long operations)",
                     config.Service.RunWebService && config.Service.RunHandlers,
                     () =>
                     {
@@ -34,7 +34,7 @@ internal static class KMService
                         });
                     }),
 
-                new("Web Service with Synchronous Ingestion Handlers",
+                new Answer("Web Service with Synchronous Ingestion Handlers",
                     config.Service.RunWebService && !config.Service.RunHandlers,
                     () =>
                     {
@@ -49,7 +49,7 @@ internal static class KMService
                         });
                     }),
 
-                new("No web Service, run only asynchronous Ingestion Handlers in the background",
+                new Answer("No web Service, run only asynchronous Ingestion Handlers in the background",
                     !config.Service.RunWebService && config.Service.RunHandlers,
                     () =>
                     {
@@ -63,7 +63,7 @@ internal static class KMService
                         });
                     }),
 
-                new("-exit-", false, SetupUI.Exit)
+                new Answer("-exit-", false, SetupUI.Exit)
             ]
         });
     }

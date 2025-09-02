@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 namespace Microsoft.KernelMemory.MemoryDb.SQLServer;
 
@@ -12,10 +12,12 @@ public class SqlServerMemoryException : KernelMemoryException
     {
     }
 
+
     /// <inheritdoc />
     public SqlServerMemoryException(string? message) : base(message)
     {
     }
+
 
     /// <inheritdoc />
     public SqlServerMemoryException(string? message, Exception? innerException) : base(message, innerException)

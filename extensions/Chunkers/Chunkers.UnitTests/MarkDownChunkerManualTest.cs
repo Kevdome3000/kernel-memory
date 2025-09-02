@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Diagnostics;
 using Microsoft.KernelMemory.AI;
@@ -33,6 +33,7 @@ public class MarkDownChunkerManualTest(ITestOutputHelper output) : BaseUnitTestC
         Assert.NotEmpty(chunks);
         DebugChunks(chunks, new CL100KTokenizer());
     }
+
 
     private static void DebugChunks(IEnumerable<string> chunks, ITextTokenizer tokenizer)
     {

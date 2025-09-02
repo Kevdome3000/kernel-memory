@@ -1,6 +1,6 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
-namespace Microsoft.KernelMemory;
+namespace Microsoft.KernelMemory.Models;
 
 #pragma warning disable CA2225
 public class GeneratedTextContent
@@ -9,17 +9,20 @@ public class GeneratedTextContent
 
     public TokenUsage? TokenUsage { get; set; }
 
+
     public GeneratedTextContent(string text, TokenUsage? tokenUsage = null)
     {
-        this.Text = text;
-        this.TokenUsage = tokenUsage;
+        Text = text;
+        TokenUsage = tokenUsage;
     }
+
 
     /// <inheritdoc/>
     public override string ToString()
     {
-        return this.Text;
+        return Text;
     }
+
 
     /// <summary>
     /// Convert a string to an instance of GeneratedTextContent

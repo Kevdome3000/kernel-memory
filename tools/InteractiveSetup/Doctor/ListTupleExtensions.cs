@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -18,11 +18,13 @@ internal static class ListTupleExtensions
         return string.Empty;
     }
 
+
     public static List<Tuple<string, string>> Add(this List<Tuple<string, string>> list, string key, string value)
     {
         list.Add(new Tuple<string, string>(key, value));
         return list;
     }
+
 
     public static List<Tuple<string, string>> AddSeparator(this List<Tuple<string, string>> list)
     {

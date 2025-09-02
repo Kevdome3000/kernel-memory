@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
+using _204_dotnet_ASP.NET_MVC_integration;
 using Microsoft.KernelMemory;
 using Microsoft.KernelMemory.Service.AspNetCore;
 

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Elastic.Clients.Elasticsearch;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,6 +29,7 @@ public static partial class KernelMemoryBuilderExtensions
         return builder;
     }
 
+
     /// <summary>
     /// Extension method to add the Elasticsearch memory connector.
     /// </summary>
@@ -47,6 +48,7 @@ public static partial class KernelMemoryBuilderExtensions
         return builder;
     }
 }
+
 
 /// <summary>
 /// .NET IServiceCollection dependency injection extensions.
@@ -75,6 +77,7 @@ public static partial class DependencyInjection
             .AddSingleton(config)
             .AddSingleton<IMemoryDb, ElasticsearchMemory>();
     }
+
 
     /// <summary>
     /// Inject Elasticsearch as the default implementation of IMemoryDb

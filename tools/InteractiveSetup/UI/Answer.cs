@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 
@@ -10,10 +10,11 @@ public sealed class Answer
     public bool IsSelected { get; }
     public Action OnSelected { get; }
 
+
     public Answer(string name, bool isSelected, Action onSelected)
     {
-        this.Name = name;
-        this.IsSelected = isSelected;
-        this.OnSelected = onSelected;
+        Name = name;
+        IsSelected = isSelected;
+        OnSelected = onSelected;
     }
 }

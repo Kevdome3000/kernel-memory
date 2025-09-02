@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Text;
 
@@ -14,6 +14,7 @@ public static class StringBuilderExtensions
         sb.Append('\n');
     }
 
+
     /// <summary>
     /// Append line using Unix line ending "\n"
     /// </summary>
@@ -23,6 +24,7 @@ public static class StringBuilderExtensions
         sb.Append('\n');
     }
 
+
     /// <summary>
     /// Append line using Unix line ending "\n"
     /// </summary>
@@ -31,6 +33,7 @@ public static class StringBuilderExtensions
         sb.Append(value);
         sb.Append('\n');
     }
+
 
     /// <summary>
     /// Append line using Unix line ending "\n"

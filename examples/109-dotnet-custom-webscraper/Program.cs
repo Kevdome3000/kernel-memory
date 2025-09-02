@@ -1,7 +1,8 @@
-// Copyright (c) Microsoft. All rights reserved.
-
+// Copyright (c) Microsoft.All rights reserved.
 using Microsoft.KernelMemory;
 using Microsoft.KernelMemory.DataFormats.WebPages;
+
+namespace _109_dotnet_custom_webscraper;
 
 public class MyWebScraper : IWebScraper
 {
@@ -25,6 +26,7 @@ public class MyWebScraper : IWebScraper
         });
     }
 }
+
 
 public static class Program
 {

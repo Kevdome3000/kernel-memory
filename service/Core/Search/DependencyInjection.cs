@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,27 +14,33 @@ namespace Microsoft.KernelMemory;
 public static partial class KernelMemoryBuilderExtensions
 {
     public static IKernelMemoryBuilder WithDefaultSearchClient(
-        this IKernelMemoryBuilder builder, SearchClientConfig? config = null)
+        this IKernelMemoryBuilder builder,
+        SearchClientConfig? config = null)
     {
         config?.Validate();
-        builder.Services.AddDefaultSearchClient(config ?? new());
+        builder.Services.AddDefaultSearchClient(config ?? new SearchClientConfig());
         return builder;
     }
 
+
     public static IKernelMemoryBuilder WithSearchClientConfig(
-        this IKernelMemoryBuilder builder, SearchClientConfig config)
+        this IKernelMemoryBuilder builder,
+        SearchClientConfig config)
     {
         config.Validate();
         builder.Services.AddSearchClientConfig(config);
         return builder;
     }
 
+
     public static IKernelMemoryBuilder WithCustomSearchClient(
-        this IKernelMemoryBuilder builder, ISearchClient instance)
+        this IKernelMemoryBuilder builder,
+        ISearchClient instance)
     {
         builder.Services.AddCustomSearchClient(instance);
         return builder;
     }
+
 
     public static IKernelMemoryBuilder WithCustomSearchClient<T>(
         this IKernelMemoryBuilder builder) where T : class, ISearchClient
@@ -44,6 +50,7 @@ public static partial class KernelMemoryBuilderExtensions
     }
 }
 
+
 /// <summary>
 /// .NET IServiceCollection dependency injection extensions.
 /// </summary>
@@ -51,17 +58,21 @@ public static partial class KernelMemoryBuilderExtensions
 public static partial class DependencyInjection
 {
     public static IServiceCollection AddDefaultSearchClient(
-        this IServiceCollection services, SearchClientConfig? config = null)
+        this IServiceCollection services,
+        SearchClientConfig? config = null)
     {
-        services.AddSingleton<SearchClientConfig>(config ?? new());
+        services.AddSingleton<SearchClientConfig>(config ?? new SearchClientConfig());
         return services.AddSingleton<ISearchClient, SearchClient>();
     }
 
+
     public static IServiceCollection AddCustomSearchClient(
-        this IServiceCollection services, ISearchClient instance)
+        this IServiceCollection services,
+        ISearchClient instance)
     {
         return services.AddSingleton<ISearchClient>(instance);
     }
+
 
     public static IServiceCollection AddCustomSearchClient<T>(
         this IServiceCollection services) where T : class, ISearchClient
@@ -69,8 +80,10 @@ public static partial class DependencyInjection
         return services.AddSingleton<ISearchClient, T>();
     }
 
+
     public static IServiceCollection AddSearchClientConfig(
-        this IServiceCollection services, SearchClientConfig instance)
+        this IServiceCollection services,
+        SearchClientConfig instance)
     {
         return services.AddSingleton<SearchClientConfig>(instance);
     }

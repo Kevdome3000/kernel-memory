@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,6 +11,7 @@ public interface IPipelineStepHandler
     /// Name of the pipeline step assigned to the handler
     /// </summary>
     string StepName { get; }
+
 
     /// <summary>
     /// Method invoked by kernel memory orchestrators to process a pipeline.

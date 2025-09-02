@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Elastic.Clients.Elasticsearch;
 using Microsoft.Extensions.Configuration;
@@ -22,23 +22,25 @@ public abstract class MemoryDbFunctionalTest : BaseFunctionalTestCase, IAsyncLif
     protected MemoryDbFunctionalTest(IConfiguration cfg, ITestOutputHelper output)
         : base(cfg, output)
     {
-        this.Output = output ?? throw new ArgumentNullException(nameof(output));
+        Output = output ?? throw new ArgumentNullException(nameof(output));
 
 #pragma warning disable KMEXP01 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-        this.TextEmbeddingGenerator = new OpenAITextEmbeddingGenerator(
-            config: base.OpenAiConfig,
+        TextEmbeddingGenerator = new OpenAITextEmbeddingGenerator(
+            OpenAiConfig,
             textTokenizer: default,
             loggerFactory: default);
 #pragma warning restore KMEXP01 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 
-        this.Client = new ElasticsearchClient(base.ElasticsearchConfig.ToElasticsearchClientSettings());
-        this.MemoryDb = new ElasticsearchMemory(base.ElasticsearchConfig, this.TextEmbeddingGenerator);
+        Client = new ElasticsearchClient(ElasticsearchConfig.ToElasticsearchClientSettings());
+        MemoryDb = new ElasticsearchMemory(ElasticsearchConfig, TextEmbeddingGenerator);
     }
+
 
     public ITestOutputHelper Output { get; }
     public ElasticsearchClient Client { get; }
     public IMemoryDb MemoryDb { get; }
     public ITextEmbeddingGenerator TextEmbeddingGenerator { get; }
+
 
     public async Task InitializeAsync()
     {
@@ -46,23 +48,24 @@ public abstract class MemoryDbFunctionalTest : BaseFunctionalTestCase, IAsyncLif
         // there is no chance for a method to finish and delete indices of other methods before the next
         // method starts executing.
 
-        var indicesFound = await this.Client.DeleteIndicesOfTestAsync(this.GetType(), base.ElasticsearchConfig).ConfigureAwait(false);
+        var indicesFound = await Client.DeleteIndicesOfTestAsync(GetType(), ElasticsearchConfig).ConfigureAwait(false);
 
         if (indicesFound.Any())
         {
-            this.Output.WriteLine($"Deleted left-over test indices: {string.Join(", ", indicesFound)}");
-            this.Output.WriteLine("");
+            Output.WriteLine($"Deleted left-over test indices: {string.Join(", ", indicesFound)}");
+            Output.WriteLine("");
         }
     }
 
+
     public async Task DisposeAsync()
     {
-        var indicesFound = await this.Client.DeleteIndicesOfTestAsync(this.GetType(), base.ElasticsearchConfig).ConfigureAwait(false);
+        var indicesFound = await Client.DeleteIndicesOfTestAsync(GetType(), ElasticsearchConfig).ConfigureAwait(false);
 
         if (indicesFound.Any())
         {
-            this.Output.WriteLine($"Deleted test indices: {string.Join(", ", indicesFound)}");
-            this.Output.WriteLine("");
+            Output.WriteLine($"Deleted test indices: {string.Join(", ", indicesFound)}");
+            Output.WriteLine("");
         }
     }
 }

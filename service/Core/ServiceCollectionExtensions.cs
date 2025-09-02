@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using Microsoft.Extensions.DependencyInjection;
@@ -30,6 +30,7 @@ public static partial class ServiceCollectionExtensions
 
         return services;
     }
+
 
     /// <summary>
     /// Adds Kernel Memory services to the specified <see cref="IServiceCollection"/> and registers both a singleton <see cref="IKernelMemory"/> service and the implementation of <typeparamref name="T"/>.

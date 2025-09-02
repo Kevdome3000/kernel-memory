@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.KernelMemory;
@@ -16,6 +16,7 @@ public class TestsetGenerationTests
     private readonly TestSetEvaluator _testSetEvaluator;
     private readonly Kernel _kernel;
 
+
     public TestsetGenerationTests(IConfiguration cfg, ITestOutputHelper output)
     {
         var azureOpenAITextConfig = new AzureOpenAIConfig();
@@ -30,64 +31,72 @@ public class TestsetGenerationTests
             .WithAzureOpenAITextGeneration(azureOpenAITextConfig)
             .WithAzureOpenAITextEmbeddingGeneration(azureOpenAIEmbeddingConfig);
 
-        this._kernel = Kernel
+        _kernel = Kernel
             .CreateBuilder()
             .AddAzureOpenAITextEmbeddingGeneration(
-                deploymentName: azureOpenAIEmbeddingConfig.Deployment,
-                endpoint: azureOpenAIEmbeddingConfig.Endpoint,
-                apiKey: azureOpenAIEmbeddingConfig.APIKey)
+                azureOpenAIEmbeddingConfig.Deployment,
+                azureOpenAIEmbeddingConfig.Endpoint,
+                azureOpenAIEmbeddingConfig.APIKey)
             .AddAzureOpenAIChatCompletion(
-                deploymentName: azureOpenAITextConfig.Deployment,
-                endpoint: azureOpenAITextConfig.Endpoint,
-                apiKey: azureOpenAITextConfig.APIKey)
+                azureOpenAITextConfig.Deployment,
+                azureOpenAITextConfig.Endpoint,
+                azureOpenAITextConfig.APIKey)
             .Build();
 
-        this._testSetGenerator = new TestSetGeneratorBuilder(memoryBuilder.Services)
-            .AddEvaluatorKernel(this._kernel)
+        _testSetGenerator = new TestSetGeneratorBuilder(memoryBuilder.Services)
+            .AddEvaluatorKernel(_kernel)
             .Build();
 
-        this._memory = memoryBuilder.Build();
+        _memory = memoryBuilder.Build();
 
-        this._testSetEvaluator = new TestSetEvaluatorBuilder()
-            .AddEvaluatorKernel(this._kernel)
-            .WithMemory(this._memory)
+        _testSetEvaluator = new TestSetEvaluatorBuilder()
+            .AddEvaluatorKernel(_kernel)
+            .WithMemory(_memory)
             .Build();
     }
+
 
     [Fact]
     [Trait("Category", "Evaluation")]
     public async Task ItGenerateTestSetAsync()
     {
-        await this._memory
+        await _memory
             .ImportDocumentAsync(
                 "file1-NASA-news.pdf",
-                documentId: "file1-NASA-news",
-                steps: Constants.PipelineWithoutSummary).ConfigureAwait(false);
+                "file1-NASA-news",
+                steps: Constants.PipelineWithoutSummary)
+            .ConfigureAwait(false);
 
-        var testSets = await this._testSetGenerator.GenerateTestSetsAsync("default4tests", retryCount: 5, count: 1)
-            .ToArrayAsync().ConfigureAwait(false);
+        var testSets = await _testSetGenerator.GenerateTestSetsAsync("default4tests", retryCount: 5, count: 1)
+            .ToArrayAsync()
+            .ConfigureAwait(false);
 
         Assert.NotEmpty(testSets);
         Assert.Equal(1, testSets.Length);
     }
 
+
     [Fact]
     [Trait("Category", "Evaluation")]
     public async Task ItEvaluateTestSetAsync()
     {
-        await this._memory
+        await _memory
             .ImportDocumentAsync(
                 "file1-NASA-news.pdf",
-                documentId: "file1-NASA-news",
-                steps: Constants.PipelineWithoutSummary).ConfigureAwait(false);
+                "file1-NASA-news",
+                steps: Constants.PipelineWithoutSummary)
+            .ConfigureAwait(false);
 
-        var evaluation = await this._testSetEvaluator.EvaluateTestSetAsync("default4tests", [
-            new TestSetItem
-            {
-                Question = "What is the role of the Department of Defense in the recovery operations for the Artemis II mission?",
-                GroundTruth = "The Department of Defense personnel are involved in practicing recovery operations for the Artemis II mission. They use a crew module test article to help verify the recovery team's readiness to recover the Artemis II crew and the Orion spacecraft.",
-            }
-        ]).ToArrayAsync().ConfigureAwait(false);
+        var evaluation = await _testSetEvaluator.EvaluateTestSetAsync("default4tests",
+            [
+                new TestSetItem
+                {
+                    Question = "What is the role of the Department of Defense in the recovery operations for the Artemis II mission?",
+                    GroundTruth = "The Department of Defense personnel are involved in practicing recovery operations for the Artemis II mission. They use a crew module test article to help verify the recovery team's readiness to recover the Artemis II crew and the Orion spacecraft."
+                }
+            ])
+            .ToArrayAsync()
+            .ConfigureAwait(false);
 
         Assert.NotEmpty(evaluation);
     }

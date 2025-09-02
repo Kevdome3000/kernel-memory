@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net9.0</TargetFramework>
         <RollForward>LatestMajor</RollForward>
         <AssemblyName>Microsoft.KernelMemory.AI.LlamaSharp</AssemblyName>
         <RootNamespace>Microsoft.KernelMemory.AI.LlamaSharp</RootNamespace>
@@ -9,12 +9,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\..\service\Abstractions\Abstractions.csproj" />
-        <ProjectReference Include="..\..\..\service\Core\Core.csproj" />
+        <ProjectReference Include="..\..\..\service\Abstractions\Abstractions.csproj"/>
+        <ProjectReference Include="..\..\..\service\Core\Core.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="LLamaSharp" /> <!-- missing strong name (CS8002) -->
+        <PackageReference Include="LLamaSharp"/> <!-- missing strong name (CS8002) -->
 
         <!-- Kernel Memory web service is configured to not have ANY pre-configured LLamaSharp backend, e.g. KM Docker
              image does not work with LLamaSharp without manually mounting a LLamaSharp backend assembly into the
@@ -25,7 +25,7 @@
         <!-- <PackageReference Include="LLamaSharp.Backend.Cuda11" />   -->
         <!-- <PackageReference Include="LLamaSharp.Backend.Cuda12" />   -->
 
-        <PackageReference Include="System.Linq.Async" />
+        <PackageReference Include="System.Linq.Async"/>
     </ItemGroup>
 
     <PropertyGroup>
@@ -38,7 +38,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <None Include="..\README.md" Link="README.md" Pack="true" PackagePath="." Visible="false" />
+        <None Include="..\README.md" Link="README.md" Pack="true" PackagePath="." Visible="false"/>
     </ItemGroup>
 
 </Project>

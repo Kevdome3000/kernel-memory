@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 namespace Microsoft.KernelMemory.Text;
 
@@ -17,6 +17,7 @@ public static class StringExtensions
 
         // Skip leading whitespace if trimming
         int i = 0;
+
         if (trim)
         {
             while (i < text.Length && char.IsWhiteSpace(text[i])) { i++; }
@@ -55,7 +56,7 @@ public static class StringExtensions
 
         // Cut off trailing whitespace if trimming
         // If every char was whitespace, lastNonWhitespacePos stays -1 and the result is an empty string
-        int finalLength = (trim && lastNonWhitespacePos >= 0)
+        int finalLength = trim && lastNonWhitespacePos >= 0
             ? lastNonWhitespacePos + 1
             : bufferPos;
 

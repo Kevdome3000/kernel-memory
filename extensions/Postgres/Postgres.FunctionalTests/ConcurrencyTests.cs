@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.KernelMemory;
@@ -13,6 +13,7 @@ public class ConcurrencyTests : BaseFunctionalTestCase
     {
     }
 
+
     [Theory]
     [InlineData("defaultSQL")]
     [InlineData("customSQL")]
@@ -20,17 +21,18 @@ public class ConcurrencyTests : BaseFunctionalTestCase
     public async Task CreateDeleteIndexConcurrencyTest(string type)
     {
         PostgresConfig config;
+
         switch (type)
         {
             default:
                 throw new ArgumentOutOfRangeException(nameof(type), $"Unknown '{type}' test case");
 
             case "defaultSQL":
-                config = this.PostgresConfig;
+                config = PostgresConfig;
                 break;
 
             case "customSQL":
-                config = this.PostgresConfig;
+                config = PostgresConfig;
                 config.TableNamePrefix = "custom_sql";
                 config.Columns = new Dictionary<string, string>
                 {
@@ -73,6 +75,7 @@ public class ConcurrencyTests : BaseFunctionalTestCase
         using var target = new PostgresMemory(config, new FakeEmbeddingGenerator());
 
         var tasks = new List<Task>();
+
         for (int i = 0; i < concurrency; i++)
         {
             tasks.Add(target.CreateIndexAsync(indexName, vectorSize));
@@ -81,6 +84,7 @@ public class ConcurrencyTests : BaseFunctionalTestCase
         await Task.WhenAll(tasks);
 
         tasks = [];
+
         for (int i = 0; i < concurrency; i++)
         {
             tasks.Add(target.DeleteIndexAsync(indexName));
@@ -88,6 +92,7 @@ public class ConcurrencyTests : BaseFunctionalTestCase
 
         await Task.WhenAll(tasks);
     }
+
 
     [Fact]
     [Trait("Category", "Postgres")]
@@ -97,7 +102,7 @@ public class ConcurrencyTests : BaseFunctionalTestCase
         var vectorSize = 4;
         var indexName = "upsert_test" + Guid.NewGuid().ToString("D");
 
-        using var target = new PostgresMemory(this.PostgresConfig, new FakeEmbeddingGenerator());
+        using var target = new PostgresMemory(PostgresConfig, new FakeEmbeddingGenerator());
 
         await target.CreateIndexAsync(indexName, vectorSize);
 
@@ -108,6 +113,7 @@ public class ConcurrencyTests : BaseFunctionalTestCase
         };
 
         var tasks = new List<Task>();
+
         for (int i = 0; i < concurrency; i++)
         {
             tasks.Add(target.UpsertAsync(indexName, record));
@@ -116,6 +122,7 @@ public class ConcurrencyTests : BaseFunctionalTestCase
         await Task.WhenAll(tasks);
 
         tasks = [];
+
         for (int i = 0; i < concurrency; i++)
         {
             tasks.Add(target.DeleteAsync(indexName, record));

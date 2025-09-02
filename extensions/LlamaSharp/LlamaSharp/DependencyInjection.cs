@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -31,6 +31,7 @@ public static partial class KernelMemoryBuilderExtensions
         return builder;
     }
 
+
     public static IKernelMemoryBuilder WithLlamaTextEmbeddingGeneration(
         this IKernelMemoryBuilder builder,
         string modelPath,
@@ -48,6 +49,7 @@ public static partial class KernelMemoryBuilderExtensions
         return builder;
     }
 
+
     public static IKernelMemoryBuilder WithLlamaTextGeneration(
         this IKernelMemoryBuilder builder,
         LlamaSharpModelConfig config,
@@ -56,6 +58,7 @@ public static partial class KernelMemoryBuilderExtensions
         builder.Services.AddLlamaSharpTextGeneration(config, textTokenizer);
         return builder;
     }
+
 
     public static IKernelMemoryBuilder WithLlamaTextEmbeddingGeneration(
         this IKernelMemoryBuilder builder,
@@ -66,6 +69,7 @@ public static partial class KernelMemoryBuilderExtensions
         return builder;
     }
 
+
     public static IKernelMemoryBuilder WithLlamaTextGeneration(
         this IKernelMemoryBuilder builder,
         LlamaSharpConfig config,
@@ -74,6 +78,7 @@ public static partial class KernelMemoryBuilderExtensions
         builder.Services.AddLlamaSharpTextGeneration(config.TextModel, textTokenizer);
         return builder;
     }
+
 
     public static IKernelMemoryBuilder WithLlamaTextEmbeddingGeneration(
         this IKernelMemoryBuilder builder,
@@ -84,6 +89,7 @@ public static partial class KernelMemoryBuilderExtensions
         return builder;
     }
 }
+
 
 /// <summary>
 /// .NET IServiceCollection dependency injection extensions.
@@ -98,10 +104,11 @@ public static partial class DependencyInjection
         config.Validate();
         return services
             .AddSingleton<ITextGenerator, LlamaSharpTextGenerator>(serviceProvider => new LlamaSharpTextGenerator(
-                config: config,
-                textTokenizer: textTokenizer,
-                loggerFactory: serviceProvider.GetService<ILoggerFactory>()));
+                config,
+                textTokenizer,
+                serviceProvider.GetService<ILoggerFactory>()));
     }
+
 
     public static IServiceCollection AddLlamaSharpTextEmbeddingGeneration(
         this IServiceCollection services,
@@ -111,8 +118,8 @@ public static partial class DependencyInjection
         config.Validate();
         return services
             .AddSingleton<ITextEmbeddingGenerator, LlamaSharpTextEmbeddingGenerator>(serviceProvider => new LlamaSharpTextEmbeddingGenerator(
-                config: config,
-                textTokenizer: textTokenizer,
-                loggerFactory: serviceProvider.GetService<ILoggerFactory>()));
+                config,
+                textTokenizer,
+                serviceProvider.GetService<ILoggerFactory>()));
     }
 }

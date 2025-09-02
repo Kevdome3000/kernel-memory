@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Diagnostics.CodeAnalysis;
@@ -28,10 +28,12 @@ public sealed class AzureQueuesPipeline : IQueue
     private static readonly JsonSerializerOptions s_indentedJsonOptions = new() { WriteIndented = true };
     private static readonly JsonSerializerOptions s_notIndentedJsonOptions = new() { WriteIndented = false };
 
+
     private sealed class MessageEventArgs : EventArgs
     {
         public QueueMessage? Message { get; set; }
     }
+
 
     /// <summary>
     /// Event triggered when a message is received
@@ -64,32 +66,34 @@ public sealed class AzureQueuesPipeline : IQueue
     private bool _busy = false;
     private readonly CancellationTokenSource _cancellation = new();
 
+
     public AzureQueuesPipeline(
         AzureQueuesConfig config,
         ILoggerFactory? loggerFactory = null)
     {
-        this._config = config;
-        this._config.Validate();
+        _config = config;
+        _config.Validate();
 
-        this._log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<AzureQueuesPipeline>();
+        _log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<AzureQueuesPipeline>();
 
         var clientOptions = GetClientOptions(config);
+
         switch (config.Auth)
         {
             case AzureQueuesConfig.AuthTypes.ConnectionString:
             {
-                this.ValidateConnectionString(config.ConnectionString);
-                this._clientBuilder = queueName => new QueueClient(config.ConnectionString, queueName, clientOptions);
+                ValidateConnectionString(config.ConnectionString);
+                _clientBuilder = queueName => new QueueClient(config.ConnectionString, queueName, clientOptions);
                 break;
             }
 
             case AzureQueuesConfig.AuthTypes.AccountKey:
             {
-                this.ValidateAccountName(config.Account);
-                this.ValidateAccountKey(config.AccountKey);
-                var suffix = this.ValidateEndpointSuffix(config.EndpointSuffix);
-                this._clientBuilder = queueName => new QueueClient(
-                    new($"https://{config.Account}.queue.{suffix}/{queueName}"),
+                ValidateAccountName(config.Account);
+                ValidateAccountKey(config.AccountKey);
+                var suffix = ValidateEndpointSuffix(config.EndpointSuffix);
+                _clientBuilder = queueName => new QueueClient(
+                    new Uri($"https://{config.Account}.queue.{suffix}/{queueName}"),
                     new StorageSharedKeyCredential(config.Account, config.AccountKey),
                     clientOptions);
                 break;
@@ -97,10 +101,10 @@ public sealed class AzureQueuesPipeline : IQueue
 
             case AzureQueuesConfig.AuthTypes.AzureIdentity:
             {
-                this.ValidateAccountName(config.Account);
-                var suffix = this.ValidateEndpointSuffix(config.EndpointSuffix);
-                this._clientBuilder = queueName => new QueueClient(
-                    new($"https://{config.Account}.queue.{suffix}/{queueName}"),
+                ValidateAccountName(config.Account);
+                var suffix = ValidateEndpointSuffix(config.EndpointSuffix);
+                _clientBuilder = queueName => new QueueClient(
+                    new Uri($"https://{config.Account}.queue.{suffix}/{queueName}"),
                     new DefaultAzureCredential(),
                     clientOptions);
                 break;
@@ -108,9 +112,9 @@ public sealed class AzureQueuesPipeline : IQueue
 
             case AzureQueuesConfig.AuthTypes.ManualStorageSharedKeyCredential:
             {
-                this.ValidateAccountName(config.Account);
-                var suffix = this.ValidateEndpointSuffix(config.EndpointSuffix);
-                this._clientBuilder = queueName => new QueueClient(new($"https://{config.Account}.queue.{suffix}/{queueName}"),
+                ValidateAccountName(config.Account);
+                var suffix = ValidateEndpointSuffix(config.EndpointSuffix);
+                _clientBuilder = queueName => new QueueClient(new Uri($"https://{config.Account}.queue.{suffix}/{queueName}"),
                     config.GetStorageSharedKeyCredential(),
                     clientOptions);
                 break;
@@ -118,9 +122,9 @@ public sealed class AzureQueuesPipeline : IQueue
 
             case AzureQueuesConfig.AuthTypes.ManualAzureSasCredential:
             {
-                this.ValidateAccountName(config.Account);
-                var suffix = this.ValidateEndpointSuffix(config.EndpointSuffix);
-                this._clientBuilder = queueName => new QueueClient(new($"https://{config.Account}.queue.{suffix}/{queueName}"),
+                ValidateAccountName(config.Account);
+                var suffix = ValidateEndpointSuffix(config.EndpointSuffix);
+                _clientBuilder = queueName => new QueueClient(new Uri($"https://{config.Account}.queue.{suffix}/{queueName}"),
                     config.GetAzureSasCredential(),
                     clientOptions);
                 break;
@@ -128,9 +132,9 @@ public sealed class AzureQueuesPipeline : IQueue
 
             case AzureQueuesConfig.AuthTypes.ManualTokenCredential:
             {
-                this.ValidateAccountName(config.Account);
-                var suffix = this.ValidateEndpointSuffix(config.EndpointSuffix);
-                this._clientBuilder = queueName => new QueueClient(new($"https://{config.Account}.queue.{suffix}/{queueName}"),
+                ValidateAccountName(config.Account);
+                var suffix = ValidateEndpointSuffix(config.EndpointSuffix);
+                _clientBuilder = queueName => new QueueClient(new Uri($"https://{config.Account}.queue.{suffix}/{queueName}"),
                     config.GetTokenCredential(),
                     clientOptions);
                 break;
@@ -138,94 +142,99 @@ public sealed class AzureQueuesPipeline : IQueue
 
             default:
             case AzureQueuesConfig.AuthTypes.Unknown:
-                this._log.LogCritical("Azure Queue authentication type '{0}' undefined or not supported", config.Auth);
+                _log.LogCritical("Azure Queue authentication type '{0}' undefined or not supported", config.Auth);
                 throw new DocumentStorageException($"Azure Queue authentication type '{config.Auth}' undefined or not supported");
         }
     }
+
 
     /// <inheritdoc />
     public async Task<IQueue> ConnectToQueueAsync(string queueName, QueueOptions options = default, CancellationToken cancellationToken = default)
     {
         queueName = CleanQueueName(queueName);
-        this._log.LogTrace("Connecting to queue name: {0}", queueName);
+        _log.LogTrace("Connecting to queue name: {0}", queueName);
 
         ArgumentNullExceptionEx.ThrowIfNullOrWhiteSpace(queueName, nameof(queueName), "The queue name is empty");
 
-        if (!string.IsNullOrEmpty(this._queueName))
+        if (!string.IsNullOrEmpty(_queueName))
         {
-            this._log.LogError("The queue name has already been set, already connected to {0}", this._queueName);
-            throw new InvalidOperationException($"The queue is already connected to `{this._queueName}`");
+            _log.LogError("The queue name has already been set, already connected to {0}", _queueName);
+            throw new InvalidOperationException($"The queue is already connected to `{_queueName}`");
         }
 
         // Note: 3..63 chars, only lowercase letters, numbers and hyphens. No hyphens at start/end and no consecutive hyphens.
-        this._queueName = queueName;
-        this._log.LogDebug("Queue name: {0}", this._queueName);
+        _queueName = queueName;
+        _log.LogDebug("Queue name: {0}", _queueName);
 
-        this._queue = this._clientBuilder(this._queueName);
-        Response? result = await this._queue.CreateIfNotExistsAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
-        this._log.LogTrace("Queue ready: status code {0}", result?.Status);
+        _queue = _clientBuilder(_queueName);
+        Response? result = await _queue.CreateIfNotExistsAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+        _log.LogTrace("Queue ready: status code {0}", result?.Status);
 
-        this._poisonQueue = this._clientBuilder(this._queueName + this._config.PoisonQueueSuffix);
-        result = await this._poisonQueue.CreateIfNotExistsAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
-        this._log.LogTrace("Poison queue ready: status code {0}", result?.Status);
+        _poisonQueue = _clientBuilder(_queueName + _config.PoisonQueueSuffix);
+        result = await _poisonQueue.CreateIfNotExistsAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+        _log.LogTrace("Poison queue ready: status code {0}", result?.Status);
 
         if (options.DequeueEnabled)
         {
-            this._log.LogTrace("Enabling dequeue on queue {0}, every {1} msecs", this._queueName, this._config.PollDelayMsecs);
-            this._dispatchTimer = new Timer(this._config.PollDelayMsecs); // milliseconds
-            this._dispatchTimer.Elapsed += this.DispatchMessages;
-            this._dispatchTimer.Start();
+            _log.LogTrace("Enabling dequeue on queue {0}, every {1} msecs", _queueName, _config.PollDelayMsecs);
+            _dispatchTimer = new Timer(_config.PollDelayMsecs); // milliseconds
+            _dispatchTimer.Elapsed += DispatchMessages;
+            _dispatchTimer.Start();
         }
 
         return this;
     }
 
+
     /// <inheritdoc />
     public async Task EnqueueAsync(string message, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrEmpty(this._queueName) || this._queue == null)
+        if (string.IsNullOrEmpty(_queueName) || _queue == null)
         {
-            this._log.LogError("The queue client is not connected, cannot enqueue messages");
+            _log.LogError("The queue client is not connected, cannot enqueue messages");
             throw new InvalidOperationException("The client must be connected to a queue first");
         }
 
-        this._log.LogDebug("Sending message...");
-        Response<SendReceipt> receipt = await this._queue.SendMessageAsync(message, cancellationToken).ConfigureAwait(false);
-        this._log.LogDebug("Message sent {0}", receipt.Value?.MessageId);
+        _log.LogDebug("Sending message...");
+        Response<SendReceipt> receipt = await _queue.SendMessageAsync(message, cancellationToken).ConfigureAwait(false);
+        _log.LogDebug("Message sent {0}", receipt.Value?.MessageId);
     }
+
 
     /// <inheritdoc />
     public void OnDequeue(Func<string, Task<ReturnType>> processMessageAction)
     {
-        this.Received += async (object sender, MessageEventArgs args) =>
+        Received += async (sender, args) =>
         {
             ArgumentNullExceptionEx.ThrowIfNull(args.Message, nameof(args.Message), "The message received is NULL");
             QueueMessage message = args.Message;
 
-            this._log.LogInformation("Message '{0}' received, expires at {1}", message.MessageId, message.ExpiresOn);
+            _log.LogInformation("Message '{0}' received, expires at {1}", message.MessageId, message.ExpiresOn);
 
             try
             {
                 ReturnType returnType = await processMessageAction.Invoke(message.MessageText).ConfigureAwait(false);
-                if (message.DequeueCount <= this._config.MaxRetriesBeforePoisonQueue)
+
+                if (message.DequeueCount <= _config.MaxRetriesBeforePoisonQueue)
                 {
                     switch (returnType)
                     {
                         case ReturnType.Success:
-                            this._log.LogTrace("Message '{0}' successfully processed, deleting message", message.MessageId);
-                            await this.DeleteMessageAsync(message, cancellationToken: default).ConfigureAwait(false);
+                            _log.LogTrace("Message '{0}' successfully processed, deleting message", message.MessageId);
+                            await DeleteMessageAsync(message, default).ConfigureAwait(false);
                             break;
 
                         case ReturnType.TransientError:
                             var backoffDelay = TimeSpan.FromSeconds(1 * message.DequeueCount);
-                            this._log.LogWarning("Message '{0}' failed to process, putting message back in the queue with a delay of {1} msecs",
-                                message.MessageId, backoffDelay.TotalMilliseconds);
-                            await this.UnlockMessageAsync(message, backoffDelay, cancellationToken: default).ConfigureAwait(false);
+                            _log.LogWarning("Message '{0}' failed to process, putting message back in the queue with a delay of {1} msecs",
+                                message.MessageId,
+                                backoffDelay.TotalMilliseconds);
+                            await UnlockMessageAsync(message, backoffDelay, default).ConfigureAwait(false);
                             break;
 
                         case ReturnType.FatalError:
-                            this._log.LogError("Message '{0}' failed to process due to a non-recoverable error, moving to poison queue", message.MessageId);
-                            await this.MoveMessageToPoisonQueueAsync(message, cancellationToken: default).ConfigureAwait(false);
+                            _log.LogError("Message '{0}' failed to process due to a non-recoverable error, moving to poison queue", message.MessageId);
+                            await MoveMessageToPoisonQueueAsync(message, default).ConfigureAwait(false);
                             break;
 
                         default:
@@ -234,14 +243,14 @@ public sealed class AzureQueuesPipeline : IQueue
                 }
                 else
                 {
-                    this._log.LogError("Message '{0}' reached max attempts, moving to poison queue", message.MessageId);
-                    await this.MoveMessageToPoisonQueueAsync(message, cancellationToken: default).ConfigureAwait(false);
+                    _log.LogError("Message '{0}' reached max attempts, moving to poison queue", message.MessageId);
+                    await MoveMessageToPoisonQueueAsync(message, default).ConfigureAwait(false);
                 }
             }
             catch (KernelMemoryException e) when (e.IsTransient.HasValue && !e.IsTransient.Value)
             {
-                this._log.LogError(e, "Message '{0}' failed to process due to a non-recoverable error, moving to poison queue", message.MessageId);
-                await this.MoveMessageToPoisonQueueAsync(message, cancellationToken: default).ConfigureAwait(false);
+                _log.LogError(e, "Message '{0}' failed to process due to a non-recoverable error, moving to poison queue", message.MessageId);
+                await MoveMessageToPoisonQueueAsync(message, default).ConfigureAwait(false);
             }
 #pragma warning disable CA1031 // Must catch all to handle queue properly
             catch (Exception e)
@@ -253,23 +262,27 @@ public sealed class AzureQueuesPipeline : IQueue
                 // - failed to move message to poison queue
 
                 var backoffDelay = TimeSpan.FromSeconds(1 * message.DequeueCount);
-                this._log.LogWarning(e, "Message '{0}' processing failed with exception, putting message back in the queue with a delay of {1} msecs",
-                    message.MessageId, backoffDelay.TotalMilliseconds);
+                _log.LogWarning(e,
+                    "Message '{0}' processing failed with exception, putting message back in the queue with a delay of {1} msecs",
+                    message.MessageId,
+                    backoffDelay.TotalMilliseconds);
 
                 // Note: if this fails, the exception is caught by this.DispatchMessages()
-                await this.UnlockMessageAsync(message, backoffDelay, cancellationToken: default).ConfigureAwait(false);
+                await UnlockMessageAsync(message, backoffDelay, default).ConfigureAwait(false);
             }
 #pragma warning restore CA1031
         };
     }
 
+
     /// <inheritdoc />
     public void Dispose()
     {
-        this._cancellation.Cancel();
-        this._cancellation.Dispose();
-        this._dispatchTimer?.Dispose();
+        _cancellation.Cancel();
+        _cancellation.Dispose();
+        _dispatchTimer?.Dispose();
     }
+
 
     /// <summary>
     /// Options used by the Azure Queue client, e.g. User Agent and Auth tokens audience, etc.
@@ -281,7 +294,7 @@ public sealed class AzureQueuesPipeline : IQueue
             Diagnostics =
             {
                 IsTelemetryEnabled = Telemetry.IsTelemetryEnabled,
-                ApplicationId = Telemetry.HttpUserAgent,
+                ApplicationId = Telemetry.HttpUserAgent
             }
         };
 
@@ -293,19 +306,20 @@ public sealed class AzureQueuesPipeline : IQueue
         return options;
     }
 
+
     /// <summary>
     /// Fetch messages from the queue and dispatch them
     /// </summary>
     private void DispatchMessages(object? sender, ElapsedEventArgs ev)
     {
-        if (this._busy || this.Received == null || this._queue == null)
+        if (_busy || Received == null || _queue == null)
         {
             return;
         }
 
-        lock (this._lock)
+        lock (_lock)
         {
-            this._busy = true;
+            _busy = true;
 
             QueueMessage[] messages = [];
 
@@ -313,7 +327,8 @@ public sealed class AzureQueuesPipeline : IQueue
             try
             {
                 // Fetch and Hide N messages
-                Response<QueueMessage[]> receiveMessages = this._queue.ReceiveMessages(this._config.FetchBatchSize, visibilityTimeout: TimeSpan.FromSeconds(this._config.FetchLockSeconds));
+                Response<QueueMessage[]> receiveMessages = _queue.ReceiveMessages(_config.FetchBatchSize, TimeSpan.FromSeconds(_config.FetchLockSeconds));
+
                 if (receiveMessages.HasValue && receiveMessages.Value.Length > 0)
                 {
                     messages = receiveMessages.Value;
@@ -321,119 +336,138 @@ public sealed class AzureQueuesPipeline : IQueue
             }
             catch (Exception exception)
             {
-                this._log.LogError(exception, "Fetch failed");
-                this._busy = false;
+                _log.LogError(exception, "Fetch failed");
+                _busy = false;
                 throw;
             }
 
             if (messages.Length == 0)
             {
-                this._busy = false;
+                _busy = false;
                 return;
             }
 
             // Async messages dispatch
-            this._log.LogTrace("Dispatching {0} messages", messages.Length);
+            _log.LogTrace("Dispatching {0} messages", messages.Length);
+
             foreach (QueueMessage message in messages)
             {
                 _ = Task.Factory.StartNew(
-                    function: async _ =>
+                    async _ =>
                     {
                         try
                         {
-                            this._log.LogTrace("Message content: {0}", message.MessageText);
-                            await this.Received(this, new MessageEventArgs { Message = message }).ConfigureAwait(false);
+                            _log.LogTrace("Message content: {0}", message.MessageText);
+                            await Received(this, new MessageEventArgs { Message = message }).ConfigureAwait(false);
                         }
 #pragma warning disable CA1031 // Must catch all to log and keep the process alive
                         catch (Exception e)
                         {
-                            this._log.LogError(e, "Message '{0}' processing failed with exception", message.MessageId);
+                            _log.LogError(e, "Message '{0}' processing failed with exception", message.MessageId);
                         }
 #pragma warning restore CA1031
                     },
-                    state: null,
-                    cancellationToken: this._cancellation.Token,
-                    creationOptions: TaskCreationOptions.RunContinuationsAsynchronously,
-                    scheduler: TaskScheduler.Current
+                    null,
+                    _cancellation.Token,
+                    TaskCreationOptions.RunContinuationsAsynchronously,
+                    TaskScheduler.Current
                 );
             }
 
-            this._busy = false;
+            _busy = false;
         }
     }
 
+
     private async Task DeleteMessageAsync(QueueMessage message, CancellationToken cancellationToken)
     {
-        await this._queue!.DeleteMessageAsync(message.MessageId, message.PopReceipt, cancellationToken).ConfigureAwait(false);
+        await _queue!.DeleteMessageAsync(message.MessageId, message.PopReceipt, cancellationToken).ConfigureAwait(false);
     }
+
 
     private async Task UnlockMessageAsync(QueueMessage message, TimeSpan delay, CancellationToken cancellationToken)
     {
-        await this._queue!.UpdateMessageAsync(message.MessageId, message.PopReceipt, visibilityTimeout: delay, cancellationToken: cancellationToken).ConfigureAwait(false);
+        await _queue!.UpdateMessageAsync(message.MessageId,
+                message.PopReceipt,
+                visibilityTimeout: delay,
+                cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
     }
+
 
     private async Task MoveMessageToPoisonQueueAsync(QueueMessage message, CancellationToken cancellationToken)
     {
-        await this._poisonQueue!.CreateIfNotExistsAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+        await _poisonQueue!.CreateIfNotExistsAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
 
         var poisonMsg = new
         {
             message.MessageText,
             Id = message.MessageId,
             message.InsertedOn,
-            message.DequeueCount,
+            message.DequeueCount
         };
 
         var neverExpire = TimeSpan.FromSeconds(-1);
-        await this._poisonQueue.SendMessageAsync(
-            ToJson(poisonMsg),
-            visibilityTimeout: TimeSpan.Zero,
-            timeToLive: neverExpire, cancellationToken: cancellationToken).ConfigureAwait(false);
-        await this.DeleteMessageAsync(message, cancellationToken).ConfigureAwait(false);
+        await _poisonQueue.SendMessageAsync(
+                ToJson(poisonMsg),
+                TimeSpan.Zero,
+                neverExpire,
+                cancellationToken)
+            .ConfigureAwait(false);
+        await DeleteMessageAsync(message, cancellationToken).ConfigureAwait(false);
     }
+
 
     private void ValidateAccountName(string value)
     {
         if (string.IsNullOrEmpty(value))
         {
-            this._log.LogCritical("The Azure Queue account name is empty");
+            _log.LogCritical("The Azure Queue account name is empty");
             throw new DocumentStorageException("The account name is empty");
         }
     }
+
 
     private void ValidateAccountKey(string value)
     {
         if (string.IsNullOrEmpty(value))
         {
-            this._log.LogCritical("The Azure Queue account key is empty");
+            _log.LogCritical("The Azure Queue account key is empty");
             throw new DocumentStorageException("The Azure Queue account key is empty");
         }
     }
+
 
     private void ValidateConnectionString(string value)
     {
         if (string.IsNullOrEmpty(value))
         {
-            this._log.LogCritical("The Azure Queue connection string is empty");
+            _log.LogCritical("The Azure Queue connection string is empty");
             throw new DocumentStorageException("The Azure Queue connection string is empty");
         }
     }
+
 
     private string ValidateEndpointSuffix(string value)
     {
         if (string.IsNullOrEmpty(value))
         {
             value = DefaultEndpointSuffix;
-            this._log.LogError("The Azure Queue account endpoint suffix is empty, using default value {0}", value);
+            _log.LogError("The Azure Queue account endpoint suffix is empty, using default value {0}", value);
         }
 
         return value;
     }
 
+
     private static string ToJson(object data, bool indented = false)
     {
-        return JsonSerializer.Serialize(data, indented ? s_indentedJsonOptions : s_notIndentedJsonOptions);
+        return JsonSerializer.Serialize(data,
+            indented
+                ? s_indentedJsonOptions
+                : s_notIndentedJsonOptions);
     }
+
 
     private static string CleanQueueName(string? name)
     {

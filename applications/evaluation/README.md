@@ -1,6 +1,7 @@
 ﻿## KM Evaluation
 
-This repository contains the code for the evaluation of the Knowledge Management (KM) system. The evaluation is based on the following metrics:
+This repository contains the code for the evaluation of the Knowledge Management (KM) system. The evaluation is based on
+the following metrics:
 
 - **Faithfulness**: Ensuring the generated text accurately represents the source information.
 - **Answer Relevancy**: Assessing the pertinence of the answer in relation to the query.
@@ -8,16 +9,17 @@ This repository contains the code for the evaluation of the Knowledge Management
 - **Context Precision**: Evaluating the accuracy of the retrieved context.
 - **Context Relevancy**: Determining the relevance of the provided context to the query.
 - **Context Entity Recall**: Checking the retrieval of key entities within the context.
-- **Answer Semantic Similarity**: Comparing the semantic similarity between the generated answer and the expected answer.
+- **Answer Semantic Similarity**: Comparing the semantic similarity between the generated answer and the expected
+  answer.
 - **Answer Correctness**: Verifying the factual correctness of the generated answers.
 
 ## Usage
 
 ### Test set generation
 
-To evaluate the KM, you must first create a test set containing the queries and the expected answers. 
-Since this is a manual process, this might be fastidious for large datasets. 
-To help you with this task, we provide a generator that creates a test set from a given KM memory and index. 
+To evaluate the KM, you must first create a test set containing the queries and the expected answers.
+Since this is a manual process, this might be fastidious for large datasets.
+To help you with this task, we provide a generator that creates a test set from a given KM memory and index.
 
 ```csharp
 using Microsoft.KernelMemory.Evaluation;
@@ -42,7 +44,6 @@ await foreach (var test in testSet)
 }
 ```
 
-
 ### Evaluation
 
 To evaluate the KM, you can use the following code:
@@ -63,4 +64,5 @@ await foreach (var result in results)
 
 ## Credits
 
-This project is an implementation of [RAGAS: Evaluation framework for your Retrieval Augmented Generation (RAG) pipelines](https://github.com/explodinggradients/ragas?tab=readme-ov-file).
+This project is an implementation
+of [RAGAS: Evaluation framework for your Retrieval Augmented Generation (RAG) pipelines](https://github.com/explodinggradients/ragas?tab=readme-ov-file).

@@ -1,10 +1,13 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.KernelMemory;
 using Microsoft.KernelMemory.Configuration;
 using Microsoft.KernelMemory.DocumentStorage.DevTools;
 using Microsoft.KernelMemory.FileSystem.DevTools;
 using Microsoft.KernelMemory.MemoryStorage.DevTools;
+using Microsoft.KernelMemory.Models;
+
+namespace _207_dotnet_expanding_chunks_on_retrieval;
 
 /// <summary>
 /// This example shows how to retrieve N memory records before and after a relevant memory record.
@@ -51,8 +54,8 @@ public static class Program
         var openAIConfig = new OpenAIConfig();
         new ConfigurationBuilder()
             .AddJsonFile("appsettings.json")
-            .AddJsonFile("appsettings.development.json", optional: true)
-            .AddJsonFile("appsettings.Development.json", optional: true)
+            .AddJsonFile("appsettings.development.json", true)
+            .AddJsonFile("appsettings.Development.json", true)
             .Build()
             .BindSection("KernelMemory:Services:OpenAI", openAIConfig);
 
@@ -60,7 +63,7 @@ public static class Program
         var textPartitioningOptions = new TextPartitioningOptions
         {
             MaxTokensPerParagraph = Chunksize,
-            OverlappingTokens = 0,
+            OverlappingTokens = 0
         };
 
         // Prepare memory instance, store memories on disk so import runs only once
@@ -73,11 +76,11 @@ public static class Program
 
         // Load text into memory
         Console.WriteLine("Importing memories...");
-        await memory.ImportDocumentAsync(filePath: "story.docx", documentId: "example207");
+        await memory.ImportDocumentAsync("story.docx", "example207");
 
         // Search
         Console.WriteLine("Searching memories...");
-        SearchResult relevant = await memory.SearchAsync(query: Query, minRelevance: MinRelevance, limit: Limit);
+        SearchResult relevant = await memory.SearchAsync(Query, minRelevance: MinRelevance, limit: Limit);
         Console.WriteLine($"Relevant documents: {relevant.Results.Count}");
 
         foreach (Citation result in relevant.Results)
@@ -85,6 +88,7 @@ public static class Program
             // Store the document IDs so we can load all their records later
             Console.WriteLine($"Document ID: {result.DocumentId}");
             Console.WriteLine($"Relevant partitions: {result.Partitions.Count}");
+
             foreach (Citation.Partition partition in result.Partitions)
             {
                 Console.WriteLine($" * Partition {partition.PartitionNumber}, relevance: {partition.Relevance}");
@@ -107,6 +111,7 @@ public static class Program
 
                 // Fetch adjacent partitions and add them to the sorted collection
                 SearchResult adjacentList = await memory.SearchAsync("", filters: filters, limit: 2);
+
                 foreach (Citation.Partition adjacent in adjacentList.Results.First().Partitions)
                 {
                     partitions[adjacent.PartitionNumber] = adjacent;

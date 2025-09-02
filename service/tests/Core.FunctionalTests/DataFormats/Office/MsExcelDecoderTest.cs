@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.KernelMemory.DataFormats;
@@ -13,6 +13,7 @@ public class MsExcelDecoderTest : BaseFunctionalTestCase
     {
     }
 
+
     [Fact]
     [Trait("Category", "UnitTest")]
     [Trait("Category", "DataFormats")]
@@ -25,7 +26,7 @@ public class MsExcelDecoderTest : BaseFunctionalTestCase
 
         // Act
         FileContent result = await decoder.DecodeAsync(file);
-        string content = result.Sections.Aggregate("", (current, s) => current + (s.Content + "\n"));
+        string content = result.Sections.Aggregate("", (current, s) => current + s.Content + "\n");
         Console.WriteLine(content);
 
         // Assert

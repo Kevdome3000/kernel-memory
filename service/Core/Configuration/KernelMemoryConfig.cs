@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -15,6 +15,7 @@ public class KernelMemoryConfig
     public const string OrchestrationTypeInProcess = "InProcess";
     public const string OrchestrationTypeDistributed = "Distributed";
 
+
     /// <summary>
     /// Settings for the upload of documents and memory creation/update.
     /// </summary>
@@ -24,6 +25,7 @@ public class KernelMemoryConfig
         {
             public string QueueType { get; set; } = string.Empty;
         }
+
 
         public string OrchestrationType { get; set; } = string.Empty;
 
@@ -88,17 +90,19 @@ public class KernelMemoryConfig
         /// </summary>
         public List<string> DefaultSteps { get; set; } = [];
 
+
         /// <summary>
         /// Note: do not store these values in DefaultSteps, to avoid
         /// the values being duplicated when using the interactive setup.
         /// </summary>
         public List<string> GetDefaultStepsOrDefaults()
         {
-            return (this.DefaultSteps.Count > 0)
-                ? this.DefaultSteps
+            return DefaultSteps.Count > 0
+                ? DefaultSteps
                 : Constants.DefaultPipeline.ToList();
         }
     }
+
 
     /// <summary>
     /// Settings for search and memory read API.
@@ -121,6 +125,7 @@ public class KernelMemoryConfig
         public SearchClientConfig SearchClient { get; set; } = new();
     }
 
+
     /// <summary>
     /// Kernel Memory Service settings.
     /// </summary>
@@ -133,16 +138,14 @@ public class KernelMemoryConfig
 
     public string ContentStorageType
     {
-        get
-        {
-            return this._contentStorageType;
-        }
+        get => _contentStorageType;
         set
         {
-            this._contentStorageType = value;
-            if (!string.IsNullOrEmpty(this._contentStorageType))
+            _contentStorageType = value;
+
+            if (!string.IsNullOrEmpty(_contentStorageType))
             {
-                throw new ConfigurationException($"`ContentStorageType` (value: {this._contentStorageType}) has been deprecated, please use `DocumentStorageType`");
+                throw new ConfigurationException($"`ContentStorageType` (value: {_contentStorageType}) has been deprecated, please use `DocumentStorageType`");
             }
         }
     }
@@ -190,6 +193,7 @@ public class KernelMemoryConfig
     /// </summary>
     public Dictionary<string, Dictionary<string, object>> Services { get; set; } = [];
 
+
     /// <summary>
     /// Fetch a service configuration from the "Services" node
     /// </summary>
@@ -201,9 +205,10 @@ public class KernelMemoryConfig
     public T GetServiceConfig<T>(IConfiguration cfg, string serviceName, string root = "KernelMemory")
     {
         return cfg
-            .GetSection(root)
-            .GetSection("Services")
-            .GetSection(serviceName)
-            .Get<T>() ?? throw new ConfigurationException($"The {serviceName} configuration is NULL");
+                .GetSection(root)
+                .GetSection("Services")
+                .GetSection(serviceName)
+                .Get<T>()
+            ?? throw new ConfigurationException($"The {serviceName} configuration is NULL");
     }
 }

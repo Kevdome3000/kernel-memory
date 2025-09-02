@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.KernelMemory.InteractiveSetup.UI;
 using Newtonsoft.Json.Linq;
@@ -15,13 +15,13 @@ internal static class Logger
             Title = "Log level?",
             Options =
             [
-                new("Trace", false, () => { logLevel = "Trace"; }),
-                new("Debug", false, () => { logLevel = "Debug"; }),
-                new("Information", false, () => { logLevel = "Information"; }),
-                new("Warning", true, () => { logLevel = "Warning"; }),
-                new("Error", false, () => { logLevel = "Error"; }),
-                new("Critical", false, () => { logLevel = "Critical"; }),
-                new("-exit-", false, SetupUI.Exit)
+                new Answer("Trace", false, () => { logLevel = "Trace"; }),
+                new Answer("Debug", false, () => { logLevel = "Debug"; }),
+                new Answer("Information", false, () => { logLevel = "Information"; }),
+                new Answer("Warning", true, () => { logLevel = "Warning"; }),
+                new Answer("Error", false, () => { logLevel = "Error"; }),
+                new Answer("Critical", false, () => { logLevel = "Critical"; }),
+                new Answer("-exit-", false, SetupUI.Exit)
             ]
         });
 

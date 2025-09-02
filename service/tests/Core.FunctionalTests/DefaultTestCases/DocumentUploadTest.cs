@@ -1,8 +1,9 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Security.Cryptography;
 using Microsoft.KernelMemory;
 using Microsoft.KernelMemory.FileSystem.DevTools;
+using Microsoft.KernelMemory.Models;
 
 namespace Microsoft.KM.Core.FunctionalTests.DefaultTestCases;
 
@@ -15,11 +16,12 @@ public static class DocumentUploadTest
         log("Uploading document");
         await memory.ImportDocumentAsync(
             "file1-NASA-news.pdf",
-            documentId: Id,
+            Id,
             steps: Constants.PipelineWithoutSummary);
 
         var count = 0;
-        while (!await memory.IsDocumentReadyAsync(documentId: Id))
+
+        while (!await memory.IsDocumentReadyAsync(Id))
         {
             Assert.True(count++ <= 30, "Document import timed out");
             log("Waiting for memory ingestion to complete...");
@@ -38,6 +40,7 @@ public static class DocumentUploadTest
         await memory.DeleteDocumentAsync(Id);
     }
 
+
     public static async Task ItDownloadsPDFDocs(IKernelMemory memory, Action<string> log)
     {
         // Arrange
@@ -47,11 +50,12 @@ public static class DocumentUploadTest
         log("Uploading document");
         await memory.ImportDocumentAsync(
             fileName,
-            documentId: Id,
+            Id,
             steps: Constants.PipelineWithoutSummary);
 
         var count = 0;
-        while (!await memory.IsDocumentReadyAsync(documentId: Id))
+
+        while (!await memory.IsDocumentReadyAsync(Id))
         {
             Assert.True(count++ <= 60, "Document import timed out");
             log("Waiting for memory ingestion to complete...");
@@ -59,7 +63,7 @@ public static class DocumentUploadTest
         }
 
         // Act
-        var streamAbleFileInfo = await memory.ExportFileAsync(documentId: Id, fileName: fileName);
+        var streamAbleFileInfo = await memory.ExportFileAsync(Id, fileName);
         var pdfBytes = (await streamAbleFileInfo.GetStreamAsync()).ReadAllBytes();
         log($"Export {streamAbleFileInfo.FileName}, size: {streamAbleFileInfo.FileSize}");
 
@@ -72,14 +76,15 @@ public static class DocumentUploadTest
         await memory.DeleteDocumentAsync(Id);
     }
 
+
     public static async Task ItSupportsTags(IKernelMemory memory, Action<string> log, bool withRetries = false)
     {
         // Arrange
         const string Id = "ItSupportTags-file1-NASA-news.pdf";
         await memory.ImportDocumentAsync(
             "file1-NASA-news.pdf",
-            documentId: Id,
-            tags: new TagCollection
+            Id,
+            new TagCollection
             {
                 { "type", "news" },
                 { "type", "test" },
@@ -87,16 +92,19 @@ public static class DocumentUploadTest
             },
             steps: Constants.PipelineWithoutSummary);
 
-        while (!await memory.IsDocumentReadyAsync(documentId: Id))
+        while (!await memory.IsDocumentReadyAsync(Id))
         {
             log("Waiting for memory ingestion to complete...");
             await Task.Delay(TimeSpan.FromSeconds(2));
         }
 
         // Act
-        var retries = withRetries ? 4 : 0;
+        var retries = withRetries
+            ? 4
+            : 0;
         var answer1 = await memory.AskAsync("What is Orion?", filter: MemoryFilters.ByTag("type", "news"));
         log("answer1: " + answer1.Result);
+
         while (retries-- > 0 && !answer1.Result.Contains("spacecraft"))
         {
             await Task.Delay(TimeSpan.FromSeconds(1));
@@ -104,9 +112,12 @@ public static class DocumentUploadTest
             log("answer1: " + answer1.Result);
         }
 
-        retries = withRetries ? 4 : 0;
+        retries = withRetries
+            ? 4
+            : 0;
         var answer2 = await memory.AskAsync("What is Orion?", filter: MemoryFilters.ByTag("type", "test"));
         log("answer2: " + answer2.Result);
+
         while (retries-- > 0 && !answer2.Result.Contains("spacecraft"))
         {
             await Task.Delay(TimeSpan.FromSeconds(1));
@@ -114,9 +125,12 @@ public static class DocumentUploadTest
             log("answer2: " + answer2.Result);
         }
 
-        retries = withRetries ? 4 : 0;
+        retries = withRetries
+            ? 4
+            : 0;
         var answer3 = await memory.AskAsync("What is Orion?", filter: MemoryFilters.ByTag("ext", "pdf"));
         log("answer3: " + answer3.Result);
+
         while (retries-- > 0 && !answer3.Result.Contains("spacecraft"))
         {
             await Task.Delay(TimeSpan.FromSeconds(1));
@@ -133,6 +147,7 @@ public static class DocumentUploadTest
         Assert.Contains("spacecraft", answer3.Result, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("NOT FOUND", answer4.Result, StringComparison.OrdinalIgnoreCase);
     }
+
 
     private static string ComputeChecksum(byte[] bytes)
     {

@@ -1,9 +1,9 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Text.Json.Serialization;
 
-namespace Microsoft.KernelMemory;
+namespace Microsoft.KernelMemory.Models;
 
 /// <summary>
 /// Represents the usage of tokens in a request and response cycle.
@@ -57,9 +57,6 @@ public class TokenUsage
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int? ServiceReasoningTokens { get; set; }
 
-    public TokenUsage()
-    {
-    }
 
     public void Merge(TokenUsage? input)
     {
@@ -68,15 +65,15 @@ public class TokenUsage
             return;
         }
 
-        this.Timestamp = input.Timestamp;
-        this.ServiceType = input.ServiceType;
-        this.ModelType = input.ModelType;
-        this.ModelName = input.ModelName;
+        Timestamp = input.Timestamp;
+        ServiceType = input.ServiceType;
+        ModelType = input.ModelType;
+        ModelName = input.ModelName;
 
-        this.TokenizerTokensIn = (this.TokenizerTokensIn ?? 0) + (input.TokenizerTokensIn ?? 0);
-        this.TokenizerTokensOut = (this.TokenizerTokensOut ?? 0) + (input.TokenizerTokensOut ?? 0);
-        this.ServiceTokensIn = (this.ServiceTokensIn ?? 0) + (input.ServiceTokensIn ?? 0);
-        this.ServiceTokensOut = (this.ServiceTokensOut ?? 0) + (input.ServiceTokensOut ?? 0);
-        this.ServiceReasoningTokens = (this.ServiceReasoningTokens ?? 0) + (input.ServiceReasoningTokens ?? 0);
+        TokenizerTokensIn = (TokenizerTokensIn ?? 0) + (input.TokenizerTokensIn ?? 0);
+        TokenizerTokensOut = (TokenizerTokensOut ?? 0) + (input.TokenizerTokensOut ?? 0);
+        ServiceTokensIn = (ServiceTokensIn ?? 0) + (input.ServiceTokensIn ?? 0);
+        ServiceTokensOut = (ServiceTokensOut ?? 0) + (input.ServiceTokensOut ?? 0);
+        ServiceReasoningTokens = (ServiceReasoningTokens ?? 0) + (input.ServiceReasoningTokens ?? 0);
     }
 }

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using Microsoft.KernelMemory.AI;
@@ -31,6 +31,7 @@ public static partial class KernelMemoryBuilderExtensions
         return builder;
     }
 
+
     /// <summary>
     /// Configure the builder in one of two ways, depending on a condition
     /// </summary>
@@ -57,6 +58,7 @@ public static partial class KernelMemoryBuilderExtensions
         return builder;
     }
 
+
     /// <summary>
     /// Allows to inject any dependency into the builder, e.g. options for handlers
     /// and custom components used by the system
@@ -65,19 +67,23 @@ public static partial class KernelMemoryBuilderExtensions
     /// <param name="dependency">Dependency. Can be NULL.</param>
     /// <typeparam name="T">Type of dependency</typeparam>
     public static IKernelMemoryBuilder With<T>(
-        this IKernelMemoryBuilder builder, T dependency) where T : class, new()
+        this IKernelMemoryBuilder builder,
+        T dependency) where T : class, new()
     {
         builder.AddSingleton(dependency);
         return builder;
     }
 
+
     public static IKernelMemoryBuilder WithCustomIngestionQueueClientFactory(
-        this IKernelMemoryBuilder builder, QueueClientFactory service)
+        this IKernelMemoryBuilder builder,
+        QueueClientFactory service)
     {
         service = service ?? throw new ConfigurationException("Memory Builder: the ingestion queue client factory instance is NULL");
         builder.AddSingleton<QueueClientFactory>(service);
         return builder;
     }
+
 
     public static IKernelMemoryBuilder WithCustomIngestionQueueClientFactory<T>(
         this IKernelMemoryBuilder builder) where T : QueueClientFactory
@@ -86,13 +92,16 @@ public static partial class KernelMemoryBuilderExtensions
         return builder;
     }
 
+
     public static IKernelMemoryBuilder WithCustomDocumentStorage(
-        this IKernelMemoryBuilder builder, IDocumentStorage service)
+        this IKernelMemoryBuilder builder,
+        IDocumentStorage service)
     {
         service = service ?? throw new ConfigurationException("Memory Builder: the document storage instance is NULL");
         builder.AddSingleton<IDocumentStorage>(service);
         return builder;
     }
+
 
     public static IKernelMemoryBuilder WithCustomDocumentStorage<T>(
         this IKernelMemoryBuilder builder) where T : class, IDocumentStorage
@@ -101,13 +110,16 @@ public static partial class KernelMemoryBuilderExtensions
         return builder;
     }
 
+
     public static IKernelMemoryBuilder WithCustomMimeTypeDetection(
-        this IKernelMemoryBuilder builder, IMimeTypeDetection service)
+        this IKernelMemoryBuilder builder,
+        IMimeTypeDetection service)
     {
         service = service ?? throw new ConfigurationException("Memory Builder: the MIME type detection instance is NULL");
         builder.AddSingleton<IMimeTypeDetection>(service);
         return builder;
     }
+
 
     public static IKernelMemoryBuilder WithCustomMimeTypeDetection<T>(
         this IKernelMemoryBuilder builder) where T : class, IMimeTypeDetection
@@ -115,6 +127,7 @@ public static partial class KernelMemoryBuilderExtensions
         builder.AddSingleton<IMimeTypeDetection, T>();
         return builder;
     }
+
 
     public static IKernelMemoryBuilder WithCustomEmbeddingGenerator(
         this IKernelMemoryBuilder builder,
@@ -137,12 +150,14 @@ public static partial class KernelMemoryBuilderExtensions
         return builder;
     }
 
+
     public static IKernelMemoryBuilder WithCustomEmbeddingGenerator<T>(
         this IKernelMemoryBuilder builder) where T : class, ITextEmbeddingGenerator
     {
         builder.AddSingleton<ITextEmbeddingGenerator, T>();
         return builder;
     }
+
 
     public static IKernelMemoryBuilder WithCustomMemoryDb(
         this IKernelMemoryBuilder builder,
@@ -165,12 +180,14 @@ public static partial class KernelMemoryBuilderExtensions
         return builder;
     }
 
+
     public static IKernelMemoryBuilder WithCustomMemoryDb<T>(
         this IKernelMemoryBuilder builder) where T : class, IMemoryDb
     {
         builder.AddSingleton<IMemoryDb, T>();
         return builder;
     }
+
 
     public static IKernelMemoryBuilder WithCustomTextGenerator(
         this IKernelMemoryBuilder builder,
@@ -181,12 +198,14 @@ public static partial class KernelMemoryBuilderExtensions
         return builder;
     }
 
+
     public static IKernelMemoryBuilder WithCustomTextGenerator<T>(
         this IKernelMemoryBuilder builder) where T : class, ITextGenerator
     {
         builder.AddSingleton<ITextGenerator, T>();
         return builder;
     }
+
 
     public static IKernelMemoryBuilder WithCustomImageOcr(
         this IKernelMemoryBuilder builder,
@@ -197,6 +216,7 @@ public static partial class KernelMemoryBuilderExtensions
         return builder;
     }
 
+
     public static IKernelMemoryBuilder WithCustomImageOcr<T>(
         this IKernelMemoryBuilder builder) where T : class, IOcrEngine
     {
@@ -204,13 +224,16 @@ public static partial class KernelMemoryBuilderExtensions
         return builder;
     }
 
+
     public static IKernelMemoryBuilder WithCustomPromptProvider(
-        this IKernelMemoryBuilder builder, IPromptProvider service)
+        this IKernelMemoryBuilder builder,
+        IPromptProvider service)
     {
         service = service ?? throw new ConfigurationException("Memory Builder: the prompt provider instance is NULL");
         builder.AddSingleton<IPromptProvider>(service);
         return builder;
     }
+
 
     public static IKernelMemoryBuilder WithCustomPromptProvider<T>(
         this IKernelMemoryBuilder builder) where T : class, IPromptProvider
@@ -219,13 +242,15 @@ public static partial class KernelMemoryBuilderExtensions
         return builder;
     }
 
+
     /// <summary>
     /// Customize how text extracted from documents is partitioned in smaller chunks.
     /// </summary>
     /// <param name="builder">KM builder instance</param>
     /// <param name="options">Partitioning options</param>
     public static IKernelMemoryBuilder WithCustomTextPartitioningOptions(
-        this IKernelMemoryBuilder builder, TextPartitioningOptions options)
+        this IKernelMemoryBuilder builder,
+        TextPartitioningOptions options)
     {
         options = options ?? throw new ConfigurationException("Memory Builder: the given text partitioning options are NULL");
         builder.With<TextPartitioningOptions>(options);

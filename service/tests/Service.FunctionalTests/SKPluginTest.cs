@@ -1,8 +1,10 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Azure.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.KernelMemory;
+using Microsoft.KernelMemory.SemanticKernel;
+using Microsoft.KernelMemory.SemanticKernelPlugin;
 using Microsoft.KM.TestHelpers;
 using Microsoft.SemanticKernel;
 
@@ -14,30 +16,34 @@ public class SKPluginTest : BaseFunctionalTestCase
     {
     }
 
+
     [Fact]
     [Trait("Category", "WebService")]
     public async Task ItSupportsQuestionsOnUploadedFiles()
     {
         // Arrange
         Kernel kernel;
-        if (string.IsNullOrEmpty(this.AzureOpenAITextConfiguration.APIKey))
+
+        if (string.IsNullOrEmpty(AzureOpenAITextConfiguration.APIKey))
         {
             // MS Entra auth
-            kernel = Kernel.CreateBuilder().AddAzureOpenAIChatCompletion(
-                    deploymentName: this.AzureOpenAITextConfiguration.Deployment,
-                    modelId: this.AzureOpenAITextConfiguration.Deployment,
-                    endpoint: this.AzureOpenAITextConfiguration.Endpoint,
+            kernel = Kernel.CreateBuilder()
+                .AddAzureOpenAIChatCompletion(
+                    AzureOpenAITextConfiguration.Deployment,
+                    modelId: AzureOpenAITextConfiguration.Deployment,
+                    endpoint: AzureOpenAITextConfiguration.Endpoint,
                     credentials: new DefaultAzureCredential())
                 .Build();
         }
         else
         {
             // API key auth
-            kernel = Kernel.CreateBuilder().AddAzureOpenAIChatCompletion(
-                    deploymentName: this.AzureOpenAITextConfiguration.Deployment,
-                    modelId: this.AzureOpenAITextConfiguration.Deployment,
-                    endpoint: this.AzureOpenAITextConfiguration.Endpoint,
-                    apiKey: this.AzureOpenAITextConfiguration.APIKey)
+            kernel = Kernel.CreateBuilder()
+                .AddAzureOpenAIChatCompletion(
+                    AzureOpenAITextConfiguration.Deployment,
+                    modelId: AzureOpenAITextConfiguration.Deployment,
+                    endpoint: AzureOpenAITextConfiguration.Endpoint,
+                    apiKey: AzureOpenAITextConfiguration.APIKey)
                 .Build();
         }
 
@@ -51,7 +57,7 @@ public class SKPluginTest : BaseFunctionalTestCase
 
         KernelFunction myFunction = kernel.CreateFunctionFromPrompt(skPrompt);
 
-        IKernelMemory memory = this.GetMemoryWebClient();
+        IKernelMemory memory = GetMemoryWebClient();
         var memoryPlugin = kernel.ImportPluginFromObject(new MemoryPlugin(memory, waitForIngestionToComplete: true), "memory");
         var context = new KernelArguments
         {

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.KernelMemory.AI;
 using Microsoft.KM.TestHelpers;
@@ -26,6 +26,7 @@ public class TokenizersTests(ITestOutputHelper output) : BaseUnitTestCase(output
         tokens = gpt4o.GetTokens(helloWorld);
         Assert.Equal(["hello", " world"], tokens);
     }
+
 
     [Fact]
     [Trait("Category", "UnitTest")]

@@ -1,10 +1,11 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.KernelMemory.Context;
+using Microsoft.KernelMemory.Models;
 
 namespace Microsoft.KernelMemory;
 
@@ -42,17 +43,18 @@ public static class KernelMemoryExtensions
         optionsOverride.Stream = false;
 
         return await memory.AskStreamingAsync(
-                question: question,
-                index: index,
-                filter: filter,
-                filters: filters,
-                minRelevance: minRelevance,
-                options: optionsOverride,
-                context: context,
+                question,
+                index,
+                filter,
+                filters,
+                minRelevance,
+                optionsOverride,
+                context,
                 cancellationToken)
-            .FirstAsync(cancellationToken: cancellationToken)
+            .FirstAsync(cancellationToken)
             .ConfigureAwait(false);
     }
+
 
     /// <summary>
     /// Return a list of synthetic memories of the specified type
@@ -75,6 +77,7 @@ public static class KernelMemoryExtensions
         if (filters == null)
         {
             filters = [];
+
             if (filter == null) { filters.Add([]); }
         }
 
@@ -89,13 +92,15 @@ public static class KernelMemoryExtensions
         }
 
         SearchResult searchResult = await memory.SearchAsync(
-            query: "",
-            index: index,
-            filters: filters,
-            cancellationToken: cancellationToken).ConfigureAwait(false);
+                "",
+                index,
+                filters: filters,
+                cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
 
         return searchResult.Results;
     }
+
 
     /// <summary>
     /// Return a list of summaries matching the given filters
@@ -113,6 +118,11 @@ public static class KernelMemoryExtensions
         ICollection<MemoryFilter>? filters = null,
         CancellationToken cancellationToken = default)
     {
-        return SearchSyntheticsAsync(memory, Constants.TagsSyntheticSummary, index, filter, filters, cancellationToken);
+        return SearchSyntheticsAsync(memory,
+            Constants.TagsSyntheticSummary,
+            index,
+            filter,
+            filters,
+            cancellationToken);
     }
 }

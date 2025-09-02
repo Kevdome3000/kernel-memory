@@ -1,7 +1,8 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.KernelMemory;
 using Microsoft.KernelMemory.MemoryStorage;
+using Microsoft.KernelMemory.Models;
 
 namespace Microsoft.KM.Core.FunctionalTests.DefaultTestCases;
 
@@ -12,6 +13,7 @@ public static class RecordDeletionTest
         async Task WaitForImport(string indexName, string docId1)
         {
             var count = 0;
+
             while (!await memory.IsDocumentReadyAsync(index: indexName, documentId: docId1))
             {
                 Assert.True(count++ <= 30, "Document import timed out");
@@ -29,21 +31,21 @@ public static class RecordDeletionTest
         log("Uploading doc1");
         await memory.ImportDocumentAsync(
             "file2-largePDF.pdf",
-            documentId: DocId1,
+            DocId1,
             index: IndexName,
             steps: Constants.PipelineWithoutSummary);
 
         log("Uploading doc2");
         await memory.ImportDocumentAsync(
             "file2-largePDF.pdf",
-            documentId: DocId2,
+            DocId2,
             index: IndexName,
             steps: Constants.PipelineWithoutSummary);
 
         log("Uploading doc3");
         await memory.ImportDocumentAsync(
             "file2-largePDF.pdf",
-            documentId: DocId3,
+            DocId3,
             index: IndexName,
             steps: Constants.PipelineWithoutSummary);
 
@@ -54,21 +56,22 @@ public static class RecordDeletionTest
         // Act: Load and delete records
         log("Fetching records to delete");
         IAsyncEnumerable<MemoryRecord> records = db.GetListAsync(
-            index: IndexName,
+            IndexName,
             limit: -1,
             filters:
             [
                 MemoryFilters.ByDocument(DocId3),
                 MemoryFilters.ByDocument(DocId2),
-                MemoryFilters.ByDocument(DocId1),
+                MemoryFilters.ByDocument(DocId1)
             ]);
 
         log("Deleting records");
         var count = 0;
+
         await foreach (var record in records.ConfigureAwait(false))
         {
             count++;
-            await db.DeleteAsync(index: IndexName, record).ConfigureAwait(false);
+            await db.DeleteAsync(IndexName, record).ConfigureAwait(false);
         }
 
         log($"{count} records deleted");

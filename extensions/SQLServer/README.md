@@ -54,8 +54,10 @@ builder.Services.AddSingleton<IKernelMemory>(sp =>
 To run Kernel Memory service with SQL Server backend:
 
 1. clone KM repository
-2. add `KernelMemory.MemoryStorage.SqlServer` nuget to [Service.csproj](https://github.com/microsoft/kernel-memory/blob/main/service/Service/Service.csproj)
-3. edit the part using `KernelMemoryBuilder` adding the same `.WithSqlServerMemoryDb(...)` call mentioned in the previous paragraph, e.g.
+2. add `KernelMemory.MemoryStorage.SqlServer` nuget
+   to [Service.csproj](https://github.com/microsoft/kernel-memory/blob/main/service/Service/Service.csproj)
+3. edit the part using `KernelMemoryBuilder` adding the same `.WithSqlServerMemoryDb(...)` call mentioned in the
+   previous paragraph, e.g.
     ```csharp
    IKernelMemory memory = new KernelMemoryBuilder(appBuilder.Services)
     .FromAppSettings()
@@ -75,6 +77,7 @@ docker run -it -p 1433:1433 --rm -e "MSSQL_SA_PASSWORD=00_CHANGE_ME_00" -e "ACCE
 ```
 
 ...using the following connection string:
+
 ```
 Server=tcp:127.0.0.1,1433;Initial Catalog=master;Persist Security Info=False;User ID=sa;Password=00_CHANGE_ME_00;MultipleActiveResultSets=False;TrustServerCertificate=True;Connection Timeout=30;
 ```
@@ -86,11 +89,13 @@ For more information about the SQL Server Linux container:
 
 ## Batch Upsert Feature
 
-The SQL Server Memory DB now supports batching upsert operations, enhancing performance for bulk data operations. This feature allows for efficient insertion or updating of multiple records in a single operation.
+The SQL Server Memory DB now supports batching upsert operations, enhancing performance for bulk data operations. This
+feature allows for efficient insertion or updating of multiple records in a single operation.
 
 ### Using Batch Upsert
 
-To use the batch upsert feature, you can utilize the `BatchUpsertAsync` method. This method accepts an index name and an enumerable of `MemoryRecord` objects, performing upsert operations for all provided records in a batch.
+To use the batch upsert feature, you can utilize the `BatchUpsertAsync` method. This method accepts an index name and an
+enumerable of `MemoryRecord` objects, performing upsert operations for all provided records in a batch.
 
 Example:
 
@@ -104,4 +109,5 @@ var records = new List<MemoryRecord>
 await memory.BatchUpsertAsync("yourIndexName", records);
 ```
 
-This method efficiently handles the insertion or updating of records, significantly improving performance for operations involving large datasets.
+This method efficiently handles the insertion or updating of records, significantly improving performance for operations
+involving large datasets.

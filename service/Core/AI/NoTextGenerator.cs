@@ -1,10 +1,11 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 using Microsoft.KernelMemory.Diagnostics;
+using Microsoft.KernelMemory.Models;
 
 namespace Microsoft.KernelMemory.AI;
 
@@ -16,35 +17,41 @@ public class NoTextGenerator : ITextGenerator
 {
     private readonly ILogger<NoTextGenerator> _log;
 
+
     public NoTextGenerator(ILoggerFactory? loggerFactory = null)
     {
-        this._log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<NoTextGenerator>();
+        _log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<NoTextGenerator>();
     }
+
 
     /// <inheritdoc />
     public int MaxTokenTotal => int.MaxValue;
 
+
     /// <inheritdoc />
     public int CountTokens(string text)
     {
-        throw this.Error();
+        throw Error();
     }
+
 
     /// <inheritdoc />
     public IReadOnlyList<string> GetTokens(string text)
     {
-        throw this.Error();
+        throw Error();
     }
+
 
     /// <inheritdoc />
     public IAsyncEnumerable<GeneratedTextContent> GenerateTextAsync(string prompt, TextGenerationOptions options, CancellationToken cancellationToken = default)
     {
-        throw this.Error();
+        throw Error();
     }
+
 
     private NotImplementedException Error()
     {
-        this._log.LogCritical("The application is attempting to generate text even if text generation has been disabled");
+        _log.LogCritical("The application is attempting to generate text even if text generation has been disabled");
         return new NotImplementedException("Text generation has been disabled");
     }
 }

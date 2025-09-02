@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -23,6 +23,7 @@ public abstract class EvaluationEngine
         return text;
     }
 
+
     protected async Task<T> Try<T>(int maxCount, Func<int, Task<T>> action)
     {
         do
@@ -42,6 +43,7 @@ public abstract class EvaluationEngine
 
         throw new InvalidProgramException();
     }
+
 
     /// <summary>
     /// Split records into nodes
@@ -66,6 +68,7 @@ public abstract class EvaluationEngine
 
         return groups;
     }
+
 
     protected IEnumerable<T> Shuffle<T>(IEnumerable<T> source)
     {

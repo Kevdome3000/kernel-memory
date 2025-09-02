@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 /* IMPORTANT: the Startup class must be at the root of the namespace and
  * the namespace must match exactly (required by Xunit.DependencyInjection) */
@@ -14,8 +14,8 @@ public class Startup
     {
         var config = new ConfigurationBuilder()
             .AddJsonFile("appsettings.json")
-            .AddJsonFile("appsettings.development.json", optional: true)
-            .AddJsonFile("appsettings.Development.json", optional: true)
+            .AddJsonFile("appsettings.development.json", true)
+            .AddJsonFile("appsettings.Development.json", true)
             .AddUserSecrets<Startup>()
             .AddEnvironmentVariables()
             .Build();

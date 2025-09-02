@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Text.Json.Serialization;
@@ -20,8 +20,9 @@ public class AzureAIDocIntelConfig
         //   You can test locally using the AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET env vars.
         AzureIdentity,
 
-        APIKey,
+        APIKey
     }
+
 
     /// <summary>
     /// Azure authentication type
@@ -48,24 +49,25 @@ public class AzureAIDocIntelConfig
     /// </summary>
     public string Endpoint { get; set; } = string.Empty;
 
+
     /// <summary>
     /// Verify that the current state is valid.
     /// </summary>
     public void Validate()
     {
-        if (this.Auth == AuthTypes.APIKey && string.IsNullOrWhiteSpace(this.APIKey))
+        if (Auth == AuthTypes.APIKey && string.IsNullOrWhiteSpace(APIKey))
         {
-            throw new ConfigurationException($"Azure AI Document Intelligence: {nameof(this.APIKey)} is empty");
+            throw new ConfigurationException($"Azure AI Document Intelligence: {nameof(APIKey)} is empty");
         }
 
-        if (string.IsNullOrWhiteSpace(this.Endpoint))
+        if (string.IsNullOrWhiteSpace(Endpoint))
         {
-            throw new ConfigurationException($"Azure AI Document Intelligence: {nameof(this.Endpoint)} is empty");
+            throw new ConfigurationException($"Azure AI Document Intelligence: {nameof(Endpoint)} is empty");
         }
 
-        if (!this.Endpoint.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        if (!Endpoint.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
         {
-            throw new ConfigurationException($"Azure AI Document Intelligence: {nameof(this.Endpoint)} must start with https://");
+            throw new ConfigurationException($"Azure AI Document Intelligence: {nameof(Endpoint)} must start with https://");
         }
     }
 }

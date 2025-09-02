@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using Microsoft.Extensions.Logging;
@@ -19,8 +19,9 @@ internal static class SkClientBuilder
             throw new ConfigurationException("OpenAI: Model ID is empty");
         }
 
-        return new OpenAIChatCompletionService(modelId, client, loggerFactory: loggerFactory);
+        return new OpenAIChatCompletionService(modelId, client, loggerFactory);
     }
+
 
     internal static OpenAITextEmbeddingGenerationService BuildEmbeddingClient(
         string modelId,
@@ -38,6 +39,9 @@ internal static class SkClientBuilder
             throw new ArgumentOutOfRangeException(nameof(dimensions), "Dimensions value cannot be less than 1");
         }
 
-        return new OpenAITextEmbeddingGenerationService(modelId, client, loggerFactory, dimensions);
+        return new OpenAITextEmbeddingGenerationService(modelId,
+            client,
+            loggerFactory,
+            dimensions);
     }
 }

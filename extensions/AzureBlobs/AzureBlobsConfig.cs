@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Text.Json.Serialization;
 using Azure;
@@ -16,6 +16,7 @@ public class AzureBlobsConfig
     private AzureSasCredential? _azureSasCredential;
     private TokenCredential? _tokenCredential;
 
+
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum AuthTypes
     {
@@ -31,8 +32,9 @@ public class AzureBlobsConfig
         AccountKey,
         ManualStorageSharedKeyCredential,
         ManualAzureSasCredential,
-        ManualTokenCredential,
+        ManualTokenCredential
     }
+
 
     /// <summary>
     /// Azure authentication type
@@ -51,39 +53,45 @@ public class AzureBlobsConfig
     public string EndpointSuffix { get; set; } = "core.windows.net";
     public string Container { get; set; } = "";
 
+
     public void SetCredential(StorageSharedKeyCredential credential)
     {
-        this.Auth = AuthTypes.ManualStorageSharedKeyCredential;
-        this._storageSharedKeyCredential = credential;
+        Auth = AuthTypes.ManualStorageSharedKeyCredential;
+        _storageSharedKeyCredential = credential;
     }
+
 
     public void SetCredential(AzureSasCredential credential)
     {
-        this.Auth = AuthTypes.ManualAzureSasCredential;
-        this._azureSasCredential = credential;
+        Auth = AuthTypes.ManualAzureSasCredential;
+        _azureSasCredential = credential;
     }
+
 
     public void SetCredential(TokenCredential credential)
     {
-        this.Auth = AuthTypes.ManualTokenCredential;
-        this._tokenCredential = credential;
+        Auth = AuthTypes.ManualTokenCredential;
+        _tokenCredential = credential;
     }
+
 
     public StorageSharedKeyCredential GetStorageSharedKeyCredential()
     {
-        return this._storageSharedKeyCredential
-               ?? throw new ConfigurationException($"Azure Blobs: {nameof(this._storageSharedKeyCredential)} not defined");
+        return _storageSharedKeyCredential
+            ?? throw new ConfigurationException($"Azure Blobs: {nameof(_storageSharedKeyCredential)} not defined");
     }
+
 
     public AzureSasCredential GetAzureSasCredential()
     {
-        return this._azureSasCredential
-               ?? throw new ConfigurationException($"Azure Blobs: {nameof(this._azureSasCredential)} not defined");
+        return _azureSasCredential
+            ?? throw new ConfigurationException($"Azure Blobs: {nameof(_azureSasCredential)} not defined");
     }
+
 
     public TokenCredential GetTokenCredential()
     {
-        return this._tokenCredential
-               ?? throw new ConfigurationException($"Azure Blobs: {nameof(this._tokenCredential)} not defined");
+        return _tokenCredential
+            ?? throw new ConfigurationException($"Azure Blobs: {nameof(_tokenCredential)} not defined");
     }
 }

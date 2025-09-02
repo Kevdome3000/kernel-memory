@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Diagnostics.CodeAnalysis;
@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.KernelMemory.Diagnostics;
 using Microsoft.KernelMemory.FileSystem.DevTools;
+using Microsoft.KernelMemory.Models;
 using Microsoft.KernelMemory.Pipeline;
 
 namespace Microsoft.KernelMemory.DocumentStorage.DevTools;
@@ -18,20 +19,22 @@ public class SimpleFileStorage : IDocumentStorage
     private readonly ILogger<SimpleFileStorage> _log;
     private readonly IFileSystem _fileSystem;
 
+
     public SimpleFileStorage(
         SimpleFileStorageConfig config,
         IMimeTypeDetection? mimeTypeDetection = null,
         ILoggerFactory? loggerFactory = null)
     {
-        this._log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<SimpleFileStorage>();
+        _log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<SimpleFileStorage>();
+
         switch (config.StorageType)
         {
             case FileSystemTypes.Disk:
-                this._fileSystem = new DiskFileSystem(config.Directory, mimeTypeDetection, loggerFactory);
+                _fileSystem = new DiskFileSystem(config.Directory, mimeTypeDetection, loggerFactory);
                 break;
 
             case FileSystemTypes.Volatile:
-                this._fileSystem = VolatileFileSystem.GetInstance(config.Directory, mimeTypeDetection, loggerFactory);
+                _fileSystem = VolatileFileSystem.GetInstance(config.Directory, mimeTypeDetection, loggerFactory);
                 break;
 
             default:
@@ -39,17 +42,20 @@ public class SimpleFileStorage : IDocumentStorage
         }
     }
 
+
     /// <inheritdoc />
     public Task CreateIndexDirectoryAsync(string index, CancellationToken cancellationToken = default)
     {
-        return this._fileSystem.CreateVolumeAsync(index, cancellationToken);
+        return _fileSystem.CreateVolumeAsync(index, cancellationToken);
     }
+
 
     /// <inheritdoc />
     public Task DeleteIndexDirectoryAsync(string index, CancellationToken cancellationToken = default)
     {
-        return this._fileSystem.DeleteVolumeAsync(index, cancellationToken);
+        return _fileSystem.DeleteVolumeAsync(index, cancellationToken);
     }
+
 
     /// <inheritdoc />
     public Task CreateDocumentDirectoryAsync(
@@ -57,8 +63,9 @@ public class SimpleFileStorage : IDocumentStorage
         string documentId,
         CancellationToken cancellationToken = default)
     {
-        return this._fileSystem.CreateDirectoryAsync(index, documentId, cancellationToken);
+        return _fileSystem.CreateDirectoryAsync(index, documentId, cancellationToken);
     }
+
 
     /// <inheritdoc />
     public async Task EmptyDocumentDirectoryAsync(
@@ -66,15 +73,21 @@ public class SimpleFileStorage : IDocumentStorage
         string documentId,
         CancellationToken cancellationToken = default)
     {
-        var files = await this._fileSystem.GetAllFileNamesAsync(index, documentId, cancellationToken).ConfigureAwait(false);
+        var files = await _fileSystem.GetAllFileNamesAsync(index, documentId, cancellationToken).ConfigureAwait(false);
+
         foreach (string fileName in files)
         {
             // Don't delete the pipeline status file
             if (fileName == Constants.PipelineStatusFilename) { continue; }
 
-            await this._fileSystem.DeleteFileAsync(index, documentId, fileName, cancellationToken).ConfigureAwait(false);
+            await _fileSystem.DeleteFileAsync(index,
+                    documentId,
+                    fileName,
+                    cancellationToken)
+                .ConfigureAwait(false);
         }
     }
+
 
     /// <inheritdoc />
     public Task DeleteDocumentDirectoryAsync(
@@ -82,8 +95,9 @@ public class SimpleFileStorage : IDocumentStorage
         string documentId,
         CancellationToken cancellationToken = default)
     {
-        return this._fileSystem.DeleteDirectoryAsync(index, documentId, cancellationToken);
+        return _fileSystem.DeleteDirectoryAsync(index, documentId, cancellationToken);
     }
+
 
     /// <inheritdoc />
     public async Task WriteFileAsync(
@@ -93,9 +107,15 @@ public class SimpleFileStorage : IDocumentStorage
         Stream streamContent,
         CancellationToken cancellationToken = default)
     {
-        await this._fileSystem.CreateDirectoryAsync(volume: index, relPath: documentId, cancellationToken).ConfigureAwait(false);
-        await this._fileSystem.WriteFileAsync(volume: index, relPath: documentId, fileName: fileName, streamContent: streamContent, cancellationToken).ConfigureAwait(false);
+        await _fileSystem.CreateDirectoryAsync(index, documentId, cancellationToken).ConfigureAwait(false);
+        await _fileSystem.WriteFileAsync(index,
+                documentId,
+                fileName,
+                streamContent,
+                cancellationToken)
+            .ConfigureAwait(false);
     }
+
 
     /// <inheritdoc />
     public async Task<StreamableFileContent> ReadFileAsync(
@@ -111,13 +131,20 @@ public class SimpleFileStorage : IDocumentStorage
 
         try
         {
-            return await this._fileSystem.ReadFileInfoAsync(volume: index, relPath: documentId, fileName: fileName, cancellationToken).ConfigureAwait(false);
+            return await _fileSystem.ReadFileInfoAsync(index,
+                    documentId,
+                    fileName,
+                    cancellationToken)
+                .ConfigureAwait(false);
         }
         catch (Exception e) when (e is DirectoryNotFoundException or FileNotFoundException)
         {
             if (logErrIfNotFound)
             {
-                this._log.LogError("File not found {0}/{1}/{2}", index, documentId, fileName);
+                _log.LogError("File not found {0}/{1}/{2}",
+                    index,
+                    documentId,
+                    fileName);
             }
 
             throw new DocumentStorageFileNotFoundException("File not found");

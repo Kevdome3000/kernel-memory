@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 /* This example shows how to setup KM pipeline with custom handlers, to process files with custom logic.
  * In this example handlers are executed synchronously when calling "ImportDocumentAsync".
@@ -23,6 +23,7 @@
 
 using Microsoft.KernelMemory;
 using Microsoft.KernelMemory.Handlers;
+using Microsoft.KernelMemory.Models;
 
 var memoryBuilder = new KernelMemoryBuilder()
     .WithoutDefaultHandlers() // remove default handlers, added manually below
@@ -55,8 +56,7 @@ await memory.ImportDocumentAsync(
         .AddFile("file4-KM-Readme.pdf")
         .AddFile("file5-NASA-news.pdf")
         .AddTag("testName", "example3"),
-    index: "user-id-1",
-    steps:
+    "user-id-1",
     [
         "extract_text",
         "split_text_in_partitions",

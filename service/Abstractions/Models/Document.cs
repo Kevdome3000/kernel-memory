@@ -1,13 +1,12 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using Microsoft.KernelMemory.Models;
 
-namespace Microsoft.KernelMemory;
+namespace Microsoft.KernelMemory.Models;
 
 /// <summary>
 /// A document is a collection of one or multiple files, with additional
@@ -20,13 +19,10 @@ public class Document
     /// </summary>
     public string Id
     {
-        get { return this._id; }
-        set
-        {
-            this._id = string.IsNullOrWhiteSpace(value)
-                ? ValidateId(RandomId())
-                : ValidateId(value);
-        }
+        get => _id;
+        set => _id = string.IsNullOrWhiteSpace(value)
+            ? ValidateId(RandomId())
+            : ValidateId(value);
     }
 
     /// <summary>
@@ -39,27 +35,30 @@ public class Document
     /// </summary>
     public TagCollection Tags { get; } = [];
 
+
     public Document(string? id = null, TagCollection? tags = null, IEnumerable<string>? filePaths = null)
     {
         // Note: the value is polished by the property setter
-        this.Id = id!;
+        Id = id!;
 
-        if (tags != null) { this.Tags = tags; }
+        if (tags != null) { Tags = tags; }
 
         if (filePaths != null)
         {
             foreach (var filePath in filePaths)
             {
-                this.Files.AddFile(filePath);
+                Files.AddFile(filePath);
             }
         }
     }
 
+
     public Document AddTag(string name, string value)
     {
-        this.Tags.Add(name, value);
+        Tags.Add(name, value);
         return this;
     }
+
 
     /// <summary>
     /// Add a file to the internal collection. If the file path is already in the list, the call is ignored.
@@ -69,9 +68,10 @@ public class Document
     /// <param name="filePath">Full file path</param>
     public Document AddFile(string filePath)
     {
-        this.Files.AddFile(filePath);
+        Files.AddFile(filePath);
         return this;
     }
+
 
     /// <summary>
     /// Add a list of files to the internal collection. If any of file paths is already in the list, such file is ignored.
@@ -81,8 +81,9 @@ public class Document
     /// <param name="filePaths">List of paths</param>
     public Document AddFiles(IEnumerable<string>? filePaths)
     {
-        return this.AddFiles(filePaths?.ToArray());
+        return AddFiles(filePaths?.ToArray());
     }
+
 
     /// <summary>
     /// Add a list of files to the internal collection. If any of file paths is already in the list, such file is ignored.
@@ -96,11 +97,12 @@ public class Document
 
         foreach (var filePath in filePaths)
         {
-            this.Files.AddFile(filePath);
+            Files.AddFile(filePath);
         }
 
         return this;
     }
+
 
     /// <summary>
     /// Add a stream content to the list of files to upload. If the file name already exists,
@@ -115,9 +117,10 @@ public class Document
             throw new KernelMemoryException("The content stream is NULL");
         }
 
-        this.Files.AddStream(fileName, content);
+        Files.AddStream(fileName, content);
         return this;
     }
+
 
     /// <summary>
     /// Check for special chars to ensure the identifier is valid across multiple storage solutions.
@@ -130,6 +133,7 @@ public class Document
         return id!;
     }
 
+
     /// <summary>
     /// Remove invalid chars from the input, replacing them with underscore.
     /// For compatibility with most storage engines, only alphanumeric chars,
@@ -141,12 +145,17 @@ public class Document
     {
         if (value == null) { return string.Empty; }
 
-        return new string(value.Select(c => IsValidChar(c) ? c : '_').ToArray());
+        return new string(value.Select(c => IsValidChar(c)
+                ? c
+                : '_')
+            .ToArray());
     }
+
 
     #region private
 
     private string _id = string.Empty;
+
 
     private static bool IsValid(string? value)
     {
@@ -155,10 +164,12 @@ public class Document
         return value.All(IsValidChar);
     }
 
+
     private static bool IsValidChar(char c)
     {
         return char.IsLetterOrDigit(c) || c == '_' || c == '-' || c == '.';
     }
+
 
     private static string RandomId()
     {
@@ -167,4 +178,6 @@ public class Document
     }
 
     #endregion
+
+
 }

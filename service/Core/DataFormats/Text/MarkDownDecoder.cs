@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Diagnostics.CodeAnalysis;
@@ -16,10 +16,12 @@ public sealed class MarkDownDecoder : IContentDecoder
 {
     private readonly ILogger<MarkDownDecoder> _log;
 
+
     public MarkDownDecoder(ILoggerFactory? loggerFactory = null)
     {
-        this._log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<MarkDownDecoder>();
+        _log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<MarkDownDecoder>();
     }
+
 
     /// <inheritdoc />
     public bool SupportsMimeType(string mimeType)
@@ -27,34 +29,37 @@ public sealed class MarkDownDecoder : IContentDecoder
         return mimeType != null && mimeType.StartsWith(MimeTypes.MarkDown, StringComparison.OrdinalIgnoreCase);
     }
 
+
     /// <inheritdoc />
     public Task<FileContent> DecodeAsync(string filename, CancellationToken cancellationToken = default)
     {
         using var stream = File.OpenRead(filename);
-        return this.DecodeAsync(stream, cancellationToken);
+        return DecodeAsync(stream, cancellationToken);
     }
+
 
     /// <inheritdoc />
     public Task<FileContent> DecodeAsync(BinaryData data, CancellationToken cancellationToken = default)
     {
-        this._log.LogDebug("Extracting text from markdown file");
+        _log.LogDebug("Extracting text from markdown file");
 
         var result = new FileContent(MimeTypes.MarkDown);
-        result.Sections.Add(new(data.ToString().Trim(), 1, Chunk.Meta(sentencesAreComplete: true)));
+        result.Sections.Add(new Chunk(data.ToString().Trim(), 1, Chunk.Meta(true)));
 
         return Task.FromResult(result)!;
     }
 
+
     /// <inheritdoc />
     public async Task<FileContent> DecodeAsync(Stream data, CancellationToken cancellationToken = default)
     {
-        this._log.LogDebug("Extracting text from markdown file");
+        _log.LogDebug("Extracting text from markdown file");
 
         var result = new FileContent(MimeTypes.MarkDown);
         using var reader = new StreamReader(data);
         var content = await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
 
-        result.Sections.Add(new(content.Trim(), 1, Chunk.Meta(sentencesAreComplete: true)));
+        result.Sections.Add(new Chunk(content.Trim(), 1, Chunk.Meta(true)));
         return result;
     }
 }

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -21,6 +21,7 @@ public sealed class LlamaSharpTextEmbeddingGenerator : ITextEmbeddingGenerator, 
     private readonly ITextTokenizer _textTokenizer;
     private readonly ILogger<LlamaSharpTextGenerator> _log;
 
+
     /// <summary>
     /// Create new instance
     /// </summary>
@@ -32,62 +33,67 @@ public sealed class LlamaSharpTextEmbeddingGenerator : ITextEmbeddingGenerator, 
         ITextTokenizer? textTokenizer = null,
         ILoggerFactory? loggerFactory = null)
     {
-        this._log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<LlamaSharpTextGenerator>();
+        _log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<LlamaSharpTextGenerator>();
 
         config.Validate();
-        this.MaxTokens = (int)config.MaxTokenTotal;
+        MaxTokens = (int)config.MaxTokenTotal;
 
         var parameters = new ModelParams(config.ModelPath)
         {
             ContextSize = config.MaxTokenTotal,
             GpuLayerCount = config.GpuLayerCount ?? 20,
             Embeddings = true,
-            PoolingType = LLamaPoolingType.None,
+            PoolingType = LLamaPoolingType.None
         };
 
         var modelFilename = config.ModelPath.Split('/').Last().Split('\\').Last();
-        this._log.LogDebug("Loading LLama model: {1}", modelFilename);
+        _log.LogDebug("Loading LLama model: {1}", modelFilename);
 
-        this._model = LLamaWeights.LoadFromFile(parameters);
-        this._context = this._model.CreateContext(parameters);
-        this._log.LogDebug("LLama model loaded");
+        _model = LLamaWeights.LoadFromFile(parameters);
+        _context = _model.CreateContext(parameters);
+        _log.LogDebug("LLama model loaded");
 
-        this._embedder = new LLamaEmbedder(this._model, parameters);
-        this._textTokenizer = textTokenizer ?? new LlamaSharpTokenizer(this._context);
+        _embedder = new LLamaEmbedder(_model, parameters);
+        _textTokenizer = textTokenizer ?? new LlamaSharpTokenizer(_context);
     }
+
 
     /// <inheritdoc/>
     public int MaxTokens { get; }
 
+
     /// <inheritdoc/>
     public int CountTokens(string text)
     {
-        return this._textTokenizer.CountTokens(text);
+        return _textTokenizer.CountTokens(text);
     }
+
 
     /// <inheritdoc/>
     public IReadOnlyList<string> GetTokens(string text)
     {
-        return this._textTokenizer.GetTokens(text);
+        return _textTokenizer.GetTokens(text);
     }
+
 
     /// <inheritdoc/>
     public async Task<Embedding> GenerateEmbeddingAsync(string text, CancellationToken cancellationToken = default)
     {
-        if (this._log.IsEnabled(LogLevel.Trace))
+        if (_log.IsEnabled(LogLevel.Trace))
         {
-            this._log.LogTrace("Generating embedding, input token size: {0}, text length: {1}", this._textTokenizer.CountTokens(text), text.Length);
+            _log.LogTrace("Generating embedding, input token size: {0}, text length: {1}", _textTokenizer.CountTokens(text), text.Length);
         }
 
-        IReadOnlyList<float[]> embeddings = await this._embedder.GetEmbeddings(text, cancellationToken).ConfigureAwait(false);
+        IReadOnlyList<float[]> embeddings = await _embedder.GetEmbeddings(text, cancellationToken).ConfigureAwait(false);
         return new Embedding(embeddings[0]);
     }
+
 
     /// <inheritdoc/>
     public void Dispose()
     {
-        this._embedder.Dispose();
-        this._model.Dispose();
-        this._context.Dispose();
+        _embedder.Dispose();
+        _model.Dispose();
+        _context.Dispose();
     }
 }

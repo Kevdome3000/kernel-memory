@@ -1,8 +1,9 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.KernelMemory;
 using Microsoft.KernelMemory.MemoryDb.Qdrant;
 using Microsoft.KernelMemory.MemoryStorage;
+using Microsoft.KernelMemory.Models;
 using Microsoft.KM.TestHelpers;
 
 namespace Microsoft.Qdrant.TestApplication;
@@ -13,8 +14,8 @@ public static class Program
     {
         var cfg = new ConfigurationBuilder()
             .AddJsonFile("appsettings.json")
-            .AddJsonFile("appsettings.development.json", optional: true)
-            .AddJsonFile("appsettings.Development.json", optional: true)
+            .AddJsonFile("appsettings.development.json", true)
+            .AddJsonFile("appsettings.Development.json", true)
             .Build();
 
         var config = cfg.GetSection("KernelMemory:Services:Qdrant").Get<QdrantConfig>();
@@ -69,8 +70,11 @@ public static class Program
 
         Console.WriteLine("===== SEARCH 1 =====");
 
-        var similarList = memory.GetSimilarListAsync("test", text: Text,
-            limit: 10, withEmbeddings: true);
+        var similarList = memory.GetSimilarListAsync("test",
+            Text,
+            limit: 10,
+            withEmbeddings: true);
+
         await foreach ((MemoryRecord, double) record in similarList)
         {
             Console.WriteLine(record.Item1.Id);
@@ -80,8 +84,12 @@ public static class Program
 
         Console.WriteLine("===== SEARCH 2 =====");
 
-        similarList = memory.GetSimilarListAsync("test", text: Text,
-            limit: 10, withEmbeddings: true, filters: [MemoryFilters.ByTag("type", "email")]);
+        similarList = memory.GetSimilarListAsync("test",
+            Text,
+            limit: 10,
+            withEmbeddings: true,
+            filters: [MemoryFilters.ByTag("type", "email")]);
+
         await foreach ((MemoryRecord, double) record in similarList)
         {
             Console.WriteLine(record.Item1.Id);
@@ -91,6 +99,7 @@ public static class Program
         Console.WriteLine("===== LIST =====");
 
         var list = memory.GetListAsync("test", limit: 10, withEmbeddings: false);
+
         await foreach (MemoryRecord record in list)
         {
             Console.WriteLine(record.Id);
@@ -104,6 +113,7 @@ public static class Program
         Console.WriteLine("===== LIST AFTER DELETE =====");
 
         list = memory.GetListAsync("test", limit: 10, withEmbeddings: false);
+
         await foreach (MemoryRecord record in list)
         {
             Console.WriteLine(record.Id);

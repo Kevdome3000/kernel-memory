@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft.All rights reserved.
 
 using System.Collections.Generic;
 using System.Globalization;
@@ -35,20 +35,20 @@ internal static class Ollama
             textModel = new Dictionary<string, object>
             {
                 { "ModelName", "phi3:medium-128k" },
-                { "MaxTokenTotal", 131072 },
+                { "MaxTokenTotal", 131072 }
             };
 
             embeddingModel = new Dictionary<string, object>
             {
                 { "ModelName", "nomic-embed-text" },
-                { "MaxTokenTotal", 2048 },
+                { "MaxTokenTotal", 2048 }
             };
 
             config = new Dictionary<string, object>
             {
                 { "Endpoint", "http://localhost:11434" },
                 { "TextModel", textModel },
-                { "EmbeddingModel", embeddingModel },
+                { "EmbeddingModel", embeddingModel }
             };
             AppSettings.AddService(ServiceName, config);
         }
@@ -63,7 +63,7 @@ internal static class Ollama
             AppSettings.Change(x => x.Services[ServiceName]["TextModel"] = new Dictionary<string, object>
             {
                 { "ModelName", SetupUI.AskOpenQuestion("Ollama text model name", textModel.TryGet("ModelName")) },
-                { "MaxTokenTotal", SetupUI.AskOpenQuestionInt("Ollama text model max tokens", StrToInt(textModel.TryGet("MaxTokenTotal"))) },
+                { "MaxTokenTotal", SetupUI.AskOpenQuestionInt("Ollama text model max tokens", StrToInt(textModel.TryGet("MaxTokenTotal"))) }
             });
         }
 
@@ -72,13 +72,14 @@ internal static class Ollama
             AppSettings.Change(x => x.Services[ServiceName]["EmbeddingModel"] = new Dictionary<string, object>
             {
                 { "ModelName", SetupUI.AskOpenQuestion("Ollama text embedding model name", embeddingModel.TryGet("ModelName")) },
-                { "MaxTokenTotal", SetupUI.AskOpenQuestionInt("Ollama text embedding model max tokens", StrToInt(embeddingModel.TryGet("MaxTokenTotal"))) },
+                { "MaxTokenTotal", SetupUI.AskOpenQuestionInt("Ollama text embedding model max tokens", StrToInt(embeddingModel.TryGet("MaxTokenTotal"))) }
             });
         }
 
         ctx.CfgOllamaText.Value = false;
         ctx.CfgOllamaEmbedding.Value = false;
     }
+
 
     private static int StrToInt(string s)
     {

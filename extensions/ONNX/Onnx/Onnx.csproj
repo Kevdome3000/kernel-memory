@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net9.0</TargetFramework>
         <RollForward>LatestMajor</RollForward>
         <AssemblyName>Microsoft.KernelMemory.AI.Onnx</AssemblyName>
         <RootNamespace>Microsoft.KernelMemory.AI.Onnx</RootNamespace>
@@ -9,12 +9,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\..\service\Abstractions\Abstractions.csproj" />
-        <ProjectReference Include="..\..\Tiktoken\Tiktoken\Tiktoken.csproj" />
+        <ProjectReference Include="..\..\..\service\Abstractions\Abstractions.csproj"/>
+        <ProjectReference Include="..\..\Tiktoken\Tiktoken\Tiktoken.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.ML.OnnxRuntimeGenAI" />
+        <PackageReference Include="Microsoft.ML.OnnxRuntimeGenAI"/>
         <!-- <PackageReference Include="Microsoft.ML.OnnxRuntimeGenAI.Cuda" /> -->
         <!-- <PackageReference Include="Microsoft.ML.OnnxRuntimeGenAI.DirectML" /> -->
     </ItemGroup>
@@ -29,7 +29,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <None Include="..\README.md" Link="README.md" Pack="true" PackagePath="." Visible="false" />
+        <None Include="..\README.md" Link="README.md" Pack="true" PackagePath="." Visible="false"/>
     </ItemGroup>
 
 </Project>

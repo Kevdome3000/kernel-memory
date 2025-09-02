@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Elastic.Clients.Elasticsearch.Mapping;
 using Microsoft.KernelMemory.MemoryDb.Elasticsearch;
@@ -14,9 +14,6 @@ namespace Microsoft.KernelMemory;
 /// </summary>
 public class ElasticsearchConfig
 {
-    public ElasticsearchConfig()
-    {
-    }
 
     /// <summary>
     /// The certificate fingerprint for the Elasticsearch instance.

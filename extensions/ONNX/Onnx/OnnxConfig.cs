@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.IO;
@@ -39,6 +39,7 @@ public class OnnxConfig
         /// </summary>
         TopN
     }
+
 
     /// <summary>
     /// Path to the directory containing the .ONNX file for Text Generation.
@@ -107,28 +108,29 @@ public class OnnxConfig
     /// </summary>
     public double LengthPenalty { get; set; } = 1.0;
 
+
     /// <summary>
     /// Verify that the current state is valid.
     /// </summary>
     public void Validate(bool allowIO = true)
     {
-        if (string.IsNullOrEmpty(this.TextModelDir))
+        if (string.IsNullOrEmpty(TextModelDir))
         {
-            throw new ConfigurationException($"Onnx: {nameof(this.TextModelDir)} is a required field.");
+            throw new ConfigurationException($"Onnx: {nameof(TextModelDir)} is a required field.");
         }
 
-        var modelDir = Path.GetFullPath(this.TextModelDir);
+        var modelDir = Path.GetFullPath(TextModelDir);
 
         if (allowIO)
         {
             if (!Directory.Exists(modelDir))
             {
-                throw new ConfigurationException($"Onnx: {this.TextModelDir} does not exist.");
+                throw new ConfigurationException($"Onnx: {TextModelDir} does not exist.");
             }
 
             if (Directory.GetFiles(modelDir).Length == 0)
             {
-                throw new ConfigurationException($"Onnx: {this.TextModelDir} is an empty directory.");
+                throw new ConfigurationException($"Onnx: {TextModelDir} is an empty directory.");
             }
 
             var modelFiles = Directory.GetFiles(modelDir)
@@ -136,41 +138,41 @@ public class OnnxConfig
 
             if (modelFiles == null)
             {
-                throw new ConfigurationException($"Onnx: {this.TextModelDir} does not contain a valid .ONNX model.");
+                throw new ConfigurationException($"Onnx: {TextModelDir} does not contain a valid .ONNX model.");
             }
         }
 
-        if (this.SearchType == OnnxSearchType.GreedySearch)
+        if (SearchType == OnnxSearchType.GreedySearch)
         {
-            if (this.NumBeams != 1)
+            if (NumBeams != 1)
             {
-                throw new ConfigurationException($"Onnx: {nameof(this.NumBeams)} is only used with Beam Search. Change {nameof(this.NumBeams)} to 1, or change {nameof(this.SearchType)} to BeamSearch.");
+                throw new ConfigurationException($"Onnx: {nameof(NumBeams)} is only used with Beam Search. Change {nameof(NumBeams)} to 1, or change {nameof(SearchType)} to BeamSearch.");
             }
 
-            if (this.EarlyStopping != false)
+            if (EarlyStopping)
             {
-                throw new ConfigurationException($"Onnx: {nameof(this.EarlyStopping)} is only used with Beam Search. Change {nameof(this.EarlyStopping)} to false, or change {nameof(this.SearchType)} to BeamSearch.");
+                throw new ConfigurationException($"Onnx: {nameof(EarlyStopping)} is only used with Beam Search. Change {nameof(EarlyStopping)} to false, or change {nameof(SearchType)} to BeamSearch.");
             }
         }
 
-        if (this.SearchType == OnnxSearchType.BeamSearch)
+        if (SearchType == OnnxSearchType.BeamSearch)
         {
-            if (this.NumBeams == null)
+            if (NumBeams == null)
             {
-                throw new ConfigurationException($"Onnx: {nameof(this.NumBeams)} is required for Beam Search. Change {nameof(this.NumBeams)} to a value >= 1, or change the {nameof(this.SearchType)}.");
+                throw new ConfigurationException($"Onnx: {nameof(NumBeams)} is required for Beam Search. Change {nameof(NumBeams)} to a value >= 1, or change the {nameof(SearchType)}.");
             }
         }
 
-        if (this.SearchType == OnnxSearchType.TopN)
+        if (SearchType == OnnxSearchType.TopN)
         {
-            if (this.NumBeams != null)
+            if (NumBeams != null)
             {
-                throw new ConfigurationException($"Onnx: {nameof(this.NumBeams)} isn't required with TopN Search. Change {nameof(this.NumBeams)} to null, or change the {nameof(this.SearchType)}.");
+                throw new ConfigurationException($"Onnx: {nameof(NumBeams)} isn't required with TopN Search. Change {nameof(NumBeams)} to null, or change the {nameof(SearchType)}.");
             }
 
-            if (this.EarlyStopping != false)
+            if (EarlyStopping)
             {
-                throw new ConfigurationException($"Onnx: {nameof(this.EarlyStopping)} is only used with Beam Search. Change {nameof(this.EarlyStopping)} to false, or change {nameof(this.SearchType)} to BeamSearch.");
+                throw new ConfigurationException($"Onnx: {nameof(EarlyStopping)} is only used with Beam Search. Change {nameof(EarlyStopping)} to false, or change {nameof(SearchType)} to BeamSearch.");
             }
         }
     }

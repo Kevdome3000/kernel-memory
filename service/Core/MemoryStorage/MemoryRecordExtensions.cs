@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -23,6 +23,7 @@ public static class MemoryRecordExtensions
         return record.GetTagValue(Constants.ReservedDocumentIdTag, log);
     }
 
+
     /// <summary>
     /// Get file ID
     /// </summary>
@@ -31,19 +32,24 @@ public static class MemoryRecordExtensions
         return record.GetTagValue(Constants.ReservedFileIdTag, log);
     }
 
+
     /// <summary>
     /// Get partition number, starting from zero.
     /// </summary>
     public static int GetPartitionNumber(this MemoryRecord record, ILogger? log = null)
     {
         var value = record.GetTagValue(Constants.ReservedFilePartitionNumberTag, log);
+
         if (string.IsNullOrEmpty(value))
         {
             return 0;
         }
 
-        return int.TryParse(value, out int number) ? number : 0;
+        return int.TryParse(value, out int number)
+            ? number
+            : 0;
     }
+
 
     /// <summary>
     /// Get page number / audio segment number / video scene number
@@ -51,13 +57,17 @@ public static class MemoryRecordExtensions
     public static int GetSectionNumber(this MemoryRecord record, ILogger? log = null)
     {
         var value = record.GetTagValue(Constants.ReservedFileSectionNumberTag, log);
+
         if (string.IsNullOrEmpty(value))
         {
             return 0;
         }
 
-        return int.TryParse(value, out int number) ? number : 0;
+        return int.TryParse(value, out int number)
+            ? number
+            : 0;
     }
+
 
     /// <summary>
     /// Get file MIME type
@@ -66,6 +76,7 @@ public static class MemoryRecordExtensions
     {
         return record.GetTagValue(Constants.ReservedFileTypeTag, log);
     }
+
 
     /// <summary>
     /// Get web page URL, if the document was a web page
@@ -82,6 +93,7 @@ public static class MemoryRecordExtensions
             .Replace(Constants.HttpFilenamePlaceholder, record.GetFileName(), StringComparison.Ordinal);
     }
 
+
     /// <summary>
     /// Get file name
     /// </summary>
@@ -89,6 +101,7 @@ public static class MemoryRecordExtensions
     {
         return record.GetPayloadValue(Constants.ReservedPayloadFileNameField, log)?.ToString() ?? string.Empty;
     }
+
 
     /// <summary>
     /// Get file name
@@ -98,14 +111,18 @@ public static class MemoryRecordExtensions
         return record.GetPayloadValue(Constants.ReservedPayloadTextField, log)?.ToString() ?? string.Empty;
     }
 
+
     /// <summary>
     /// Get file name
     /// </summary>
     public static DateTimeOffset GetLastUpdate(this MemoryRecord record, ILogger? log = null)
     {
         var value = record.GetPayloadValue(Constants.ReservedPayloadLastUpdateField, log);
-        return DateTimeOffset.TryParse(value?.ToString() ?? string.Empty, out var date) ? date : DateTimeOffset.MinValue;
+        return DateTimeOffset.TryParse(value?.ToString() ?? string.Empty, out var date)
+            ? date
+            : DateTimeOffset.MinValue;
     }
+
 
     /// <summary>
     /// Return a memory record tag value if available
@@ -120,6 +137,7 @@ public static class MemoryRecordExtensions
 
         return tagValues.FirstOrDefault() ?? string.Empty;
     }
+
 
     /// <summary>
     /// Return a memory record tag value if available

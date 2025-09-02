@@ -1,4 +1,6 @@
-// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft.All rights reserved.
+
+namespace _003_dotnet_SemanticKernel_plugin;
 
 /// <summary>
 /// Logging handler you might want to use to
@@ -13,16 +15,20 @@ public class HttpLogger : DelegatingHandler
             : new HttpClient();
     }
 
+
     public HttpLogger(HttpMessageHandler innerHandler)
         : base(innerHandler)
     {
     }
 
+
     protected override async Task<HttpResponseMessage> SendAsync(
-        HttpRequestMessage request, CancellationToken cancellationToken)
+        HttpRequestMessage request,
+        CancellationToken cancellationToken)
     {
         Console.WriteLine("Request:");
         Console.WriteLine(request.ToString());
+
         if (request.Content != null)
         {
             Console.WriteLine(await request.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false));
@@ -34,6 +40,7 @@ public class HttpLogger : DelegatingHandler
 
         Console.WriteLine("Response:");
         Console.WriteLine(response.ToString());
+
         if (response.Content != null)
         {
             Console.WriteLine(await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false));

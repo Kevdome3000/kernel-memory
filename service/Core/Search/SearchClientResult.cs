@@ -1,16 +1,18 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Microsoft.KernelMemory.Models;
 
 namespace Microsoft.KernelMemory.Search;
 
 internal enum SearchMode
 {
     SearchMode = 0,
-    AskMode = 1,
+    AskMode = 1
 }
+
 
 internal enum SearchState
 {
@@ -18,6 +20,7 @@ internal enum SearchState
     SkipRecord = 1,
     Stop = 2
 }
+
 
 internal class SearchClientResult
 {
@@ -42,12 +45,16 @@ internal class SearchClientResult
     public int TokensAvailable { get; set; }
     public HashSet<string> FactsUniqueness { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 
+
     /// <summary>
     /// Create new instance in Ask mode
     /// </summary>
     public static SearchClientResult AskResultInstance(
-        string question, string emptyAnswer, string moderatedAnswer,
-        int maxGroundingFacts, int tokensAvailable)
+        string question,
+        string emptyAnswer,
+        string moderatedAnswer,
+        int maxGroundingFacts,
+        int tokensAvailable)
     {
         return new SearchClientResult
         {
@@ -95,24 +102,27 @@ internal class SearchClientResult
         };
     }
 
+
     /// <summary>
     /// Add source to all the collections
     /// </summary>
     public void AddSource(Citation citation)
     {
-        this.SearchResult.Results?.Add(citation);
-        this.AskResult.RelevantSources?.Add(citation);
-        this.InsufficientTokensResult.RelevantSources?.Add(citation);
-        this.UnsafeAnswerResult.RelevantSources?.Add(citation);
+        SearchResult.Results?.Add(citation);
+        AskResult.RelevantSources?.Add(citation);
+        InsufficientTokensResult.RelevantSources?.Add(citation);
+        UnsafeAnswerResult.RelevantSources?.Add(citation);
     }
+
 
     public void AddTokenUsageToStaticResults(TokenUsage tokenUsage)
     {
         // Add report only to non-streamed results
-        this.InsufficientTokensResult.TokenUsage = [tokenUsage];
-        this.UnsafeAnswerResult.TokenUsage = [tokenUsage];
-        this.NoFactsResult.TokenUsage = [tokenUsage];
+        InsufficientTokensResult.TokenUsage = [tokenUsage];
+        UnsafeAnswerResult.TokenUsage = [tokenUsage];
+        NoFactsResult.TokenUsage = [tokenUsage];
     }
+
 
     /// <summary>
     /// Create new instance in Search mode
@@ -131,23 +141,26 @@ internal class SearchClientResult
         };
     }
 
+
     /// <summary>
     /// Tell search client to skip the current memory record
     /// </summary>
     public SearchClientResult SkipRecord()
     {
-        this.State = SearchState.SkipRecord;
+        State = SearchState.SkipRecord;
         return this;
     }
+
 
     /// <summary>
     /// Tell search client to stop processing records and return a final result
     /// </summary>
     public SearchClientResult Stop()
     {
-        this.State = SearchState.Stop;
+        State = SearchState.Stop;
         return this;
     }
+
 
     // Force factory methods
     private SearchClientResult() { }

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,42 +12,47 @@ public sealed class TestSetGeneratorBuilder
     // Services required to build the testset generator class
     private readonly IServiceCollection _serviceCollection;
 
+
     public TestSetGeneratorBuilder(IServiceCollection? hostServiceCollection = null)
     {
-        this._serviceCollection = new ServiceCollection();
+        _serviceCollection = new ServiceCollection();
 
-        CopyServiceCollection(hostServiceCollection, this._serviceCollection);
+        CopyServiceCollection(hostServiceCollection, _serviceCollection);
     }
+
 
     public TestSetGeneratorBuilder AddIngestionMemoryDb(IMemoryDb service)
     {
-        this._serviceCollection.AddSingleton<IMemoryDb>(service);
+        _serviceCollection.AddSingleton<IMemoryDb>(service);
 
         return this;
     }
+
 
     public TestSetGeneratorBuilder AddEvaluatorKernel(Kernel kernel)
     {
-        this._serviceCollection.AddKeyedSingleton<Kernel>("evaluation", kernel);
+        _serviceCollection.AddKeyedSingleton<Kernel>("evaluation", kernel);
 
         return this;
     }
+
 
     public TestSetGeneratorBuilder AddTranslatorKernel(Kernel kernel)
     {
-        this._serviceCollection.AddKeyedSingleton<Kernel>("translation", kernel);
+        _serviceCollection.AddKeyedSingleton<Kernel>("translation", kernel);
 
         return this;
     }
 
+
     public TestSetGenerator Build()
     {
-        if (!this._serviceCollection.HasService<IMemoryDb>())
+        if (!_serviceCollection.HasService<IMemoryDb>())
         {
             throw new InvalidOperationException("MemoryDb service is required to build the TestSetGenerator");
         }
 
-        this._serviceCollection.AddScoped<TestSetGenerator>(sp =>
+        _serviceCollection.AddScoped<TestSetGenerator>(sp =>
         {
             return new TestSetGenerator(
                 sp.GetRequiredKeyedService<Kernel>("evaluation"),
@@ -55,9 +60,10 @@ public sealed class TestSetGeneratorBuilder
                 sp.GetRequiredService<IMemoryDb>());
         });
 
-        return this._serviceCollection.BuildServiceProvider()
+        return _serviceCollection.BuildServiceProvider()
             .GetRequiredService<TestSetGenerator>();
     }
+
 
     private static void CopyServiceCollection(
         IServiceCollection? source,

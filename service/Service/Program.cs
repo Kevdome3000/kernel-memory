@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -20,6 +20,8 @@ using Microsoft.KernelMemory.DocumentStorage;
 using Microsoft.KernelMemory.MemoryStorage;
 using Microsoft.KernelMemory.Pipeline;
 using Microsoft.KernelMemory.Service.AspNetCore;
+using Microsoft.KernelMemory.Service.HttpFilters;
+using Microsoft.KernelMemory.Service.Internals;
 
 // KM Configuration:
 //
@@ -50,6 +52,7 @@ namespace Microsoft.KernelMemory.Service;
 internal static class Program
 {
     private static readonly DateTimeOffset s_start = DateTimeOffset.UtcNow;
+
 
     public static void Main(string[] args)
     {
@@ -88,7 +91,7 @@ internal static class Program
 
         // Read KM settings, needed before building the app.
         KernelMemoryConfig config = appBuilder.Configuration.GetSection("KernelMemory").Get<KernelMemoryConfig>()
-                                    ?? throw new ConfigurationException("Unable to load configuration");
+            ?? throw new ConfigurationException("Unable to load configuration");
 
         // Some OpenAPI Explorer/Swagger dependencies
         appBuilder.ConfigureSwagger(config);
@@ -108,11 +111,15 @@ internal static class Program
                 // When using in process orchestration, handlers are hosted by the memory orchestrator
                 syncHandlersCount = AddHandlersToServerlessMemory(config, memory);
 
-                memoryType = ((memory is MemoryServerless) ? "Sync - " : "Async - ") + memory.GetType().FullName;
+                memoryType = (memory is MemoryServerless
+                        ? "Sync - "
+                        : "Async - ")
+                    + memory.GetType().FullName;
             },
             services =>
             {
                 long? maxSize = config.Service.GetMaxUploadSizeInBytes();
+
                 if (!maxSize.HasValue) { return; }
 
                 services.Configure<IISServerOptions>(x => { x.MaxRequestBodySize = maxSize.Value; });
@@ -127,20 +134,26 @@ internal static class Program
         // CORS
         bool enableCORS = false;
         const string CORSPolicyName = "KM-CORS";
+
         if (enableCORS && config.Service.RunWebService)
         {
             appBuilder.Services.AddCors(options =>
             {
-                options.AddPolicy(name: CORSPolicyName, policy =>
-                {
-                    policy
-                        .WithMethods("HEAD", "GET", "POST", "PUT", "DELETE")
-                        .WithExposedHeaders("Content-Type", "Content-Length", "Last-Modified");
-                    // .AllowAnyOrigin()
-                    // .WithOrigins(...)
-                    // .AllowAnyHeader()
-                    // .WithHeaders(...)
-                });
+                options.AddPolicy(CORSPolicyName,
+                    policy =>
+                    {
+                        policy
+                            .WithMethods("HEAD",
+                                "GET",
+                                "POST",
+                                "PUT",
+                                "DELETE")
+                            .WithExposedHeaders("Content-Type", "Content-Length", "Last-Modified");
+                        // .AllowAnyOrigin()
+                        // .WithOrigins(...)
+                        // .AllowAnyHeader()
+                        // .WithHeaders(...)
+                    });
             });
         }
 
@@ -154,17 +167,20 @@ internal static class Program
             app.UseSwagger(config);
             var errorFilter = new HttpErrorsEndpointFilter();
             var authFilter = new HttpAuthEndpointFilter(config.ServiceAuthorization);
-            app.MapGet("/", () => Results.Ok("Ingestion service is running. " +
-                                             "Uptime: " + (DateTimeOffset.UtcNow.ToUnixTimeSeconds()
-                                                           - s_start.ToUnixTimeSeconds()) + " secs " +
-                                             $"- Environment: {Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")}"))
+            app.MapGet("/",
+                    () => Results.Ok("Ingestion service is running. "
+                        + "Uptime: "
+                        + (DateTimeOffset.UtcNow.ToUnixTimeSeconds()
+                            - s_start.ToUnixTimeSeconds())
+                        + " secs "
+                        + $"- Environment: {Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")}"))
                 .AddEndpointFilter(errorFilter)
                 .AddEndpointFilter(authFilter)
                 .WithName("ServiceStatus")
                 .WithDisplayName("ServiceStatus")
                 .WithDescription("Show the service status and uptime.")
                 .WithSummary("Show the service status and uptime.")
-                .Produces<string>(StatusCodes.Status200OK)
+                .Produces<string>()
                 .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
                 .Produces<ProblemDetails>(StatusCodes.Status403Forbidden);
 
@@ -177,7 +193,7 @@ internal static class Program
                 .WithDisplayName("ServiceHealth")
                 .WithDescription("Show if the service is healthy.")
                 .WithSummary("Show if the service is healthy.")
-                .Produces<string>(StatusCodes.Status200OK)
+                .Produces<string>()
                 .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
                 .Produces<ProblemDetails>(StatusCodes.Status403Forbidden);
 
@@ -190,23 +206,36 @@ internal static class Program
         // *************************** START ***********************************
 
         var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+
         if (string.IsNullOrEmpty(env))
         {
             app.Logger.LogError("ASPNETCORE_ENVIRONMENT env var not defined.");
         }
 
         Console.WriteLine("***************************************************************************************************************************");
-        Console.WriteLine("* Environment         : " + (string.IsNullOrEmpty(env) ? "WARNING: ASPNETCORE_ENVIRONMENT env var not defined" : env));
+        Console.WriteLine("* Environment         : "
+            + (string.IsNullOrEmpty(env)
+                ? "WARNING: ASPNETCORE_ENVIRONMENT env var not defined"
+                : env));
         Console.WriteLine("* Memory type         : " + memoryType);
         Console.WriteLine("* Pipeline handlers   : " + $"{syncHandlersCount} synchronous / {asyncHandlersCount} asynchronous");
-        Console.WriteLine("* Web service         : " + (config.Service.RunWebService ? "Enabled" : "Disabled"));
+        Console.WriteLine("* Web service         : "
+            + (config.Service.RunWebService
+                ? "Enabled"
+                : "Disabled"));
 
         if (config.Service.RunWebService)
         {
             const double AspnetDefaultMaxUploadSize = 30000000d / 1024 / 1024;
-            Console.WriteLine("* Web service auth    : " + (config.ServiceAuthorization.Enabled ? "Enabled" : "Disabled"));
+            Console.WriteLine("* Web service auth    : "
+                + (config.ServiceAuthorization.Enabled
+                    ? "Enabled"
+                    : "Disabled"));
             Console.WriteLine("* Max HTTP req size   : " + (config.Service.MaxUploadSizeMb ?? AspnetDefaultMaxUploadSize).ToString("0.#", CultureInfo.CurrentCulture) + " Mb");
-            Console.WriteLine("* OpenAPI swagger     : " + (config.Service.OpenApiEnabled ? "Enabled (/swagger/index.html)" : "Disabled"));
+            Console.WriteLine("* OpenAPI swagger     : "
+                + (config.Service.OpenApiEnabled
+                    ? "Enabled (/swagger/index.html)"
+                    : "Disabled"));
         }
 
         Console.WriteLine("* Memory Db           : " + app.Services.GetService<IMemoryDb>()?.GetType().FullName);
@@ -237,6 +266,7 @@ internal static class Program
         }
     }
 
+
     /// <summary>
     /// Register handlers as asynchronous hosted services
     /// </summary>
@@ -262,22 +292,25 @@ internal static class Program
         // Register all pipeline handlers defined in the configuration to run as hosted services
         foreach (KeyValuePair<string, HandlerConfig> handlerConfig in config.Service.Handlers)
         {
-            appBuilder.Services.AddHandlerAsHostedService(config: handlerConfig.Value, stepName: handlerConfig.Key);
+            appBuilder.Services.AddHandlerAsHostedService(handlerConfig.Value, handlerConfig.Key);
         }
 
         // Return registered handlers count
         return appBuilder.Services.Count(s => typeof(IPipelineStepHandler).IsAssignableFrom(s.ServiceType));
     }
 
+
     /// <summary>
     /// Register handlers instances inside the synchronous orchestrator
     /// </summary>
     private static int AddHandlersToServerlessMemory(
-        KernelMemoryConfig config, IKernelMemory memory)
+        KernelMemoryConfig config,
+        IKernelMemory memory)
     {
         if (memory is not MemoryServerless) { return 0; }
 
         var orchestrator = ((MemoryServerless)memory).Orchestrator;
+
         foreach (KeyValuePair<string, HandlerConfig> handlerConfig in config.Service.Handlers)
         {
             orchestrator.AddSynchronousHandler(handlerConfig.Value, handlerConfig.Key);

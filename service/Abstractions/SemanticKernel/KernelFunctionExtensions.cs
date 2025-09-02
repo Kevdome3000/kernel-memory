@@ -1,9 +1,10 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.SemanticKernel;
 
-namespace Microsoft.SemanticKernel;
+namespace Microsoft.KernelMemory.SemanticKernel;
 
 /// <summary>
 /// Semantic Kernel function extensions.
@@ -11,6 +12,7 @@ namespace Microsoft.SemanticKernel;
 public static partial class KernelFunctionExtensions
 {
     private const string SemanticFunctionFirstParamName = "input";
+
 
     /// <summary>
     /// Invokes the semantic function passing a string in input.
@@ -28,6 +30,7 @@ public static partial class KernelFunctionExtensions
         CancellationToken cancellationToken = default)
     {
         var args = new KernelArguments();
+
         if (function.Metadata.Parameters.Count >= 1)
         {
             // Native functions

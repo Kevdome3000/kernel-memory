@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Collections.Generic;
 using System.Threading;
@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.KernelMemory.Diagnostics;
 using Microsoft.KernelMemory.DocumentStorage;
 using Microsoft.KernelMemory.MemoryStorage;
+using Microsoft.KernelMemory.Models;
 using Microsoft.KernelMemory.Pipeline;
 
 namespace Microsoft.KernelMemory.Handlers;
@@ -19,46 +20,50 @@ public sealed class DeleteDocumentHandler : IPipelineStepHandler
 
     public string StepName { get; }
 
+
     public DeleteDocumentHandler(
         string stepName,
         IDocumentStorage documentStorage,
         List<IMemoryDb> memoryDbs,
         ILoggerFactory? loggerFactory = null)
     {
-        this.StepName = stepName;
-        this._documentStorage = documentStorage;
-        this._memoryDbs = memoryDbs;
-        this._log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<DeleteDocumentHandler>();
+        StepName = stepName;
+        _documentStorage = documentStorage;
+        _memoryDbs = memoryDbs;
+        _log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<DeleteDocumentHandler>();
 
-        this._log.LogInformation("Handler '{0}' ready", stepName);
+        _log.LogInformation("Handler '{0}' ready", stepName);
     }
+
 
     /// <inheritdoc />
     public async Task<(ReturnType returnType, DataPipeline updatedPipeline)> InvokeAsync(
-        DataPipeline pipeline, CancellationToken cancellationToken = default)
+        DataPipeline pipeline,
+        CancellationToken cancellationToken = default)
     {
-        this._log.LogDebug("Deleting document, pipeline '{0}/{1}'", pipeline.Index, pipeline.DocumentId);
+        _log.LogDebug("Deleting document, pipeline '{0}/{1}'", pipeline.Index, pipeline.DocumentId);
 
         // Delete embeddings
-        foreach (IMemoryDb db in this._memoryDbs)
+        foreach (IMemoryDb db in _memoryDbs)
         {
             IAsyncEnumerable<MemoryRecord> records = db.GetListAsync(
-                index: pipeline.Index,
+                pipeline.Index,
                 limit: -1,
                 filters: [MemoryFilters.ByDocument(pipeline.DocumentId)],
                 cancellationToken: cancellationToken);
 
             await foreach (var record in records.WithCancellation(cancellationToken).ConfigureAwait(false))
             {
-                await db.DeleteAsync(index: pipeline.Index, record, cancellationToken: cancellationToken).ConfigureAwait(false);
+                await db.DeleteAsync(pipeline.Index, record, cancellationToken).ConfigureAwait(false);
             }
         }
 
         // Delete files, leaving the status file
-        await this._documentStorage.EmptyDocumentDirectoryAsync(
-            index: pipeline.Index,
-            documentId: pipeline.DocumentId,
-            cancellationToken).ConfigureAwait(false);
+        await _documentStorage.EmptyDocumentDirectoryAsync(
+                pipeline.Index,
+                pipeline.DocumentId,
+                cancellationToken)
+            .ConfigureAwait(false);
 
         return (ReturnType.Success, pipeline);
     }

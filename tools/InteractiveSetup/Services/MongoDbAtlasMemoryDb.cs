@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Collections.Generic;
 using Microsoft.KernelMemory.InteractiveSetup.UI;
@@ -18,7 +18,7 @@ internal static class MongoDbAtlasMemoryDb
         {
             config = new Dictionary<string, object>
             {
-                { "ConnectionString", "" },
+                { "ConnectionString", "" }
             };
             AppSettings.AddService(ServiceName, config);
         }
@@ -28,7 +28,7 @@ internal static class MongoDbAtlasMemoryDb
             {
                 "ConnectionString",
                 SetupUI.AskPassword("MongoDB Atlas connection string (e.g. 'mongodb://usr:pwd@host:port/?...')", config["ConnectionString"].ToString(), optional: false)
-            },
+            }
         });
     }
 }

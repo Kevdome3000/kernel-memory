@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Collections.Generic;
 
@@ -10,8 +10,9 @@ public sealed class RequestContext : IContext
 
     public RequestContext() { }
 
+
     public RequestContext(IDictionary<string, object?>? args)
     {
-        this.Arguments = args ?? new Dictionary<string, object?>();
+        Arguments = args ?? new Dictionary<string, object?>();
     }
 }

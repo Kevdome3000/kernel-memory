@@ -1,6 +1,7 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.KernelMemory;
+using Xunit;
 
 namespace Microsoft.KM.Abstractions.UnitTests.AI;
 

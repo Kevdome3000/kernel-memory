@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.KernelMemory.DocumentStorage;
@@ -27,6 +27,7 @@ public static partial class KernelMemoryBuilderExtensions
         return builder;
     }
 
+
     /// <summary>
     /// Adds Mongodb as document storage for files.
     /// </summary>
@@ -39,6 +40,7 @@ public static partial class KernelMemoryBuilderExtensions
         builder.Services.AddMongoDbAtlasAsDocumentStorage(config);
         return builder;
     }
+
 
     /// <summary>
     /// Adds Mongodb as document storage and memory db, for both files and memory records.
@@ -53,6 +55,7 @@ public static partial class KernelMemoryBuilderExtensions
         return builder;
     }
 }
+
 
 /// <summary>
 /// .NET IServiceCollection dependency injection extensions.
@@ -73,6 +76,7 @@ public static partial class DependencyInjection
             .AddSingleton<IMemoryDb, MongoDbAtlasMemory>();
     }
 
+
     /// <summary>
     /// Adds MongoDbAtlasStorage as a service.
     /// </summary>
@@ -86,6 +90,7 @@ public static partial class DependencyInjection
             .AddSingleton(config)
             .AddSingleton<IDocumentStorage, MongoDbAtlasStorage>();
     }
+
 
     /// <summary>
     /// Adds MongoDbAtlasMemory and MongoDbAtlasStorage as services.

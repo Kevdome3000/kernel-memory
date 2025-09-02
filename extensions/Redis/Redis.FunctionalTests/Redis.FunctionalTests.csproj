@@ -3,32 +3,32 @@
     <PropertyGroup>
         <AssemblyName>Microsoft.Redis.FunctionalTests</AssemblyName>
         <RootNamespace>Microsoft.Redis.FunctionalTests</RootNamespace>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net9.0</TargetFramework>
         <RollForward>LatestMajor</RollForward>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
     <ItemGroup>
-        <Using Include="Xunit" />
-        <Using Include="Xunit.Abstractions" />
+        <Using Include="Xunit"/>
+        <Using Include="Xunit.Abstractions"/>
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.NET.Test.Sdk" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk"/>
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\..\service\tests\Core.FunctionalTests\Core.FunctionalTests.csproj" />
+        <ProjectReference Include="..\..\..\service\tests\Core.FunctionalTests\Core.FunctionalTests.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-        <None Remove="appsettings.json" />
+        <None Remove="appsettings.json"/>
         <Content Include="appsettings.json">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>
 
-        <None Remove="appsettings.Development.json" Condition="Exists('appsettings.Development.json')" />
+        <None Remove="appsettings.Development.json" Condition="Exists('appsettings.Development.json')"/>
         <Content Include="appsettings.Development.json" Condition="Exists('appsettings.Development.json')">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>

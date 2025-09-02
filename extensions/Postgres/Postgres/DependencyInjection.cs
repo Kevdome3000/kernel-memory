@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.KernelMemory.MemoryStorage;
@@ -24,6 +24,7 @@ public static partial class KernelMemoryBuilderExtensions
         return builder;
     }
 
+
     /// <summary>
     /// Kernel Memory Builder extension method to add Postgres memory connector.
     /// </summary>
@@ -35,6 +36,7 @@ public static partial class KernelMemoryBuilderExtensions
         return builder;
     }
 }
+
 
 /// <summary>
 /// .NET IServiceCollection dependency injection extensions.
@@ -52,6 +54,7 @@ public static partial class DependencyInjection
             .AddSingleton<PostgresConfig>(config)
             .AddSingleton<IMemoryDb, PostgresMemory>();
     }
+
 
     /// <summary>
     /// Inject Postgres as the default implementation of IMemoryDb

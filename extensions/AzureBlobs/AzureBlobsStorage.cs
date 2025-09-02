@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Diagnostics.CodeAnalysis;
@@ -13,6 +13,7 @@ using Azure.Storage.Blobs.Models;
 using Azure.Storage.Blobs.Specialized;
 using Microsoft.Extensions.Logging;
 using Microsoft.KernelMemory.Diagnostics;
+using Microsoft.KernelMemory.Models;
 using Microsoft.KernelMemory.Pipeline;
 
 namespace Microsoft.KernelMemory.DocumentStorage.AzureBlobs;
@@ -30,30 +31,32 @@ public sealed class AzureBlobsStorage : IDocumentStorage
     private readonly ILogger<AzureBlobsStorage> _log;
     private readonly IMimeTypeDetection _mimeTypeDetection;
 
+
     public AzureBlobsStorage(
         AzureBlobsConfig config,
         IMimeTypeDetection? mimeTypeDetection = null,
         ILoggerFactory? loggerFactory = null)
     {
-        this._mimeTypeDetection = mimeTypeDetection ?? new MimeTypesDetection();
-        this._log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<AzureBlobsStorage>();
+        _mimeTypeDetection = mimeTypeDetection ?? new MimeTypesDetection();
+        _log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<AzureBlobsStorage>();
 
         BlobServiceClient client;
         var clientOptions = GetClientOptions(config);
+
         switch (config.Auth)
         {
             case AzureBlobsConfig.AuthTypes.ConnectionString:
             {
-                this.ValidateConnectionString(config.ConnectionString);
+                ValidateConnectionString(config.ConnectionString);
                 client = new BlobServiceClient(config.ConnectionString, clientOptions);
                 break;
             }
 
             case AzureBlobsConfig.AuthTypes.AccountKey:
             {
-                this.ValidateAccountName(config.Account);
-                this.ValidateAccountKey(config.AccountKey);
-                var suffix = this.ValidateEndpointSuffix(config.EndpointSuffix);
+                ValidateAccountName(config.Account);
+                ValidateAccountKey(config.AccountKey);
+                var suffix = ValidateEndpointSuffix(config.EndpointSuffix);
                 client = new BlobServiceClient(
                     new Uri($"https://{config.Account}.blob.{suffix}"),
                     new StorageSharedKeyCredential(config.Account, config.AccountKey),
@@ -63,8 +66,8 @@ public sealed class AzureBlobsStorage : IDocumentStorage
 
             case AzureBlobsConfig.AuthTypes.AzureIdentity:
             {
-                this.ValidateAccountName(config.Account);
-                var suffix = this.ValidateEndpointSuffix(config.EndpointSuffix);
+                ValidateAccountName(config.Account);
+                var suffix = ValidateEndpointSuffix(config.EndpointSuffix);
                 client = new BlobServiceClient(
                     new Uri($"https://{config.Account}.blob.{suffix}"),
                     new DefaultAzureCredential(),
@@ -74,8 +77,8 @@ public sealed class AzureBlobsStorage : IDocumentStorage
 
             case AzureBlobsConfig.AuthTypes.ManualStorageSharedKeyCredential:
             {
-                this.ValidateAccountName(config.Account);
-                var suffix = this.ValidateEndpointSuffix(config.EndpointSuffix);
+                ValidateAccountName(config.Account);
+                var suffix = ValidateEndpointSuffix(config.EndpointSuffix);
                 client = new BlobServiceClient(
                     new Uri($"https://{config.Account}.blob.{suffix}"),
                     config.GetStorageSharedKeyCredential(),
@@ -85,8 +88,8 @@ public sealed class AzureBlobsStorage : IDocumentStorage
 
             case AzureBlobsConfig.AuthTypes.ManualAzureSasCredential:
             {
-                this.ValidateAccountName(config.Account);
-                var suffix = this.ValidateEndpointSuffix(config.EndpointSuffix);
+                ValidateAccountName(config.Account);
+                var suffix = ValidateEndpointSuffix(config.EndpointSuffix);
                 client = new BlobServiceClient(
                     new Uri($"https://{config.Account}.blob.{suffix}"),
                     config.GetAzureSasCredential(),
@@ -96,8 +99,8 @@ public sealed class AzureBlobsStorage : IDocumentStorage
 
             case AzureBlobsConfig.AuthTypes.ManualTokenCredential:
             {
-                this.ValidateAccountName(config.Account);
-                var suffix = this.ValidateEndpointSuffix(config.EndpointSuffix);
+                ValidateAccountName(config.Account);
+                var suffix = ValidateEndpointSuffix(config.EndpointSuffix);
                 client = new BlobServiceClient(
                     new Uri($"https://{config.Account}.blob.{suffix}"),
                     config.GetTokenCredential(),
@@ -107,24 +110,27 @@ public sealed class AzureBlobsStorage : IDocumentStorage
 
             default:
             case AzureBlobsConfig.AuthTypes.Unknown:
-                this._log.LogCritical("Azure Blob authentication type '{0}' undefined or not supported", config.Auth);
+                _log.LogCritical("Azure Blob authentication type '{0}' undefined or not supported", config.Auth);
                 throw new DocumentStorageException($"Azure Blob authentication type '{config.Auth}' undefined or not supported");
         }
 
-        this._containerName = config.Container;
-        if (string.IsNullOrEmpty(this._containerName))
+        _containerName = config.Container;
+
+        if (string.IsNullOrEmpty(_containerName))
         {
-            this._containerName = DefaultContainerName;
-            this._log.LogError("The Azure Blob container name is empty, using default value {0}", this._containerName);
+            _containerName = DefaultContainerName;
+            _log.LogError("The Azure Blob container name is empty, using default value {0}", _containerName);
         }
 
-        this._containerClient = client.GetBlobContainerClient(this._containerName);
-        if (this._containerClient == null)
+        _containerClient = client.GetBlobContainerClient(_containerName);
+
+        if (_containerClient == null)
         {
-            this._log.LogCritical("Unable to instantiate Azure Blob container client");
+            _log.LogCritical("Unable to instantiate Azure Blob container client");
             throw new DocumentStorageException("Unable to instantiate Azure Blob container client");
         }
     }
+
 
     /// <inheritdoc />
     public async Task CreateIndexDirectoryAsync(
@@ -135,14 +141,15 @@ public sealed class AzureBlobsStorage : IDocumentStorage
         //       so there's no such thing as creating a directory. When creating a blob, the name must contain
         //       the directory name, e.g. blob.Name = "dir1/subdir2/file.txt"
 
-        this._log.LogTrace("Creating container '{0}' ...", this._containerName);
+        _log.LogTrace("Creating container '{0}' ...", _containerName);
 
-        await this._containerClient
-            .CreateIfNotExistsAsync(PublicAccessType.None, cancellationToken: cancellationToken)
+        await _containerClient
+            .CreateIfNotExistsAsync(cancellationToken: cancellationToken)
             .ConfigureAwait(false);
 
-        this._log.LogTrace("Container '{0}' ready", this._containerName);
+        _log.LogTrace("Container '{0}' ready", _containerName);
     }
+
 
     /// <inheritdoc />
     public Task DeleteIndexDirectoryAsync(string index, CancellationToken cancellationToken = default)
@@ -152,8 +159,9 @@ public sealed class AzureBlobsStorage : IDocumentStorage
             throw new DocumentStorageException("The index name is empty, stopping the process to prevent data loss");
         }
 
-        return this.DeleteBlobsByPrefixAsync(index, cancellationToken);
+        return DeleteBlobsByPrefixAsync(index, cancellationToken);
     }
+
 
     /// <inheritdoc />
     public async Task CreateDocumentDirectoryAsync(
@@ -165,26 +173,29 @@ public sealed class AzureBlobsStorage : IDocumentStorage
         //       so there's no such thing as creating a directory. When creating a blob, the name must contain
         //       the directory name, e.g. blob.Name = "dir1/subdir2/file.txt"
 
-        this._log.LogTrace("Creating container '{0}' ...", this._containerName);
+        _log.LogTrace("Creating container '{0}' ...", _containerName);
 
-        await this._containerClient
-            .CreateIfNotExistsAsync(PublicAccessType.None, cancellationToken: cancellationToken)
+        await _containerClient
+            .CreateIfNotExistsAsync(cancellationToken: cancellationToken)
             .ConfigureAwait(false);
 
-        this._log.LogTrace("Container '{0}' ready", this._containerName);
+        _log.LogTrace("Container '{0}' ready", _containerName);
     }
+
 
     /// <inheritdoc />
     public Task EmptyDocumentDirectoryAsync(string index, string documentId, CancellationToken cancellationToken = default)
     {
         var directoryName = JoinPaths(index, documentId);
+
         if (string.IsNullOrWhiteSpace(index) || string.IsNullOrWhiteSpace(documentId) || string.IsNullOrWhiteSpace(directoryName))
         {
             throw new DocumentStorageException("The index, or document ID, or directory name is empty, stopping the process to prevent data loss");
         }
 
-        return this.DeleteBlobsByPrefixAsync(directoryName, cancellationToken);
+        return DeleteBlobsByPrefixAsync(directoryName, cancellationToken);
     }
+
 
     /// <inheritdoc />
     public Task DeleteDocumentDirectoryAsync(
@@ -193,13 +204,15 @@ public sealed class AzureBlobsStorage : IDocumentStorage
         CancellationToken cancellationToken = default)
     {
         var directoryName = JoinPaths(index, documentId);
+
         if (string.IsNullOrWhiteSpace(index) || string.IsNullOrWhiteSpace(documentId) || string.IsNullOrWhiteSpace(directoryName))
         {
             throw new DocumentStorageException("The index, or document ID, or directory name is empty, stopping the process to prevent data loss");
         }
 
-        return this.DeleteBlobsByPrefixAsync(directoryName, cancellationToken);
+        return DeleteBlobsByPrefixAsync(directoryName, cancellationToken);
     }
+
 
     /// <inheritdoc />
     public Task WriteFileAsync(
@@ -210,14 +223,15 @@ public sealed class AzureBlobsStorage : IDocumentStorage
         CancellationToken cancellationToken = default)
     {
         var directoryName = JoinPaths(index, documentId);
-        var fileType = this._mimeTypeDetection.GetFileType(fileName);
-        return this.InternalWriteAsync(
-            directoryName: directoryName,
-            fileName: fileName,
-            fileType: fileType,
-            content: streamContent,
+        var fileType = _mimeTypeDetection.GetFileType(fileName);
+        return InternalWriteAsync(
+            directoryName,
+            fileName,
+            fileType,
+            streamContent,
             cancellationToken);
     }
+
 
     /// <inheritdoc />
     public async Task<StreamableFileContent> ReadFileAsync(
@@ -233,11 +247,12 @@ public sealed class AzureBlobsStorage : IDocumentStorage
 
         var directoryName = JoinPaths(index, documentId);
         var blobName = $"{directoryName}/{fileName}";
-        BlobClient blobClient = this.GetBlobClient(blobName);
+        BlobClient blobClient = GetBlobClient(blobName);
 
         try
         {
             bool exists = await blobClient.ExistsAsync(cancellationToken).ConfigureAwait(false);
+
             if (exists)
             {
                 var properties = (await blobClient.GetPropertiesAsync(null, cancellationToken).ConfigureAwait(false)).Value;
@@ -249,16 +264,17 @@ public sealed class AzureBlobsStorage : IDocumentStorage
                     async () => (await blobClient.DownloadStreamingAsync(null, cancellationToken).ConfigureAwait(false)).Value.Content);
             }
 
-            if (logErrIfNotFound) { this._log.LogError("Unable to download file {0}", blobName); }
+            if (logErrIfNotFound) { _log.LogError("Unable to download file {0}", blobName); }
 
             throw new DocumentStorageFileNotFoundException("Unable to fetch blob content");
         }
         catch (RequestFailedException e) when (e.Status == 404)
         {
-            this._log.LogInformation("File not found: {0}", blobName);
+            _log.LogInformation("File not found: {0}", blobName);
             throw new DocumentStorageFileNotFoundException("File not found", e);
         }
     }
+
 
     #region private
 
@@ -273,6 +289,7 @@ public sealed class AzureBlobsStorage : IDocumentStorage
         return $"{index}/{documentId}";
     }
 
+
     /// <summary>
     /// Options used by the Azure Blob client, e.g. User Agent and Auth tokens audience, etc.
     /// </summary>
@@ -283,7 +300,7 @@ public sealed class AzureBlobsStorage : IDocumentStorage
             Diagnostics =
             {
                 IsTelemetryEnabled = Telemetry.IsTelemetryEnabled,
-                ApplicationId = Telemetry.HttpUserAgent,
+                ApplicationId = Telemetry.HttpUserAgent
             }
         };
 
@@ -295,6 +312,7 @@ public sealed class AzureBlobsStorage : IDocumentStorage
         return options;
     }
 
+
     private async Task InternalWriteAsync(
         string directoryName,
         string fileName,
@@ -304,23 +322,25 @@ public sealed class AzureBlobsStorage : IDocumentStorage
     {
         var blobName = $"{directoryName}/{fileName}";
 
-        BlobClient blobClient = this.GetBlobClient(blobName);
+        BlobClient blobClient = GetBlobClient(blobName);
 
         BlobUploadOptions options = new();
         BlobLeaseClient? blobLeaseClient = null;
         BlobLease? lease = null;
+
         if (await blobClient.ExistsAsync(cancellationToken).ConfigureAwait(false))
         {
-            blobLeaseClient = this.GetBlobLeaseClient(blobClient);
-            lease = await this.LeaseBlobAsync(blobLeaseClient, cancellationToken).ConfigureAwait(false);
+            blobLeaseClient = GetBlobLeaseClient(blobClient);
+            lease = await LeaseBlobAsync(blobLeaseClient, cancellationToken).ConfigureAwait(false);
             options = new BlobUploadOptions { Conditions = new BlobRequestConditions { LeaseId = lease.LeaseId } };
         }
 
         options.HttpHeaders = new BlobHttpHeaders { ContentType = fileType };
 
-        this._log.LogTrace("Writing blob {0} ...", blobName);
+        _log.LogTrace("Writing blob {0} ...", blobName);
 
         long size;
+
         switch (content)
         {
             case string fileContent:
@@ -338,13 +358,14 @@ public sealed class AzureBlobsStorage : IDocumentStorage
 
         if (size == 0)
         {
-            this._log.LogWarning("The file {0}/{1} is empty", directoryName, fileName);
+            _log.LogWarning("The file {0}/{1} is empty", directoryName, fileName);
         }
 
-        await this.ReleaseBlobAsync(blobLeaseClient, lease, cancellationToken).ConfigureAwait(false);
+        await ReleaseBlobAsync(blobLeaseClient, lease, cancellationToken).ConfigureAwait(false);
 
-        this._log.LogTrace("Blob {0} ready, size {1}", blobName, size);
+        _log.LogTrace("Blob {0} ready, size {1}", blobName, size);
     }
+
 
     private async Task DeleteBlobsByPrefixAsync(string prefix, CancellationToken cancellationToken)
     {
@@ -353,9 +374,10 @@ public sealed class AzureBlobsStorage : IDocumentStorage
             throw new DocumentStorageException("The blob prefix is empty, stopping the process to prevent data loss");
         }
 
-        this._log.LogInformation("Deleting blobs at {0}", prefix);
+        _log.LogInformation("Deleting blobs at {0}", prefix);
 
-        AsyncPageable<BlobItem>? blobList = this._containerClient.GetBlobsAsync(prefix: prefix, cancellationToken: cancellationToken);
+        AsyncPageable<BlobItem>? blobList = _containerClient.GetBlobsAsync(prefix: prefix, cancellationToken: cancellationToken);
+
         await foreach (Page<BlobItem> page in blobList.AsPages().WithCancellation(cancellationToken).ConfigureAwait(false))
         {
             foreach (BlobItem blob in page.Values)
@@ -365,28 +387,32 @@ public sealed class AzureBlobsStorage : IDocumentStorage
 
                 // Remove the prefix, skip root and empty names
                 var fileName = blob.Name.Trim('/').Substring(prefix.Trim('/').Length).Trim('/');
+
                 if (string.IsNullOrWhiteSpace(fileName)) { continue; }
 
                 // Don't delete the pipeline status file
                 if (fileName == Constants.PipelineStatusFilename) { continue; }
 
-                this._log.LogInformation("Deleting blob {0}", blob.Name);
-                Response? response = await this.GetBlobClient(blob.Name).DeleteAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+                _log.LogInformation("Deleting blob {0}", blob.Name);
+                Response? response = await GetBlobClient(blob.Name).DeleteAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+
                 if (response.Status < 300)
                 {
-                    this._log.LogDebug("Delete response: {0}", response.Status);
+                    _log.LogDebug("Delete response: {0}", response.Status);
                 }
                 else
                 {
-                    this._log.LogWarning("Unexpected delete response: {0}", response.Status);
+                    _log.LogWarning("Unexpected delete response: {0}", response.Status);
                 }
             }
         }
     }
 
+
     private BlobClient GetBlobClient(string blobName)
     {
-        BlobClient? blobClient = this._containerClient.GetBlobClient(blobName);
+        BlobClient? blobClient = _containerClient.GetBlobClient(blobName);
+
         if (blobClient == null)
         {
             throw new DocumentStorageException("Unable to instantiate Azure Blob blob client");
@@ -395,9 +421,11 @@ public sealed class AzureBlobsStorage : IDocumentStorage
         return blobClient;
     }
 
+
     private BlobLeaseClient GetBlobLeaseClient(BlobClient blobClient)
     {
         var blobLeaseClient = blobClient.GetBlobLeaseClient();
+
         if (blobLeaseClient == null)
         {
             throw new DocumentStorageException("Unable to instantiate Azure blob lease client");
@@ -406,72 +434,81 @@ public sealed class AzureBlobsStorage : IDocumentStorage
         return blobLeaseClient;
     }
 
+
     private async Task<BlobLease> LeaseBlobAsync(BlobLeaseClient blobLeaseClient, CancellationToken cancellationToken)
     {
-        this._log.LogTrace("Leasing blob {0} ...", blobLeaseClient.Uri);
+        _log.LogTrace("Leasing blob {0} ...", blobLeaseClient.Uri);
 
         Response<BlobLease> lease = await blobLeaseClient
             .AcquireAsync(TimeSpan.FromSeconds(30), cancellationToken: cancellationToken)
             .ConfigureAwait(false);
+
         if (lease == null || !lease.HasValue)
         {
             throw new DocumentStorageException("Unable to lease blob");
         }
 
-        this._log.LogTrace("Blob {0} leased", blobLeaseClient.Uri);
+        _log.LogTrace("Blob {0} leased", blobLeaseClient.Uri);
 
         return lease.Value;
     }
+
 
     private async Task ReleaseBlobAsync(BlobLeaseClient? blobLeaseClient, BlobLease? lease, CancellationToken cancellationToken)
     {
         if (lease != null && blobLeaseClient != null)
         {
-            this._log.LogTrace("Releasing blob {0} ...", blobLeaseClient.Uri);
+            _log.LogTrace("Releasing blob {0} ...", blobLeaseClient.Uri);
             await blobLeaseClient
-                .ReleaseAsync(new BlobRequestConditions { LeaseId = lease.LeaseId }, cancellationToken: cancellationToken)
+                .ReleaseAsync(new BlobRequestConditions { LeaseId = lease.LeaseId }, cancellationToken)
                 .ConfigureAwait(false);
-            this._log.LogTrace("Blob released {0} ...", blobLeaseClient.Uri);
+            _log.LogTrace("Blob released {0} ...", blobLeaseClient.Uri);
         }
     }
+
 
     private void ValidateAccountName(string value)
     {
         if (string.IsNullOrEmpty(value))
         {
-            this._log.LogCritical("The Azure Blob account name is empty");
+            _log.LogCritical("The Azure Blob account name is empty");
             throw new DocumentStorageException("The account name is empty");
         }
     }
+
 
     private void ValidateAccountKey(string value)
     {
         if (string.IsNullOrEmpty(value))
         {
-            this._log.LogCritical("The Azure Blob account key is empty");
+            _log.LogCritical("The Azure Blob account key is empty");
             throw new DocumentStorageException("The Azure Blob account key is empty");
         }
     }
+
 
     private void ValidateConnectionString(string value)
     {
         if (string.IsNullOrEmpty(value))
         {
-            this._log.LogCritical("The Azure Blob connection string is empty");
+            _log.LogCritical("The Azure Blob connection string is empty");
             throw new DocumentStorageException("The Azure Blob connection string is empty");
         }
     }
+
 
     private string ValidateEndpointSuffix(string value)
     {
         if (string.IsNullOrEmpty(value))
         {
             value = DefaultEndpointSuffix;
-            this._log.LogError("The Azure Blob account endpoint suffix is empty, using default value {0}", value);
+            _log.LogError("The Azure Blob account endpoint suffix is empty, using default value {0}", value);
         }
 
         return value;
     }
 
     #endregion
+
+
 }

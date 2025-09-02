@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.KernelMemory;
@@ -12,96 +12,108 @@ public class DefaultTests : BaseFunctionalTestCase
     private readonly MemoryServerless _memory;
     private readonly ElasticsearchConfig _esConfig;
 
+
     public DefaultTests(IConfiguration cfg, ITestOutputHelper output) : base(cfg, output)
     {
-        Assert.False(string.IsNullOrEmpty(this.OpenAiConfig.APIKey));
+        Assert.False(string.IsNullOrEmpty(OpenAiConfig.APIKey));
 
-        this._esConfig = cfg.GetSection("KernelMemory:Services:Elasticsearch").Get<ElasticsearchConfig>()!;
+        _esConfig = cfg.GetSection("KernelMemory:Services:Elasticsearch").Get<ElasticsearchConfig>()!;
 
-        this._memory = new KernelMemoryBuilder()
+        _memory = new KernelMemoryBuilder()
             .With(new KernelMemoryConfig { DefaultIndexName = "default4tests" })
             .WithSearchClientConfig(new SearchClientConfig { EmptyAnswer = NotFound })
-            .WithOpenAI(this.OpenAiConfig)
+            .WithOpenAI(OpenAiConfig)
             // .WithAzureOpenAITextGeneration(this.AzureOpenAITextConfiguration)
             // .WithAzureOpenAITextEmbeddingGeneration(this.AzureOpenAIEmbeddingConfiguration)
-            .WithElasticsearchMemoryDb(this._esConfig)
+            .WithElasticsearchMemoryDb(_esConfig)
             .Build<MemoryServerless>();
     }
+
 
     [Fact]
     [Trait("Category", "Elasticsearch")]
     public async Task ItSupportsASingleFilter()
     {
-        await FilteringTest.ItSupportsASingleFilter(this._memory, this.Log);
+        await FilteringTest.ItSupportsASingleFilter(_memory, Log);
     }
+
 
     [Fact]
     [Trait("Category", "Elasticsearch")]
     public async Task ItSupportsMultipleFilters()
     {
-        await FilteringTest.ItSupportsMultipleFilters(this._memory, this.Log);
+        await FilteringTest.ItSupportsMultipleFilters(_memory, Log);
     }
+
 
     [Fact]
     [Trait("Category", "Elasticsearch")]
     public async Task ItIgnoresEmptyFilters()
     {
-        await FilteringTest.ItIgnoresEmptyFilters(this._memory, this.Log, true);
+        await FilteringTest.ItIgnoresEmptyFilters(_memory, Log, true);
     }
+
 
     [Fact]
     [Trait("Category", "Elasticsearch")]
     public async Task ItDoesntFailIfTheIndexExistsAlready()
     {
-        await IndexCreationTest.ItDoesntFailIfTheIndexExistsAlready(this._memory, this.Log);
+        await IndexCreationTest.ItDoesntFailIfTheIndexExistsAlready(_memory, Log);
     }
+
 
     [Fact]
     [Trait("Category", "Elasticsearch")]
     public async Task ItListsIndexes()
     {
-        await IndexListTest.ItListsIndexes(this._memory, this.Log);
+        await IndexListTest.ItListsIndexes(_memory, Log);
     }
+
 
     [Fact]
     [Trait("Category", "Elasticsearch")]
     public async Task ItNormalizesIndexNames()
     {
-        await IndexListTest.ItNormalizesIndexNames(this._memory, this.Log);
+        await IndexListTest.ItNormalizesIndexNames(_memory, Log);
     }
+
 
     [Fact]
     [Trait("Category", "Elasticsearch")]
     public async Task ItUsesDefaultIndexName()
     {
-        await IndexListTest.ItUsesDefaultIndexName(this._memory, this.Log, "default4tests");
+        await IndexListTest.ItUsesDefaultIndexName(_memory, Log, "default4tests");
     }
+
 
     [Fact]
     [Trait("Category", "Elasticsearch")]
     public async Task ItDeletesIndexes()
     {
-        await IndexDeletionTest.ItDeletesIndexes(this._memory, this.Log);
+        await IndexDeletionTest.ItDeletesIndexes(_memory, Log);
     }
+
 
     [Fact]
     [Trait("Category", "Elasticsearch")]
     public async Task ItHandlesMissingIndexesConsistently()
     {
-        await MissingIndexTest.ItHandlesMissingIndexesConsistently(this._memory, this.Log);
+        await MissingIndexTest.ItHandlesMissingIndexesConsistently(_memory, Log);
     }
+
 
     [Fact]
     [Trait("Category", "Elasticsearch")]
     public async Task ItUploadsPDFDocsAndDeletes()
     {
-        await DocumentUploadTest.ItUploadsPDFDocsAndDeletes(this._memory, this.Log);
+        await DocumentUploadTest.ItUploadsPDFDocsAndDeletes(_memory, Log);
     }
+
 
     [Fact]
     [Trait("Category", "Elasticsearch")]
     public async Task ItSupportsTags()
     {
-        await DocumentUploadTest.ItSupportsTags(this._memory, this.Log);
+        await DocumentUploadTest.ItSupportsTags(_memory, Log);
     }
 }

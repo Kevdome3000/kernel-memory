@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -8,7 +8,12 @@ namespace Microsoft.KernelMemory.InteractiveSetup.Doctor;
 
 public static class Storage
 {
-    public static void Run(KernelMemoryConfig config, List<Tuple<string, string>> stats, HashSet<string> services, List<Tuple<string, string>> warnings, List<Tuple<string, string>> errors)
+    public static void Run(
+        KernelMemoryConfig config,
+        List<Tuple<string, string>> stats,
+        HashSet<string> services,
+        List<Tuple<string, string>> warnings,
+        List<Tuple<string, string>> errors)
     {
         if (config.DataIngestion.MemoryDbTypes.Count == 0)
         {
@@ -18,6 +23,7 @@ public static class Storage
         else
         {
             stats.Add("Memory DBs", string.Join(", ", config.DataIngestion.MemoryDbTypes.Select(dbType => GetServiceName(config, dbType))));
+
             foreach (var t in config.DataIngestion.MemoryDbTypes)
             {
                 services.Add(t);
@@ -35,6 +41,7 @@ public static class Storage
             services.Add(config.DocumentStorageType);
         }
     }
+
 
     private static string GetServiceName(KernelMemoryConfig config, string serviceName)
     {

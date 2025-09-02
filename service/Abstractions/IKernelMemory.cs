@@ -1,10 +1,11 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.KernelMemory.Context;
+using Microsoft.KernelMemory.Models;
 
 namespace Microsoft.KernelMemory;
 
@@ -19,12 +20,13 @@ public interface IKernelMemory
     /// <param name="context">Unstructured data supporting custom business logic in the current request.</param>
     /// <param name="cancellationToken">Async task cancellation token</param>
     /// <returns>Document ID</returns>
-    public Task<string> ImportDocumentAsync(
+    Task<string> ImportDocumentAsync(
         Document document,
         string? index = null,
         IEnumerable<string>? steps = null,
         IContext? context = null,
         CancellationToken cancellationToken = default);
+
 
     /// <summary>
     /// Import a file from disk into memory, with details such as tags and user ID.
@@ -37,7 +39,7 @@ public interface IKernelMemory
     /// <param name="context">Unstructured data supporting custom business logic in the current request.</param>
     /// <param name="cancellationToken">Async task cancellation token</param>
     /// <returns>Document ID</returns>
-    public Task<string> ImportDocumentAsync(
+    Task<string> ImportDocumentAsync(
         string filePath,
         string? documentId = null,
         TagCollection? tags = null,
@@ -46,6 +48,7 @@ public interface IKernelMemory
         IContext? context = null,
         CancellationToken cancellationToken = default);
 
+
     /// <summary>
     /// Import a document into memory. The document can contain one or more files, can have tags and other details.
     /// </summary>
@@ -53,10 +56,11 @@ public interface IKernelMemory
     /// <param name="context">Not used. Context arguments are passed via 'uploadRequest'.</param>
     /// <param name="cancellationToken">Async task cancellation token</param>
     /// <returns>Document ID</returns>
-    public Task<string> ImportDocumentAsync(
+    Task<string> ImportDocumentAsync(
         DocumentUploadRequest uploadRequest,
         IContext? context = null,
         CancellationToken cancellationToken = default);
+
 
     /// <summary>
     /// Import any stream from memory, e.g. text or binary data, with details such as tags and user ID.
@@ -70,7 +74,7 @@ public interface IKernelMemory
     /// <param name="context">Unstructured data supporting custom business logic in the current request.</param>
     /// <param name="cancellationToken">Async task cancellation token</param>
     /// <returns>Document ID</returns>
-    public Task<string> ImportDocumentAsync(
+    Task<string> ImportDocumentAsync(
         Stream content,
         string? fileName = null,
         string? documentId = null,
@@ -79,6 +83,7 @@ public interface IKernelMemory
         IEnumerable<string>? steps = null,
         IContext? context = null,
         CancellationToken cancellationToken = default);
+
 
     /// <summary>
     /// Import any stream from memory, e.g. text or binary data, with details such as tags and user ID.
@@ -91,7 +96,7 @@ public interface IKernelMemory
     /// <param name="context">Unstructured data supporting custom business logic in the current request.</param>
     /// <param name="cancellationToken">Async task cancellation token</param>
     /// <returns>Document ID</returns>
-    public Task<string> ImportTextAsync(
+    Task<string> ImportTextAsync(
         string text,
         string? documentId = null,
         TagCollection? tags = null,
@@ -99,6 +104,7 @@ public interface IKernelMemory
         IEnumerable<string>? steps = null,
         IContext? context = null,
         CancellationToken cancellationToken = default);
+
 
     /// <summary>
     /// Import memories from a web page
@@ -111,7 +117,7 @@ public interface IKernelMemory
     /// <param name="context">Unstructured data supporting custom business logic in the current request.</param>
     /// <param name="cancellationToken">Async task cancellation token</param>
     /// <returns>Document ID</returns>
-    public Task<string> ImportWebPageAsync(
+    Task<string> ImportWebPageAsync(
         string url,
         string? documentId = null,
         TagCollection? tags = null,
@@ -120,21 +126,24 @@ public interface IKernelMemory
         IContext? context = null,
         CancellationToken cancellationToken = default);
 
+
     /// <summary>
     /// Returns a list of the indexes available in memory.
     /// </summary>
     /// <param name="cancellationToken">Async task cancellation token</param>
     /// <returns>List of indexes</returns>
-    public Task<IEnumerable<IndexDetails>> ListIndexesAsync(CancellationToken cancellationToken = default);
+    Task<IEnumerable<IndexDetails>> ListIndexesAsync(CancellationToken cancellationToken = default);
+
 
     /// <summary>
     /// Delete an entire index.
     /// </summary>
     /// <param name="index">Optional index name, when empty the default index is deleted</param>
     /// <param name="cancellationToken">Async task cancellation token</param>
-    public Task DeleteIndexAsync(
+    Task DeleteIndexAsync(
         string? index = null,
         CancellationToken cancellationToken = default);
+
 
     /// <summary>
     /// Delete a specified document from memory, and update all derived memories.
@@ -142,10 +151,11 @@ public interface IKernelMemory
     /// <param name="documentId">Document ID</param>
     /// <param name="index">Optional index name</param>
     /// <param name="cancellationToken">Async task cancellation token</param>
-    public Task DeleteDocumentAsync(
+    Task DeleteDocumentAsync(
         string documentId,
         string? index = null,
         CancellationToken cancellationToken = default);
+
 
     /// <summary>
     /// Check if a document ID exists in the given index and is ready for usage.
@@ -156,10 +166,11 @@ public interface IKernelMemory
     /// <param name="index">Optional index name</param>
     /// <param name="cancellationToken">Async task cancellation token</param>
     /// <returns>True if the document has been successfully uploaded and imported</returns>
-    public Task<bool> IsDocumentReadyAsync(
+    Task<bool> IsDocumentReadyAsync(
         string documentId,
         string? index = null,
         CancellationToken cancellationToken = default);
+
 
     /// <summary>
     /// Get information about an uploaded document
@@ -168,10 +179,11 @@ public interface IKernelMemory
     /// <param name="index">Optional index name</param>
     /// <param name="cancellationToken">Async task cancellation token</param>
     /// <returns>Information about an uploaded document</returns>
-    public Task<DataPipelineStatus?> GetDocumentStatusAsync(
+    Task<DataPipelineStatus?> GetDocumentStatusAsync(
         string documentId,
         string? index = null,
         CancellationToken cancellationToken = default);
+
 
     /// <summary>
     /// Export a file from document storage
@@ -181,11 +193,12 @@ public interface IKernelMemory
     /// <param name="index">Index containing the document</param>
     /// <param name="cancellationToken">Async task cancellation token</param>
     /// <returns>File content</returns>
-    public Task<StreamableFileContent> ExportFileAsync(
+    Task<StreamableFileContent> ExportFileAsync(
         string documentId,
         string fileName,
         string? index = null,
         CancellationToken cancellationToken = default);
+
 
     /// <summary>
     /// Search the given index for a list of relevant documents for the given query.
@@ -199,7 +212,7 @@ public interface IKernelMemory
     /// <param name="context">Unstructured data supporting custom business logic in the current request.</param>
     /// <param name="cancellationToken">Async task cancellation token</param>
     /// <returns>Answer to the query, if possible</returns>
-    public Task<SearchResult> SearchAsync(
+    Task<SearchResult> SearchAsync(
         string query,
         string? index = null,
         MemoryFilter? filter = null,
@@ -208,6 +221,7 @@ public interface IKernelMemory
         int limit = -1,
         IContext? context = null,
         CancellationToken cancellationToken = default);
+
 
     /// <summary>
     /// Search the given index for an answer to the given query.
@@ -226,7 +240,7 @@ public interface IKernelMemory
     /// <param name="context">Unstructured data supporting custom business logic in the current request.</param>
     /// <param name="cancellationToken">Async task cancellation token</param>
     /// <returns>Answer to the query, if possible</returns>
-    public IAsyncEnumerable<MemoryAnswer> AskStreamingAsync(
+    IAsyncEnumerable<MemoryAnswer> AskStreamingAsync(
         string question,
         string? index = null,
         MemoryFilter? filter = null,

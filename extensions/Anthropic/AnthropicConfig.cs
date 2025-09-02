@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 
@@ -65,13 +65,14 @@ public class AnthropicConfig
     /// </summary>
     public string HttpClientName { get; set; } = string.Empty;
 
+
     /// <summary>
     /// Validate the configuration
     /// </summary>
     /// <exception cref="ArgumentOutOfRangeException"></exception>
     public void Validate()
     {
-        if (string.IsNullOrWhiteSpace(this.ApiKey))
+        if (string.IsNullOrWhiteSpace(ApiKey))
         {
             throw new ConfigurationException("The API Key is empty");
         }

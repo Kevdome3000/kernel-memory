@@ -1,8 +1,8 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Text.Json.Serialization;
 
-namespace Microsoft.KernelMemory.MemoryDb.Qdrant.Client.Http;
+namespace Microsoft.KernelMemory.MemoryDb.Qdrant.Internals.Http;
 
 /// <summary>
 /// Base class for Qdrant response schema.

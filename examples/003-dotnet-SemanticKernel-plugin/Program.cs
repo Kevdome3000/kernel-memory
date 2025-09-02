@@ -1,8 +1,12 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.KernelMemory;
+using Microsoft.KernelMemory.SemanticKernel;
+using Microsoft.KernelMemory.SemanticKernelPlugin;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
+
+namespace _003_dotnet_SemanticKernel_plugin;
 
 public static class Program
 {
@@ -22,9 +26,9 @@ public static class Program
         builder
             // For OpenAI:
             .AddOpenAIChatCompletion(
-                modelId: "gpt-4",
-                apiKey: EnvVar("OPENAI_API_KEY"),
-                httpClient: HttpLogger.GetHttpClient(false));
+                "gpt-4",
+                EnvVar("OPENAI_API_KEY"),
+                httpClient: HttpLogger.GetHttpClient());
         // Azure OpenAI:
         // .AddAzureOpenAIChatCompletion(
         //     deploymentName: EnvVar("AOAI_DEPLOYMENT_TEXT"),
@@ -133,26 +137,28 @@ public static class Program
         Console.WriteLine("Answer: " + answer);
     }
 
+
     /* ===== OUTPUT =====
 
-    ---------
-    any news about Orion? (expected: some answer using the PDF provided)
+---------
+any news about Orion? (expected: some answer using the PDF provided)
 
-    Answer: Yes, there is news about the Orion spacecraft. NASA has invited media to see...
-    ---------
-    any news about Hubble telescope? (expected answer: "I don't know")
+Answer: Yes, there is news about the Orion spacecraft. NASA has invited media to see...
+---------
+any news about Hubble telescope? (expected answer: "I don't know")
 
-    Answer: I don't know.
-    ---------
-    what is a solar eclipse? (expected answer: "I don't know")
+Answer: I don't know.
+---------
+what is a solar eclipse? (expected answer: "I don't know")
 
-    Answer: A solar eclipse is a natural event that occurs when the moon passes between the sun and Earth, blocking the sunlight.
-    ---------
-    what is my location? (expected answer: "Earth / Europe / Italy")
+Answer: A solar eclipse is a natural event that occurs when the moon passes between the sun and Earth, blocking the sunlight.
+---------
+what is my location? (expected answer: "Earth / Europe / Italy")
 
-    Answer: Your location is Italy.
+Answer: Your location is Italy.
 
-    */
+*/
+
 
     private static IKernelMemory GetMemoryConnector(bool serverless = false)
     {
@@ -188,9 +194,10 @@ public static class Program
         //     .Build<MemoryServerless>();
     }
 
+
     private static string EnvVar(string name)
     {
         return Environment.GetEnvironmentVariable(name)
-               ?? throw new ArgumentException($"Env var {name} not set");
+            ?? throw new ArgumentException($"Env var {name} not set");
     }
 }

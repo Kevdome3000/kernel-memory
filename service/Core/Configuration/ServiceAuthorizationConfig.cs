@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Linq;
 
@@ -43,26 +43,28 @@ public class ServiceAuthorizationConfig
     /// </summary>
     public string AccessKey2 { get; set; } = "";
 
+
     public void Validate()
     {
-        if (!this.Enabled)
+        if (!Enabled)
         {
             return;
         }
 
-        if (this.AuthenticationType != APIKeyAuthType)
+        if (AuthenticationType != APIKeyAuthType)
         {
-            throw new ConfigurationException($"KM Web Service: authorization type '{this.AuthenticationType}' is not supported. Please use '{APIKeyAuthType}'.");
+            throw new ConfigurationException($"KM Web Service: authorization type '{AuthenticationType}' is not supported. Please use '{APIKeyAuthType}'.");
         }
 
-        if (string.IsNullOrWhiteSpace(this.HttpHeaderName))
+        if (string.IsNullOrWhiteSpace(HttpHeaderName))
         {
             throw new ConfigurationException("KM Web Service: the HTTP header name cannot be empty");
         }
 
-        ValidateAccessKey(this.AccessKey1, 1);
-        ValidateAccessKey(this.AccessKey2, 2);
+        ValidateAccessKey(AccessKey1, 1);
+        ValidateAccessKey(AccessKey2, 2);
     }
+
 
     private static void ValidateAccessKey(string key, int keyNumber)
     {
@@ -81,6 +83,7 @@ public class ServiceAuthorizationConfig
             throw new ConfigurationException($"KM Web Service: Access Key {keyNumber} contains some invalid chars (allowed: A-B, a-b, 0-9, '{string.Join("', '", ValidChars)}')");
         }
     }
+
 
     private static bool IsValidChar(char c)
     {

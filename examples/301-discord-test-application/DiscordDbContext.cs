@@ -2,7 +2,7 @@
 
 using Microsoft.EntityFrameworkCore;
 
-namespace Microsoft.Discord.TestApplication;
+namespace _301_discord_test_application;
 
 public class DiscordDbContext : DbContext
 {
@@ -11,8 +11,9 @@ public class DiscordDbContext : DbContext
     // Table to store Discord messages, table name is "Messages"
     public DbSet<DiscordDbMessage> Messages { get; set; }
 
+
     public DiscordDbContext(DbContextOptions<DiscordDbContext> options) : base(options)
     {
-        this.Options = options;
+        Options = options;
     }
 }

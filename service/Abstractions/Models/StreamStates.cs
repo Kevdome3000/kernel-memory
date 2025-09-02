@@ -1,10 +1,10 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Microsoft.KernelMemory;
+namespace Microsoft.KernelMemory.Models;
 
 [JsonConverter(typeof(StreamStatesConverter))]
 public enum StreamStates
@@ -22,8 +22,9 @@ public enum StreamStates
 
     // Inform the client the end of the stream has been reached
     // and that this is the last record to append.
-    Last = 3,
+    Last = 3
 }
+
 
 #pragma warning disable CA1308
 internal sealed class StreamStatesConverter : JsonConverter<StreamStates>
@@ -40,6 +41,7 @@ internal sealed class StreamStatesConverter : JsonConverter<StreamStates>
             _ => throw new JsonException($"Unknown {nameof(StreamStates)} value: {value}")
         };
     }
+
 
     public override void Write(Utf8JsonWriter writer, StreamStates value, JsonSerializerOptions options)
     {

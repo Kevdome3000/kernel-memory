@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -23,11 +23,13 @@ public sealed class MsPowerPointDecoder : IContentDecoder
     private readonly MsPowerPointDecoderConfig _config;
     private readonly ILogger<MsPowerPointDecoder> _log;
 
+
     public MsPowerPointDecoder(MsPowerPointDecoderConfig? config = null, ILoggerFactory? loggerFactory = null)
     {
-        this._config = config ?? new MsPowerPointDecoderConfig();
-        this._log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<MsPowerPointDecoder>();
+        _config = config ?? new MsPowerPointDecoderConfig();
+        _log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<MsPowerPointDecoder>();
     }
+
 
     /// <inheritdoc />
     public bool SupportsMimeType(string mimeType)
@@ -35,24 +37,27 @@ public sealed class MsPowerPointDecoder : IContentDecoder
         return mimeType != null && mimeType.StartsWith(MimeTypes.MsPowerPointX, StringComparison.OrdinalIgnoreCase);
     }
 
+
     /// <inheritdoc />
     public Task<FileContent> DecodeAsync(string filename, CancellationToken cancellationToken = default)
     {
         using var stream = File.OpenRead(filename);
-        return this.DecodeAsync(stream, cancellationToken);
+        return DecodeAsync(stream, cancellationToken);
     }
+
 
     /// <inheritdoc />
     public Task<FileContent> DecodeAsync(BinaryData data, CancellationToken cancellationToken = default)
     {
         using var stream = data.ToStream();
-        return this.DecodeAsync(stream, cancellationToken);
+        return DecodeAsync(stream, cancellationToken);
     }
+
 
     /// <inheritdoc />
     public Task<FileContent> DecodeAsync(Stream data, CancellationToken cancellationToken = default)
     {
-        this._log.LogDebug("Extracting text from MS PowerPoint file");
+        _log.LogDebug("Extracting text from MS PowerPoint file");
 
         var result = new FileContent(MimeTypes.PlainText);
         using PresentationDocument presentationDocument = PresentationDocument.Open(data, false);
@@ -64,6 +69,7 @@ public sealed class MsPowerPointDecoder : IContentDecoder
             && slideIdList.Elements<SlideId>().ToList() is List<SlideId> slideIds and { Count: > 0 })
         {
             var slideNumber = 0;
+
             foreach (SlideId slideId in slideIds)
             {
                 slideNumber++;
@@ -81,13 +87,16 @@ public sealed class MsPowerPointDecoder : IContentDecoder
                     // - Show is false: the slide is hidden
                     // - Show is true: the slide is visible
                     bool isVisible = slidePart.Slide.Show ?? true;
-                    if (this._config.SkipHiddenSlides && !isVisible) { continue; }
+
+                    if (_config.SkipHiddenSlides && !isVisible) { continue; }
 
                     var currentSlideContent = new StringBuilder();
+
                     for (var i = 0; i < texts.Count; i++)
                     {
                         var text = texts[i];
                         currentSlideContent.Append(text.Text);
+
                         if (i < texts.Count - 1)
                         {
                             currentSlideContent.Append(' ');
@@ -98,24 +107,24 @@ public sealed class MsPowerPointDecoder : IContentDecoder
                     if (currentSlideContent.Length < 1) { continue; }
 
                     // Prepend slide number before the slide text
-                    if (this._config.WithSlideNumber)
+                    if (_config.WithSlideNumber)
                     {
-                        sb.AppendLineNix(this._config.SlideNumberTemplate.Replace("{number}", $"{slideNumber}", StringComparison.OrdinalIgnoreCase));
+                        sb.AppendLineNix(_config.SlideNumberTemplate.Replace("{number}", $"{slideNumber}", StringComparison.OrdinalIgnoreCase));
                     }
 
                     sb.Append(currentSlideContent);
                     sb.AppendLineNix();
 
                     // Append the end of slide marker
-                    if (this._config.WithEndOfSlideMarker)
+                    if (_config.WithEndOfSlideMarker)
                     {
-                        sb.AppendLineNix(this._config.EndOfSlideMarkerTemplate.Replace("{number}", $"{slideNumber}", StringComparison.OrdinalIgnoreCase));
+                        sb.AppendLineNix(_config.EndOfSlideMarkerTemplate.Replace("{number}", $"{slideNumber}", StringComparison.OrdinalIgnoreCase));
                     }
                 }
 
                 string slideContent = sb.ToString().NormalizeNewlines(true);
                 sb.Clear();
-                result.Sections.Add(new Chunk(slideContent, slideNumber, Chunk.Meta(sentencesAreComplete: true)));
+                result.Sections.Add(new Chunk(slideContent, slideNumber, Chunk.Meta(true)));
             }
         }
 

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -66,6 +66,7 @@ public sealed class ElasticsearchMemoryRecord
     [JsonConverter(typeof(Embedding.JsonConverter))]
     public Embedding Vector { get; set; } = new();
 
+
     /// <summary>
     /// TBC
     /// </summary>
@@ -73,24 +74,25 @@ public sealed class ElasticsearchMemoryRecord
     {
         MemoryRecord result = new()
         {
-            Id = this.Id,
-            Payload = JsonSerializer.Deserialize<Dictionary<string, object>>(this.Payload, s_jsonOptions) ?? []
+            Id = Id,
+            Payload = JsonSerializer.Deserialize<Dictionary<string, object>>(Payload, s_jsonOptions) ?? []
         };
         // TODO: remove magic string
-        result.Payload["text"] = this.Content;
+        result.Payload["text"] = Content;
 
         if (withEmbedding)
         {
-            result.Vector = this.Vector;
+            result.Vector = Vector;
         }
 
-        foreach (var tag in this.Tags)
+        foreach (var tag in Tags)
         {
             result.Tags.Add(tag.Name, tag.Value);
         }
 
         return result;
     }
+
 
     /// <summary>
     /// TBC
@@ -103,6 +105,7 @@ public sealed class ElasticsearchMemoryRecord
 
         // TODO: remove magic strings
         string content = string.Empty;
+
         if (record.Payload.TryGetValue("text", out object? text))
         {
             content = text?.ToString() ?? string.Empty;
@@ -110,12 +113,14 @@ public sealed class ElasticsearchMemoryRecord
 
         //string content = record.Payload["text"]?.ToString() ?? string.Empty;
         string documentId = string.Empty;
+
         if (record.Tags.TryGetValue("__document_id", out List<string?>? documentIdList))
         {
             documentId = documentIdList?[0] ?? string.Empty;
         }
 
         string filePart = string.Empty;
+
         if (record.Tags.TryGetValue("__file_part", out List<string?>? filePartList))
         {
             filePart = filePartList?[0] ?? string.Empty;
@@ -138,14 +143,14 @@ public sealed class ElasticsearchMemoryRecord
             if (tag.Value == null || tag.Value.Count == 0)
             {
                 // Key only, with no values
-                result.Tags.Add(new ElasticsearchTag(name: tag.Key));
+                result.Tags.Add(new ElasticsearchTag(tag.Key));
                 continue;
             }
 
             foreach (var value in tag.Value)
             {
                 // Key with one or more values
-                result.Tags.Add(new ElasticsearchTag(name: tag.Key, value: value));
+                result.Tags.Add(new ElasticsearchTag(tag.Key, value));
             }
         }
 

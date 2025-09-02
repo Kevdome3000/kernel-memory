@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.KernelMemory.Diagnostics;
+using Microsoft.KernelMemory.Models;
 using Microsoft.ML.OnnxRuntimeGenAI;
 using static Microsoft.KernelMemory.OnnxConfig;
 
@@ -47,6 +48,7 @@ public sealed class OnnxTextGenerator : ITextGenerator, IDisposable
     /// <inheritdoc/>
     public int MaxTokenTotal { get; internal set; }
 
+
     /// <summary>
     /// Create a new instance
     /// </summary>
@@ -58,45 +60,49 @@ public sealed class OnnxTextGenerator : ITextGenerator, IDisposable
         ITextTokenizer? textTokenizer = null,
         ILoggerFactory? loggerFactory = null)
     {
-        this._log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<OnnxTextGenerator>();
+        _log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<OnnxTextGenerator>();
 
         textTokenizer ??= TokenizerFactory.GetTokenizerForEncoding(config.Tokenizer);
+
         if (textTokenizer == null)
         {
             textTokenizer = new O200KTokenizer();
-            this._log.LogWarning(
+            _log.LogWarning(
                 "Tokenizer not specified, will use {0}. The token count might be incorrect, causing unexpected errors",
                 textTokenizer.GetType().FullName);
         }
 
         config.Validate();
-        this._config = config;
-        this.MaxTokenTotal = (int)config.MaxTokens;
-        this._textTokenizer = textTokenizer;
+        _config = config;
+        MaxTokenTotal = config.MaxTokens;
+        _textTokenizer = textTokenizer;
 
         var modelDir = Path.GetFullPath(config.TextModelDir);
         var modelFile = Directory.GetFiles(modelDir)
             .FirstOrDefault(file => string.Equals(Path.GetExtension(file), ".ONNX", StringComparison.OrdinalIgnoreCase));
 
-        this._log.LogDebug("Loading Onnx model: {1} from directory {0}", modelDir, Path.GetFileNameWithoutExtension(modelFile));
-        this._model = new Model(config.TextModelDir);
-        this._tokenizer = new Tokenizer(this._model);
-        this._log.LogDebug("Onnx model loaded");
+        _log.LogDebug("Loading Onnx model: {1} from directory {0}", modelDir, Path.GetFileNameWithoutExtension(modelFile));
+        _model = new Model(config.TextModelDir);
+        _tokenizer = new Tokenizer(_model);
+        _log.LogDebug("Onnx model loaded");
     }
+
 
     /// <inheritdoc/>
     public int CountTokens(string text)
     {
         // TODO: Implement with _tokenizer and remove _textTokenizer
-        return this._textTokenizer.CountTokens(text);
+        return _textTokenizer.CountTokens(text);
     }
+
 
     /// <inheritdoc/>
     public IReadOnlyList<string> GetTokens(string text)
     {
         // TODO: Implement with _tokenizer and remove _textTokenizer
-        return this._textTokenizer.GetTokens(text);
+        return _textTokenizer.GetTokens(text);
     }
+
 
     /// <inheritdoc/>
     public async IAsyncEnumerable<GeneratedTextContent> GenerateTextAsync(
@@ -105,13 +111,13 @@ public sealed class OnnxTextGenerator : ITextGenerator, IDisposable
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         // TODO: the prompt format should be configurable
-        using var sequences = this._tokenizer.Encode($"<|user|>{prompt}<|end|><|assistant|>");
+        using var sequences = _tokenizer.Encode($"<|user|>{prompt}<|end|><|assistant|>");
 
-        using var generatorParams = new GeneratorParams(this._model);
-        this.SetGeneratorParams(generatorParams, options);
+        using var generatorParams = new GeneratorParams(_model);
+        SetGeneratorParams(generatorParams, options);
 
-        using var tokenizerStream = this._tokenizer.CreateStream();
-        using var generator = new Generator(this._model, generatorParams);
+        using var tokenizerStream = _tokenizer.CreateStream();
+        using var generator = new Generator(_model, generatorParams);
         generator.AppendTokenSequences(sequences);
 
         while (!generator.IsDone())
@@ -124,20 +130,22 @@ public sealed class OnnxTextGenerator : ITextGenerator, IDisposable
         await Task.CompletedTask.ConfigureAwait(false);
     }
 
+
     /// <inheritdoc/>
     public void Dispose()
     {
-        this._model.Dispose();
-        this._tokenizer.Dispose();
+        _model.Dispose();
+        _tokenizer.Dispose();
     }
+
 
     private void SetGeneratorParams(GeneratorParams generatorParams, TextGenerationOptions? options)
     {
-        generatorParams.SetSearchOption("max_length", this.MaxTokenTotal);
-        generatorParams.SetSearchOption("min_length", this._config.MinLength);
-        generatorParams.SetSearchOption("num_return_sequences", this._config.ResultsPerPrompt);
-        generatorParams.SetSearchOption("repetition_penalty", this._config.RepetitionPenalty);
-        generatorParams.SetSearchOption("length_penalty", this._config.LengthPenalty);
+        generatorParams.SetSearchOption("max_length", MaxTokenTotal);
+        generatorParams.SetSearchOption("min_length", _config.MinLength);
+        generatorParams.SetSearchOption("num_return_sequences", _config.ResultsPerPrompt);
+        generatorParams.SetSearchOption("repetition_penalty", _config.RepetitionPenalty);
+        generatorParams.SetSearchOption("length_penalty", _config.LengthPenalty);
         generatorParams.SetSearchOption("temperature", 0);
 
         if (options != null)
@@ -151,26 +159,27 @@ public sealed class OnnxTextGenerator : ITextGenerator, IDisposable
             }
         }
 
-        switch (this._config.SearchType)
+        switch (_config.SearchType)
         {
             case OnnxSearchType.BeamSearch:
                 generatorParams.SetSearchOption("do_sample", false);
-                generatorParams.SetSearchOption("early_stopping", this._config.EarlyStopping);
+                generatorParams.SetSearchOption("early_stopping", _config.EarlyStopping);
 
-                if (this._config.NumBeams != null)
+                if (_config.NumBeams != null)
                 {
-                    generatorParams.SetSearchOption("num_beams", (double)this._config.NumBeams);
+                    generatorParams.SetSearchOption("num_beams", (double)_config.NumBeams);
                 }
 
                 break;
 
             case OnnxSearchType.TopN:
                 generatorParams.SetSearchOption("do_sample", true);
-                generatorParams.SetSearchOption("top_k", this._config.TopK);
+                generatorParams.SetSearchOption("top_k", _config.TopK);
 
-                generatorParams.SetSearchOption("top_p", options is { NucleusSampling: > 0 and <= 1 }
-                    ? options.NucleusSampling
-                    : this._config.NucleusSampling);
+                generatorParams.SetSearchOption("top_p",
+                    options is { NucleusSampling: > 0 and <= 1 }
+                        ? options.NucleusSampling
+                        : _config.NucleusSampling);
 
                 break;
 
@@ -178,9 +187,9 @@ public sealed class OnnxTextGenerator : ITextGenerator, IDisposable
 
                 generatorParams.SetSearchOption("do_sample", false);
 
-                if (this._config.NumBeams != null)
+                if (_config.NumBeams != null)
                 {
-                    generatorParams.SetSearchOption("num_beams", (double)this._config.NumBeams);
+                    generatorParams.SetSearchOption("num_beams", (double)_config.NumBeams);
                 }
 
                 break;

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Collections.Generic;
 using System.Threading;
@@ -19,36 +19,40 @@ public sealed class DeleteIndexHandler : IPipelineStepHandler
 
     public string StepName { get; }
 
+
     public DeleteIndexHandler(
         string stepName,
         IDocumentStorage documentStorage,
         List<IMemoryDb> memoryDbs,
         ILoggerFactory? loggerFactory = null)
     {
-        this.StepName = stepName;
-        this._documentStorage = documentStorage;
-        this._memoryDbs = memoryDbs;
-        this._log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<DeleteIndexHandler>();
+        StepName = stepName;
+        _documentStorage = documentStorage;
+        _memoryDbs = memoryDbs;
+        _log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<DeleteIndexHandler>();
 
-        this._log.LogInformation("Handler '{0}' ready", stepName);
+        _log.LogInformation("Handler '{0}' ready", stepName);
     }
+
 
     /// <inheritdoc />
     public async Task<(ReturnType returnType, DataPipeline updatedPipeline)> InvokeAsync(
-        DataPipeline pipeline, CancellationToken cancellationToken = default)
+        DataPipeline pipeline,
+        CancellationToken cancellationToken = default)
     {
-        this._log.LogDebug("Deleting index, pipeline '{0}/{1}'", pipeline.Index, pipeline.DocumentId);
+        _log.LogDebug("Deleting index, pipeline '{0}/{1}'", pipeline.Index, pipeline.DocumentId);
 
         // Delete index from vector storage
-        foreach (IMemoryDb db in this._memoryDbs)
+        foreach (IMemoryDb db in _memoryDbs)
         {
-            await db.DeleteIndexAsync(index: pipeline.Index, cancellationToken: cancellationToken).ConfigureAwait(false);
+            await db.DeleteIndexAsync(pipeline.Index, cancellationToken).ConfigureAwait(false);
         }
 
         // Delete index from file storage
-        await this._documentStorage.DeleteIndexDirectoryAsync(
-            index: pipeline.Index,
-            cancellationToken).ConfigureAwait(false);
+        await _documentStorage.DeleteIndexDirectoryAsync(
+                pipeline.Index,
+                cancellationToken)
+            .ConfigureAwait(false);
 
         return (ReturnType.Success, pipeline);
     }

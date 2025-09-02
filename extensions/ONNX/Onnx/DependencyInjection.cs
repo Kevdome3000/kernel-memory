@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -30,6 +30,7 @@ public static partial class KernelMemoryBuilderExtensions
         return builder;
     }
 
+
     public static IKernelMemoryBuilder WithOnnxTextGeneration(
         this IKernelMemoryBuilder builder,
         OnnxConfig config,
@@ -39,6 +40,7 @@ public static partial class KernelMemoryBuilderExtensions
         return builder;
     }
 }
+
 
 /// <summary>
 /// .NET IServiceCollection dependency injection extensions.
@@ -53,8 +55,8 @@ public static partial class DependencyInjection
         config.Validate();
         return services
             .AddSingleton<ITextGenerator, OnnxTextGenerator>(serviceProvider => new OnnxTextGenerator(
-                config: config,
-                textTokenizer: textTokenizer,
-                loggerFactory: serviceProvider.GetService<ILoggerFactory>()));
+                config,
+                textTokenizer,
+                serviceProvider.GetService<ILoggerFactory>()));
     }
 }

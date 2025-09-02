@@ -5,9 +5,10 @@ using System.Text;
 using System.Text.Json;
 using Discord;
 using Discord.WebSocket;
+using Microsoft.KernelMemory;
 using Microsoft.KernelMemory.Diagnostics;
 
-namespace Microsoft.KernelMemory.Sources.DiscordBot;
+namespace _301_discord_test_application.DiscordConnector;
 
 /// <summary>
 /// Service responsible for connecting to Discord, listening for messages
@@ -23,6 +24,7 @@ public sealed class DiscordConnector : IHostedService, IDisposable, IAsyncDispos
     private readonly string _docStorageFilename;
     private readonly List<string> _pipelineSteps;
 
+
     /// <summary>
     /// New instance of Discord bot
     /// </summary>
@@ -34,8 +36,8 @@ public sealed class DiscordConnector : IHostedService, IDisposable, IAsyncDispos
         IKernelMemory memory,
         ILoggerFactory? loggerFactory = null)
     {
-        this._log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<DiscordConnector>();
-        this._authToken = config.DiscordToken;
+        _log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<DiscordConnector>();
+        _authToken = config.DiscordToken;
 
         var dc = new DiscordSocketConfig
         {
@@ -45,40 +47,45 @@ public sealed class DiscordConnector : IHostedService, IDisposable, IAsyncDispos
             SuppressUnknownDispatchWarnings = false
         };
 
-        this._client = new DiscordSocketClient(dc);
-        this._client.Log += this.OnLog;
-        this._client.MessageReceived += this.OnMessage;
-        this._memory = memory;
-        this._docStorageIndex = config.Index;
-        this._pipelineSteps = config.Steps;
-        this._docStorageFilename = config.FileName;
+        _client = new DiscordSocketClient(dc);
+        _client.Log += OnLog;
+        _client.MessageReceived += OnMessage;
+        _memory = memory;
+        _docStorageIndex = config.Index;
+        _pipelineSteps = config.Steps;
+        _docStorageFilename = config.FileName;
     }
+
 
     /// <inheritdoc />
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        await this._client.LoginAsync(TokenType.Bot, this._authToken).ConfigureAwait(false);
-        await this._client.StartAsync().ConfigureAwait(false);
+        await _client.LoginAsync(TokenType.Bot, _authToken).ConfigureAwait(false);
+        await _client.StartAsync().ConfigureAwait(false);
     }
+
 
     /// <inheritdoc />
     public async Task StopAsync(CancellationToken cancellationToken)
     {
-        await this._client.LogoutAsync().ConfigureAwait(false);
-        await this._client.StopAsync().ConfigureAwait(false);
+        await _client.LogoutAsync().ConfigureAwait(false);
+        await _client.StopAsync().ConfigureAwait(false);
     }
+
 
     /// <inheritdoc />
     public void Dispose()
     {
-        this._client.Dispose();
+        _client.Dispose();
     }
+
 
     /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
-        await this._client.DisposeAsync().ConfigureAwait(false);
+        await _client.DisposeAsync().ConfigureAwait(false);
     }
+
 
     #region private
 
@@ -91,6 +98,7 @@ public sealed class DiscordConnector : IHostedService, IDisposable, IAsyncDispos
         [LogSeverity.Verbose] = LogLevel.Debug, // note the inconsistency
         [LogSeverity.Debug] = LogLevel.Trace // note the inconsistency
     };
+
 
     private Task OnMessage(SocketMessage message)
     {
@@ -105,7 +113,7 @@ public sealed class DiscordConnector : IHostedService, IDisposable, IAsyncDispos
             Timestamp = message.Timestamp,
             Content = message.Content,
             CleanContent = message.CleanContent,
-            EmbedsCount = message.Embeds.Count,
+            EmbedsCount = message.Embeds.Count
         };
 
         if (message.Channel is SocketTextChannel textChannel)
@@ -118,23 +126,27 @@ public sealed class DiscordConnector : IHostedService, IDisposable, IAsyncDispos
             msg.ServerMemberCount = textChannel.Guild.MemberCount;
         }
 
-        this._log.LogTrace("[{0}] New message from '{1}' [{2}]", msg.MessageId, msg.AuthorUsername, msg.AuthorId);
-        this._log.LogTrace("[{0}] Channel: {1}", msg.MessageId, msg.ChannelId);
-        this._log.LogTrace("[{0}] Channel: {1}", msg.MessageId, msg.ChannelName);
-        this._log.LogTrace("[{0}] Timestamp: {1}", msg.MessageId, msg.Timestamp);
-        this._log.LogTrace("[{0}] Content: {1}", msg.MessageId, msg.Content);
-        this._log.LogTrace("[{0}] CleanContent: {1}", msg.MessageId, msg.CleanContent);
-        this._log.LogTrace("[{0}] Reference: {1}", msg.MessageId, msg.ReferenceMessageId);
-        this._log.LogTrace("[{0}] EmbedsCount: {1}", msg.MessageId, msg.EmbedsCount);
+        _log.LogTrace("[{0}] New message from '{1}' [{2}]",
+            msg.MessageId,
+            msg.AuthorUsername,
+            msg.AuthorId);
+        _log.LogTrace("[{0}] Channel: {1}", msg.MessageId, msg.ChannelId);
+        _log.LogTrace("[{0}] Channel: {1}", msg.MessageId, msg.ChannelName);
+        _log.LogTrace("[{0}] Timestamp: {1}", msg.MessageId, msg.Timestamp);
+        _log.LogTrace("[{0}] Content: {1}", msg.MessageId, msg.Content);
+        _log.LogTrace("[{0}] CleanContent: {1}", msg.MessageId, msg.CleanContent);
+        _log.LogTrace("[{0}] Reference: {1}", msg.MessageId, msg.ReferenceMessageId);
+        _log.LogTrace("[{0}] EmbedsCount: {1}", msg.MessageId, msg.EmbedsCount);
+
         if (message.Embeds.Count > 0)
         {
             foreach (Embed? x in message.Embeds)
             {
                 if (x == null) { continue; }
 
-                this._log.LogTrace("[{0}] Embed Title: {1}", message.Id, x.Title);
-                this._log.LogTrace("[{0}] Embed Url: {1}", message.Id, x.Url);
-                this._log.LogTrace("[{0}] Embed Description: {1}", message.Id, x.Description);
+                _log.LogTrace("[{0}] Embed Title: {1}", message.Id, x.Title);
+                _log.LogTrace("[{0}] Embed Url: {1}", message.Id, x.Url);
+                _log.LogTrace("[{0}] Embed Description: {1}", message.Id, x.Description);
             }
         }
 
@@ -143,32 +155,41 @@ public sealed class DiscordConnector : IHostedService, IDisposable, IAsyncDispos
             string documentId = $"{msg.ServerId}_{msg.ChannelId}_{msg.MessageId}";
             string content = JsonSerializer.Serialize(msg);
             Stream fileContent = new MemoryStream(Encoding.UTF8.GetBytes(content), false);
+
             await using (fileContent.ConfigureAwait(false))
             {
-                await this._memory.ImportDocumentAsync(
-                    fileContent,
-                    fileName: this._docStorageFilename,
-                    documentId: documentId,
-                    index: this._docStorageIndex,
-                    steps: this._pipelineSteps).ConfigureAwait(false);
+                await _memory.ImportDocumentAsync(
+                        fileContent,
+                        _docStorageFilename,
+                        documentId,
+                        index: _docStorageIndex,
+                        steps: _pipelineSteps)
+                    .ConfigureAwait(false);
             }
         });
 
         return Task.CompletedTask;
     }
 
+
     private Task OnLog(LogMessage msg)
     {
         var logLevel = LogLevel.Information;
+
         if (s_logLevels.TryGetValue(msg.Severity, out LogLevel value))
         {
             logLevel = value;
         }
 
-        this._log.Log(logLevel, "{0}: {1}", msg.Source, msg.Message);
+        _log.Log(logLevel,
+            "{0}: {1}",
+            msg.Source,
+            msg.Message);
 
         return Task.CompletedTask;
     }
 
     #endregion
+
+
 }

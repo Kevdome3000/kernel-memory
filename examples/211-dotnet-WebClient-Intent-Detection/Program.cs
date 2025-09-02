@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 #pragma warning disable CS8602 // memory is initialized before usage
 #pragma warning disable CS0162 // unreachable code is managed via boolean settings
@@ -6,11 +6,15 @@
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.KernelMemory;
+using Microsoft.KernelMemory.Models;
+
+namespace _211_dotnet_WebClient_Intent_Detection;
 
 public static class Program
 {
     private static MemoryWebClient? s_memory;
     private static readonly List<string> s_toDelete = [];
+
 
     public static async Task Main()
     {
@@ -25,7 +29,7 @@ public static class Program
         // Wait for remote ingestion pipelines to complete
         foreach (var docId in s_toDelete)
         {
-            while (!await s_memory.IsDocumentReadyAsync(documentId: docId))
+            while (!await s_memory.IsDocumentReadyAsync(docId))
             {
                 Console.WriteLine("Waiting for memory ingestion to complete...");
                 await Task.Delay(TimeSpan.FromSeconds(2));
@@ -49,9 +53,11 @@ public static class Program
         await DeleteMemories();
     }
 
+
     // =======================
     // === INGESTION =========
     // =======================
+
 
     // Adding intent as a tag with samples to memory.
     private static async Task StoreIntent()
@@ -86,14 +92,14 @@ public static class Program
                 {
                     "How to transfer fund to my checking account?",
                     "I need to pay my credit card",
-                    "Can I pay my bill?",
+                    "Can I pay my bill?"
                 }
             },
 
             {
                 "transaction-history", new List<string>
                 {
-                    "Can I get transaction records?",
+                    "Can I get transaction records?"
                 }
             },
 
@@ -113,7 +119,7 @@ public static class Program
                     "Transfer to an agent",
                     "Can I talk to a human?"
                 }
-            },
+            }
         };
 
         foreach (KeyValuePair<string, List<string>> intentSample in intentSamples)
@@ -121,13 +127,14 @@ public static class Program
             foreach (string intentRequest in intentSample.Value)
             {
                 var docId = HashThis(intentRequest);
+
                 if (await s_memory.IsDocumentReadyAsync(docId))
                 {
                     continue;
                 }
 
                 Console.WriteLine($"Uploading intent {intentSample.Key} with question: {intentRequest}");
-                await s_memory.ImportTextAsync(intentRequest, tags: new TagCollection() { { "intent", intentSample.Key } }, documentId: docId);
+                await s_memory.ImportTextAsync(intentRequest, tags: new TagCollection { { "intent", intentSample.Key } }, documentId: docId);
                 Console.WriteLine($"- Document Id: {docId}");
                 s_toDelete.Add(docId);
             }
@@ -136,9 +143,11 @@ public static class Program
         Console.WriteLine("\n====================================\n");
     }
 
+
     // =======================
     // === RETRIEVAL =========
     // =======================
+
 
     // Helper function to retrieve a tag value from a SearchResult
     private static string? GetTagValue(SearchResult answer, string tagName, string? defaultValue = null)
@@ -163,6 +172,7 @@ public static class Program
         return defaultValue;
     }
 
+
     private static async Task AskForIntent(string request)
     {
         Console.WriteLine($"Question: {request}");
@@ -176,14 +186,17 @@ public static class Program
         Console.WriteLine("\n====================================\n");
     }
 
+
     private static string HashThis(string value)
     {
         return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value))).ToUpperInvariant();
     }
 
+
     // =======================
     // === PURGE =============
     // =======================
+
 
     private static async Task DeleteMemories()
     {

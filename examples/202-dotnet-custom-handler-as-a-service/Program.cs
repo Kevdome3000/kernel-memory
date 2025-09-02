@@ -1,5 +1,6 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
+using _202_dotnet_custom_handler_as_a_service;
 using Microsoft.KernelMemory;
 
 /* The following code shows how to create a custom handler and run it as a standalone service.

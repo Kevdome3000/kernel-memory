@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.KernelMemory.AI;
 
@@ -10,6 +10,7 @@ internal sealed class OneCharTestTokenizer : ITextTokenizer
     {
         return text.Length;
     }
+
 
     public IReadOnlyList<string> GetTokens(string text)
     {

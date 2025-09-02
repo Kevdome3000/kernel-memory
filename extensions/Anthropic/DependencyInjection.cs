@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Net.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -31,6 +31,7 @@ public static partial class KernelMemoryBuilderExtensions
     }
 }
 
+
 /// <summary>
 /// .NET IServiceCollection dependency injection extensions.
 /// </summary>
@@ -53,9 +54,9 @@ public static partial class DependencyInjection
         {
             return services
                 .AddSingleton<ITextGenerator>(serviceProvider => new AnthropicTextGeneration(
-                    config: config,
-                    textTokenizer: textTokenizer,
-                    httpClientFactory: serviceProvider.GetService<IHttpClientFactory>(),
+                    config,
+                    textTokenizer,
+                    serviceProvider.GetService<IHttpClientFactory>(),
                     loggerFactory: serviceProvider.GetService<ILoggerFactory>()));
         }
 

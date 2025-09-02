@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Text;
 using Microsoft.Extensions.Logging;
@@ -84,6 +84,7 @@ public class RabbitMQConfig
     /// </summary>
     public string PoisonQueueSuffix { get; set; } = "-poison";
 
+
     /// <summary>
     /// Verify that the current state is valid.
     /// </summary>
@@ -91,52 +92,52 @@ public class RabbitMQConfig
     {
         const int MinTTLSecs = 5;
 
-        if (string.IsNullOrWhiteSpace(this.Host) || this.Host != $"{this.Host}".Trim())
+        if (string.IsNullOrWhiteSpace(Host) || Host != $"{Host}".Trim())
         {
-            throw new ConfigurationException($"RabbitMQ: {nameof(this.Host)} cannot be empty or have leading or trailing spaces");
+            throw new ConfigurationException($"RabbitMQ: {nameof(Host)} cannot be empty or have leading or trailing spaces");
         }
 
-        if (this.Port < 1)
+        if (Port < 1)
         {
-            throw new ConfigurationException($"RabbitMQ: {nameof(this.Port)} value {this.Port} is not valid");
+            throw new ConfigurationException($"RabbitMQ: {nameof(Port)} value {Port} is not valid");
         }
 
-        if (this.MessageTTLSecs < MinTTLSecs)
+        if (MessageTTLSecs < MinTTLSecs)
         {
-            throw new ConfigurationException($"RabbitMQ: {nameof(this.MessageTTLSecs)} value {this.MessageTTLSecs} is too low, cannot be less than {MinTTLSecs}");
+            throw new ConfigurationException($"RabbitMQ: {nameof(MessageTTLSecs)} value {MessageTTLSecs} is too low, cannot be less than {MinTTLSecs}");
         }
 
-        if (this.ConcurrentThreads < 1)
+        if (ConcurrentThreads < 1)
         {
-            throw new ConfigurationException($"RabbitMQ: {nameof(this.ConcurrentThreads)} value cannot be less than 1");
+            throw new ConfigurationException($"RabbitMQ: {nameof(ConcurrentThreads)} value cannot be less than 1");
         }
 
-        if (string.IsNullOrWhiteSpace(this.PoisonQueueSuffix) || this.PoisonQueueSuffix != $"{this.PoisonQueueSuffix}".Trim())
+        if (string.IsNullOrWhiteSpace(PoisonQueueSuffix) || PoisonQueueSuffix != $"{PoisonQueueSuffix}".Trim())
         {
-            throw new ConfigurationException($"RabbitMQ: {nameof(this.PoisonQueueSuffix)} cannot be empty or have leading or trailing spaces");
+            throw new ConfigurationException($"RabbitMQ: {nameof(PoisonQueueSuffix)} cannot be empty or have leading or trailing spaces");
         }
 
-        if (this.MaxRetriesBeforePoisonQueue < 0)
+        if (MaxRetriesBeforePoisonQueue < 0)
         {
-            throw new ConfigurationException($"RabbitMQ: {nameof(this.MaxRetriesBeforePoisonQueue)} cannot be a negative number");
+            throw new ConfigurationException($"RabbitMQ: {nameof(MaxRetriesBeforePoisonQueue)} cannot be a negative number");
         }
 
-        if (string.IsNullOrWhiteSpace(this.PoisonQueueSuffix))
+        if (string.IsNullOrWhiteSpace(PoisonQueueSuffix))
         {
-            throw new ConfigurationException($"RabbitMQ: {nameof(this.PoisonQueueSuffix)} is empty");
+            throw new ConfigurationException($"RabbitMQ: {nameof(PoisonQueueSuffix)} is empty");
         }
 
         // Queue names can be up to 255 bytes of UTF-8 characters.
         // Allow a max of 60 bytes for the suffix, so there is room for the queue name.
-        if (Encoding.UTF8.GetByteCount(this.PoisonQueueSuffix) > 60)
+        if (Encoding.UTF8.GetByteCount(PoisonQueueSuffix) > 60)
         {
-            throw new ConfigurationException($"RabbitMQ: {nameof(this.PoisonQueueSuffix)} can be up to 60 characters length");
+            throw new ConfigurationException($"RabbitMQ: {nameof(PoisonQueueSuffix)} can be up to 60 characters length");
         }
 
 #pragma warning disable CA2254
-        if (this.PrefetchCount < this.ConcurrentThreads)
+        if (PrefetchCount < ConcurrentThreads)
         {
-            log?.LogWarning($"The value of {nameof(this.PrefetchCount)} ({this.PrefetchCount}) should not be lower than the value of {nameof(this.ConcurrentThreads)} ({this.ConcurrentThreads})");
+            log?.LogWarning($"The value of {nameof(PrefetchCount)} ({PrefetchCount}) should not be lower than the value of {nameof(ConcurrentThreads)} ({ConcurrentThreads})");
         }
 #pragma warning restore CA2254
     }

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.KernelMemory.MemoryDb.SQLServer;
@@ -26,6 +26,7 @@ public static partial class KernelMemoryBuilderExtensions
         return builder;
     }
 
+
     /// <summary>
     /// Kernel Memory Builder extension method to add SQL Server memory connector.
     /// </summary>
@@ -48,6 +49,7 @@ public static partial class KernelMemoryBuilderExtensions
     }
 }
 
+
 /// <summary>
 /// .NET IServiceCollection dependency injection extensions.
 /// </summary>
@@ -68,6 +70,7 @@ public static partial class DependencyInjection
             .AddSingleton<SqlServerConfig>(config)
             .AddSingleton<IMemoryDb, SqlServerMemory>();
     }
+
 
     /// <summary>
     /// Inject SQL Server as the default implementation of IMemoryDb

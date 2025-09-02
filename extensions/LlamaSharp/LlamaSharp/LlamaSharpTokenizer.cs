@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Collections.Generic;
 using System.Linq;
@@ -16,20 +16,23 @@ public sealed class LlamaSharpTokenizer : ITextTokenizer
 
     private readonly LLamaContext _context;
 
+
     public LlamaSharpTokenizer(LLamaContext context)
     {
-        this._context = context;
+        _context = context;
     }
+
 
     public int CountTokens(string text)
     {
-        return this._context.Tokenize(text, addBos: AddBos, special: Special).Length;
+        return _context.Tokenize(text, AddBos, Special).Length;
     }
+
 
     public IReadOnlyList<string> GetTokens(string text)
     {
-        StreamingTokenDecoder decoder = new(this._context);
-        return this._context.Tokenize(text, addBos: AddBos, special: Special)
+        StreamingTokenDecoder decoder = new(_context);
+        return _context.Tokenize(text, AddBos, Special)
             .Select(x =>
             {
                 decoder.Add(x);

@@ -1,22 +1,16 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System.ComponentModel.DataAnnotations;
-using Microsoft.KernelMemory.Sources.DiscordBot;
+using _301_discord_test_application.DiscordConnector;
 
-namespace Microsoft.Discord.TestApplication;
+namespace _301_discord_test_application;
 
 public class DiscordDbMessage : DiscordMessage
 {
     [Key]
     public string Id
     {
-        get
-        {
-            return this.MessageId;
-        }
-        set
-        {
-            this.MessageId = value;
-        }
+        get => MessageId;
+        set => MessageId = value;
     }
 }

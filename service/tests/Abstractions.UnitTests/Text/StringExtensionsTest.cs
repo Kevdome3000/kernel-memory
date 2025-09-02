@@ -1,6 +1,7 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.KernelMemory.Text;
+using Xunit;
 
 namespace Microsoft.KM.Abstractions.UnitTests.Text;
 
@@ -39,6 +40,7 @@ public class StringExtensionsTest
         // Assert
         Assert.Equal(expected, actual);
     }
+
 
     [Theory]
     [Trait("Category", "UnitTest")]

@@ -1,11 +1,11 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
 
-namespace Microsoft.KernelMemory.Service;
+namespace Microsoft.KernelMemory.Service.Internals;
 
 internal static class OpenAPI
 {
@@ -21,21 +21,22 @@ internal static class OpenAPI
             if (!config.ServiceAuthorization.Enabled) { return; }
 
             const string ReqName = "auth";
-            c.AddSecurityDefinition(ReqName, new OpenApiSecurityScheme
-            {
-                Description = "The API key to access the API",
-                Type = SecuritySchemeType.ApiKey,
-                Scheme = "ApiKeyScheme",
-                Name = config.ServiceAuthorization.HttpHeaderName,
-                In = ParameterLocation.Header,
-            });
+            c.AddSecurityDefinition(ReqName,
+                new OpenApiSecurityScheme
+                {
+                    Description = "The API key to access the API",
+                    Type = SecuritySchemeType.ApiKey,
+                    Scheme = "ApiKeyScheme",
+                    Name = config.ServiceAuthorization.HttpHeaderName,
+                    In = ParameterLocation.Header
+                });
 
             var scheme = new OpenApiSecurityScheme
             {
                 Reference = new OpenApiReference
                 {
                     Id = ReqName,
-                    Type = ReferenceType.SecurityScheme,
+                    Type = ReferenceType.SecurityScheme
                 },
                 In = ParameterLocation.Header
             };
@@ -48,6 +49,7 @@ internal static class OpenAPI
             c.AddSecurityRequirement(requirement);
         });
     }
+
 
     public static void UseSwagger(this WebApplication app, KernelMemoryConfig config)
     {

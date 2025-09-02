@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Collections.Generic;
 using System.Linq;
@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.KernelMemory.Evaluation;
 using Microsoft.KernelMemory.Evaluation.TestSet;
+using Microsoft.KernelMemory.Models;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Embeddings;
 
@@ -20,17 +21,19 @@ internal sealed class AnswerSimilarityEvaluator : EvaluationEngine
 
     private readonly ITextEmbeddingGenerationService _textEmbeddingGenerationService;
 
+
     public AnswerSimilarityEvaluator(Kernel kernel)
     {
-        this._kernel = kernel.Clone();
+        _kernel = kernel.Clone();
 
-        this._textEmbeddingGenerationService = this._kernel.Services.GetRequiredService<ITextEmbeddingGenerationService>();
+        _textEmbeddingGenerationService = _kernel.Services.GetRequiredService<ITextEmbeddingGenerationService>();
     }
+
 
     internal async Task<float> Evaluate(TestSetItem testSet, MemoryAnswer answer, Dictionary<string, object?> metadata)
     {
-        var answerEmbeddings = await this._textEmbeddingGenerationService
-            .GenerateEmbeddingsAsync([testSet.GroundTruth, answer.Result], this._kernel)
+        var answerEmbeddings = await _textEmbeddingGenerationService
+            .GenerateEmbeddingsAsync([testSet.GroundTruth, answer.Result], _kernel)
             .ConfigureAwait(false);
 
         var evaluation = TensorPrimitives.CosineSimilarity(answerEmbeddings.First().Span, answerEmbeddings.Last().Span);

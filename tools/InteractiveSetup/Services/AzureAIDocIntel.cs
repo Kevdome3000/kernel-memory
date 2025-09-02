@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Collections.Generic;
 using Microsoft.KernelMemory.InteractiveSetup.UI;
@@ -20,7 +20,7 @@ internal static class AzureAIDocIntel
             {
                 { "Endpoint", "" },
                 { "Auth", "ApiKey" },
-                { "APIKey", "" },
+                { "APIKey", "" }
             };
             AppSettings.AddService(ServiceName, config);
         }
@@ -30,16 +30,20 @@ internal static class AzureAIDocIntel
             Title = $"[{ServiceName}] Which type of authentication do you want to use?",
             Options =
             [
-                new("Azure Identity (Entra)", config["Auth"].ToString() == "AzureIdentity", () => AppSettings.Change(x =>
-                {
-                    x.Services[ServiceName]["Auth"] = "AzureIdentity";
-                    x.Services[ServiceName].Remove("APIKey");
-                })),
-                new("API Key", config["Auth"].ToString() != "AzureIdentity", () => AppSettings.Change(x =>
-                {
-                    x.Services[ServiceName]["Auth"] = "ApiKey";
-                    x.Services[ServiceName]["APIKey"] = SetupUI.AskPassword("Azure AI <API Key>", config["APIKey"].ToString());
-                }))
+                new Answer("Azure Identity (Entra)",
+                    config["Auth"].ToString() == "AzureIdentity",
+                    () => AppSettings.Change(x =>
+                    {
+                        x.Services[ServiceName]["Auth"] = "AzureIdentity";
+                        x.Services[ServiceName].Remove("APIKey");
+                    })),
+                new Answer("API Key",
+                    config["Auth"].ToString() != "AzureIdentity",
+                    () => AppSettings.Change(x =>
+                    {
+                        x.Services[ServiceName]["Auth"] = "ApiKey";
+                        x.Services[ServiceName]["APIKey"] = SetupUI.AskPassword("Azure AI <API Key>", config["APIKey"].ToString());
+                    }))
             ]
         });
 

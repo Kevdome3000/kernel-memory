@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 
@@ -13,10 +13,12 @@ public class ConfigurationException : KernelMemoryException
     {
     }
 
+
     /// <inheritdoc />
     public ConfigurationException(string? message) : base(message)
     {
     }
+
 
     /// <inheritdoc />
     public ConfigurationException(string? message, Exception? innerException) : base(message, innerException)

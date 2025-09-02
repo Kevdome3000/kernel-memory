@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
-namespace Microsoft.KernelMemory.Sources.DiscordBot;
+namespace _301_discord_test_application.DiscordConnector;
 
 /// <summary>
 /// Discord bot settings

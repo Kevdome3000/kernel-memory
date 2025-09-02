@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Collections.Generic;
 
@@ -13,6 +13,7 @@ public interface IContextProvider
     IContext GetContext();
 }
 
+
 public static class ContextProviderExtensions
 {
     public static IContextProvider? InitContextArgs(this IContextProvider? provider, IDictionary<string, object?> args)
@@ -23,6 +24,7 @@ public static class ContextProviderExtensions
         return provider;
     }
 
+
     public static IContextProvider? InitContext(this IContextProvider? provider, IContext? context)
     {
         if (provider == null) { return null; }
@@ -31,6 +33,7 @@ public static class ContextProviderExtensions
         return provider;
     }
 
+
     public static IContextProvider? SetContextArgs(this IContextProvider? provider, IDictionary<string, object?> args)
     {
         if (provider == null) { return null; }
@@ -38,6 +41,7 @@ public static class ContextProviderExtensions
         provider.GetContext().SetArgs(args);
         return provider;
     }
+
 
     public static IContextProvider? SetContextArg(this IContextProvider? provider, string key, object? value)
     {

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 
@@ -14,6 +14,7 @@ public static class ArgumentExceptionEx
 
         throw new ArgumentException(paramName, message);
     }
+
 
     public static void ThrowIfNot(bool condition, string? paramName, string message)
     {

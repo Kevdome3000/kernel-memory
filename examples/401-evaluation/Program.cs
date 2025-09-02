@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.KernelMemory;
 using Microsoft.KernelMemory.Evaluation;
@@ -17,8 +17,8 @@ var postgresConfig = new PostgresConfig();
 
 new ConfigurationBuilder()
     .AddJsonFile("appsettings.json")
-    .AddJsonFile("appsettings.development.json", optional: true)
-    .AddJsonFile("appsettings.Development.json", optional: true)
+    .AddJsonFile("appsettings.development.json", true)
+    .AddJsonFile("appsettings.Development.json", true)
     .Build()
     .BindSection("KernelMemory", memoryConfiguration)
     .BindSection("KernelMemory:Services:OpenAI", openAIConfig)
@@ -47,8 +47,8 @@ var memoryBuilder = new KernelMemoryBuilder()
 var kernel = Kernel.CreateBuilder()
     // For OpenAI:
     .AddOpenAIChatCompletion(
-        modelId: "gpt-4",
-        apiKey: Environment.GetEnvironmentVariable("OPENAI_API_KEY")!)
+        "gpt-4",
+        Environment.GetEnvironmentVariable("OPENAI_API_KEY")!)
     .Build();
 
 var testSetGenerator = new TestSetGeneratorBuilder(memoryBuilder.Services)
@@ -63,7 +63,10 @@ var distribution = new Distribution
     Conditioning = .17f
 };
 
-var testSet = testSetGenerator.GenerateTestSetsAsync(index: "default", count: 10, retryCount: 3, distribution: distribution);
+var testSet = testSetGenerator.GenerateTestSetsAsync("default",
+    10,
+    3,
+    distribution: distribution);
 
 await foreach (var test in testSet)
 {
@@ -75,7 +78,7 @@ var evaluation = new TestSetEvaluatorBuilder()
     .WithMemory(memoryBuilder.Build())
     .Build();
 
-var results = evaluation.EvaluateTestSetAsync(index: "default", await testSet.ToArrayAsync());
+var results = evaluation.EvaluateTestSetAsync("default", await testSet.ToArrayAsync());
 
 await foreach (var result in results)
 {

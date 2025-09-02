@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.IO;
 
@@ -23,19 +23,20 @@ public class LlamaSharpModelConfig
     /// </summary>
     public int? GpuLayerCount { get; set; }
 
+
     /// <summary>
     /// Verify that the current state is valid.
     /// </summary>
     public void Validate(bool allowIO = true)
     {
-        if (string.IsNullOrWhiteSpace(this.ModelPath))
+        if (string.IsNullOrWhiteSpace(ModelPath))
         {
-            throw new ConfigurationException($"LlamaSharp: {nameof(this.ModelPath)} is empty");
+            throw new ConfigurationException($"LlamaSharp: {nameof(ModelPath)} is empty");
         }
 
-        if (allowIO && !File.Exists(this.ModelPath))
+        if (allowIO && !File.Exists(ModelPath))
         {
-            throw new ConfigurationException($"LlamaSharp: {nameof(this.ModelPath)} file not found");
+            throw new ConfigurationException($"LlamaSharp: {nameof(ModelPath)} file not found");
         }
     }
 }

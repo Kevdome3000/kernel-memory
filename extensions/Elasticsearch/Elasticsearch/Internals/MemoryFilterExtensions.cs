@@ -1,4 +1,6 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
+
+using Microsoft.KernelMemory.Models;
 
 namespace Microsoft.KernelMemory.MemoryDb.Elasticsearch.Internals;
 
@@ -23,6 +25,7 @@ internal static class MemoryFilterExtensions
         var tags = filter.Select(x => $"({x.Key}={string.Join("|", x.Value)})");
         return string.Join(" & ", tags);
     }
+
 
     /// <summary>
     /// Displays the MemoryFilter(s) in a human-readable format.

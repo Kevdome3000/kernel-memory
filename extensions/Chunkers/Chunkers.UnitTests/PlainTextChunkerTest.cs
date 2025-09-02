@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.Chunkers.UnitTests.Helpers;
 using Microsoft.KernelMemory.AI;
@@ -38,8 +38,9 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
         ":", // note: \n \t make no difference with this char
         ",", // note: \n \t make no difference with this char
         " ", // note: \n \t make no difference with this char
-        "-", // note: \n \t make no difference with this char
+        "-" // note: \n \t make no difference with this char
     ]);
+
 
     [Fact]
     [Trait("Category", "UnitTest")]
@@ -61,6 +62,7 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
         Assert.Equal("world", fragments[3].Content);
         Assert.Equal("!", fragments[4].Content);
     }
+
 
     [Fact]
     [Trait("Category", "UnitTest")]
@@ -87,6 +89,7 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
         Assert.Equal("!", fragments[8].Content);
     }
 
+
     [Fact]
     [Trait("Category", "UnitTest")]
     [Trait("Category", "Chunking")]
@@ -103,6 +106,7 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
         Assert.Equal(1, fragments.Count);
         Assert.Equal("Hello", fragments[0].Content);
     }
+
 
     [Fact]
     [Trait("Category", "UnitTest")]
@@ -122,6 +126,7 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
         Assert.Equal("!", fragments[1].Content);
         Assert.Equal("World", fragments[2].Content);
     }
+
 
     [Fact]
     [Trait("Category", "UnitTest")]
@@ -144,6 +149,7 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
         Assert.Equal(expected, chunks);
     }
 
+
     [Fact]
     [Trait("Category", "UnitTest")]
     [Trait("Category", "Chunking")]
@@ -164,6 +170,7 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
         Assert.Equal(expected, chunks);
     }
 
+
     [Fact]
     [Trait("Category", "UnitTest")]
     [Trait("Category", "Chunking")]
@@ -177,7 +184,7 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
             "This is a sentence ",
             "longer than 5 ",
             "tokens, as you can ",
-            "see.",
+            "see."
         ];
 
         // Act
@@ -187,6 +194,7 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
         // Assert
         Assert.Equal(expected, chunks);
     }
+
 
     [Fact]
     [Trait("Category", "UnitTest")]
@@ -214,6 +222,7 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
         // Assert
         Assert.Equal(expected, chunks);
     }
+
 
     [Fact]
     [Trait("Category", "UnitTest")]
@@ -247,6 +256,7 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
         Assert.Equal(expected, chunks);
     }
 
+
     [Fact]
     [Trait("Category", "UnitTest")]
     [Trait("Category", "Chunking")]
@@ -276,6 +286,7 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
         Assert.Equal(expected, chunks);
     }
 
+
     [Fact]
     [Trait("Category", "UnitTest")]
     [Trait("Category", "Chunking")]
@@ -304,6 +315,7 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
         Assert.Equal(expected, chunks);
     }
 
+
     [Fact]
     [Trait("Category", "UnitTest")]
     [Trait("Category", "Chunking")]
@@ -317,6 +329,7 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
         Assert.Empty(chunks2);
         Assert.Empty(chunks4);
     }
+
 
     [Fact]
     [Trait("Category", "UnitTest")]
@@ -350,6 +363,7 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
         Assert.Equal(expected, chunks);
     }
 
+
     [Fact]
     [Trait("Category", "UnitTest")]
     [Trait("Category", "Chunking")]
@@ -382,6 +396,7 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
         Assert.Equal(expected, chunks);
     }
 
+
     [Fact]
     [Trait("Category", "UnitTest")]
     [Trait("Category", "Chunking")]
@@ -410,6 +425,7 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
         // Assert
         Assert.Equal(expected, chunks);
     }
+
 
     // a plaintext example that splits on ' '
     [Fact]
@@ -447,6 +463,7 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
         Assert.Equal(expected, chunks);
     }
 
+
     // a plaintext example that splits on ' '
     [Fact]
     [Trait("Category", "UnitTest")]
@@ -468,7 +485,7 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
             "This is a test of the emergency broadcast system This is ", // 15 tokens
             $"only a test{Separator}We repeat this is only a test A unit test{Separator}A ", // 14 tokens
             "small note And another And once again Seriously this is the ", // 15 tokens
-            $"end We're finished All set Bye.{Separator}Done.", // 10 tokens
+            $"end We're finished All set Bye.{Separator}Done." // 10 tokens
         ];
 
         // Act
@@ -479,6 +496,7 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
         Assert.Equal(expected, chunks);
     }
 
+
     [Fact]
     [Trait("Category", "UnitTest")]
     [Trait("Category", "Chunking")]
@@ -486,10 +504,7 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
     {
         // Arrange
         const string Input =
-            "this. has. punctuation. like. normal. sentences. " +
-            "this is a long sentence without any punctuation or spaces and it is very long and it goes on and on " +
-            "thisisalongstringwithoutanyspacesorpunctuationanditisverylonganditgoesonandonandon " +
-            "and finally this is a long sentence with punctuation. ";
+            "this. has. punctuation. like. normal. sentences. " + "this is a long sentence without any punctuation or spaces and it is very long and it goes on and on " + "thisisalongstringwithoutanyspacesorpunctuationanditisverylonganditgoesonandonandon " + "and finally this is a long sentence with punctuation. ";
 
         string[] expected =
         [
@@ -501,7 +516,7 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
             "thisisalongstringwithoutanyspacesorpunct", // 10 tokens
             "uationanditisverylonganditgoesonandon", // 10 tokens
             "andon and finally this is a long sentence with ", // 10 tokens
-            "punctuation.", // 3 tokens
+            "punctuation." // 3 tokens
         ];
 
         // Act
@@ -512,6 +527,7 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
         Assert.Equal(expected, chunks);
     }
 
+
     [Fact]
     [Trait("Category", "UnitTest")]
     [Trait("Category", "Chunking")]
@@ -519,8 +535,7 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
     {
         // Arrange
         const string Input =
-            "Hello!!!It's been a minute!?!Here's a list of numbers: one, two, three, four, five, six, seven, eight, nine, ten⁇" +
-            "Hello!!!It's been a minute!?!Here's a list of numbers: one, two, three, four, five, six, seven, eight, nine, ten⁇";
+            "Hello!!!It's been a minute!?!Here's a list of numbers: one, two, three, four, five, six, seven, eight, nine, ten⁇" + "Hello!!!It's been a minute!?!Here's a list of numbers: one, two, three, four, five, six, seven, eight, nine, ten⁇";
 
         string[] expected =
         [
@@ -536,7 +551,7 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
             "one, two, three, ", // 7 tokens
             "four, five, six, ", // 7 tokens
             "seven, eight, nine, ", // 7 tokens
-            "ten⁇", // 3 tokens
+            "ten⁇" // 3 tokens
         ];
 
         // Act
@@ -548,6 +563,7 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
         Assert.Equal(Input, merged);
         Assert.Equal(expected, chunks);
     }
+
 
     [Fact]
     [Trait("Category", "UnitTest")]
@@ -569,7 +585,7 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
             $"{ChunkHeader}e emergency broadcast system. This is only a test.{Separator}", // 19 tokens
             $"{ChunkHeader}This is only a test.{Separator}We repeat, ", // 15 tokens
             $"{ChunkHeader}We repeat, this is only a test. A unit ", // 16 tokens
-            $"{ChunkHeader}this is only a test. A unit test.", // 15 tokens
+            $"{ChunkHeader}this is only a test. A unit test." // 15 tokens
         ];
 
         // Act
@@ -579,6 +595,7 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
         // Assert
         Assert.Equal(expected, chunks);
     }
+
 
     [Fact]
     [Trait("Category", "UnitTest")]
@@ -597,7 +614,7 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
         [
             $"This is a test of the emergency broadcast system. This is only a test.{Separator}", // 71 tokens
             $" broadcast system. This is only a test.{Separator}We repeat, this is only a test. ", // 72 tokens
-            "We repeat, this is only a test. A unit test.", // 44 tokens
+            "We repeat, this is only a test. A unit test." // 44 tokens
         ];
 
         // Act
@@ -607,6 +624,7 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
         // Assert
         Assert.Equal(expected, chunks);
     }
+
 
     [Fact]
     [Trait("Category", "UnitTest")]
@@ -627,7 +645,7 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
             $"e emergency broadcast system. This is only a test.{Separator}", // 13 tokens
             $"This is only a test.{Separator}We repeat, ", // 8 tokens
             "We repeat, this is only a test. A unit ", // 10 tokens
-            "this is only a test. A unit test.", // 9 tokens
+            "this is only a test. A unit test." // 9 tokens
         ];
 
         // Act
@@ -637,6 +655,7 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
         // Assert
         Assert.Equal(expected, chunks);
     }
+
 
     [Fact]
     [Trait("Category", "UnitTest")]
@@ -667,6 +686,7 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
         // Assert
         Assert.Equal(expected, chunks);
     }
+
 
     // a plaintext example that splits on ? or !
     [Fact]
@@ -700,6 +720,7 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
         Assert.Equal(expected, chunks);
     }
 
+
     // a plaintext example that splits on ;
     [Fact]
     [Trait("Category", "UnitTest")]
@@ -722,7 +743,7 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
             $"This is only a test{Separator}We repeat; this is only a test; ",
             $"A unit test{Separator}A small note; And another; And once again; ",
             "Seriously, this is the end; We're finished; All set; ",
-            $"Bye.{Separator}Done.",
+            $"Bye.{Separator}Done."
         ];
 
         // Act
@@ -731,6 +752,7 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
         // Assert
         Assert.Equal(expected, chunks);
     }
+
 
     // a plaintext example that splits on :
     [Fact]
@@ -754,7 +776,7 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
             $"This is only a test{Separator}We repeat: this is only a test: ",
             $"A unit test{Separator}A small note: And another: And once again: ",
             "Seriously, this is the end: We're finished: All set: ",
-            $"Bye.{Separator}Done.",
+            $"Bye.{Separator}Done."
         ];
 
         // Act
@@ -764,6 +786,7 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
         // Assert
         Assert.Equal(expected, chunks);
     }
+
 
     // a plaintext example that splits on ,
     [Fact]
@@ -787,7 +810,7 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
             $"This is only a test{Separator}We repeat, this is only a test, ",
             $"A unit test{Separator}A small note, And another, And once again, ",
             "Seriously, this is the end, We're finished, All set, ",
-            $"Bye.{Separator}Done.",
+            $"Bye.{Separator}Done."
         ];
 
         // Act
@@ -797,6 +820,7 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
         // Assert
         Assert.Equal(expected, chunks);
     }
+
 
     // a plaintext example that splits on ) or ] or }
     [Fact]
@@ -820,7 +844,7 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
             $"This is only a test{Separator}We repeat) this is only a test) ",
             $"A unit test{Separator}A small note] And another) And once again] ",
             "Seriously this is the end} We're finished} All set} ",
-            $"Bye.{Separator}Done.",
+            $"Bye.{Separator}Done."
         ];
 
         // Act
@@ -830,6 +854,7 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
         // Assert
         Assert.Equal(expected, chunks);
     }
+
 
     // a plaintext example that splits on '-' (very weak separator)
     [Fact]
@@ -852,7 +877,7 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
             "This-is-a-test-of-the-emergency-broadcast-system-This-is-",
             "only-a-testWe-repeat-this-is-only-a-test-A-unit-testA-small-",
             "note-And-another-And-once-again-Seriously, ",
-            "this-is-the-end-We're-finished-All-set-Bye.Done.",
+            "this-is-the-end-We're-finished-All-set-Bye.Done."
         ];
 
         // Act
@@ -862,6 +887,7 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
         // Assert
         Assert.Equal(expected, chunks);
     }
+
 
     [Fact]
     [Trait("Category", "UnitTest")]
@@ -881,7 +907,7 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
         [
             $"{ChunkHeader}This is a test of the emergency broadcast system. This is only a test.{Separator}", // 96 tokens
             $"{ChunkHeader} broadcast system. This is only a test.{Separator}We repeat, this is only a test. ", // 97 tokens
-            $"{ChunkHeader}We repeat, this is only a test. A unit test.", // 69 tokens
+            $"{ChunkHeader}We repeat, this is only a test. A unit test." // 69 tokens
         ];
 
         // Act
@@ -892,6 +918,7 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
         Assert.Equal(expected, chunks);
     }
 
+
     #region internals
 
     private static void DebugChunks(IEnumerable<string> chunks, ITextTokenizer tokenizer)
@@ -899,6 +926,7 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
         var list = chunks.ToList();
 
         Console.WriteLine("----------------------------------");
+
         for (int index = 0; index < list.Count; index++)
         {
             Console.WriteLine($"- {index}: \"{list[index]}\" [{tokenizer.CountTokens(list[index])} tokens]");
@@ -906,6 +934,7 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
 
         Console.WriteLine("----------------------------------");
     }
+
 
     private static void DebugFragments(List<Chunk> fragments)
     {
@@ -921,4 +950,6 @@ public class PlainTextChunkerTest(ITestOutputHelper output) : BaseUnitTestCase(o
     }
 
     #endregion
+
+
 }

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
@@ -37,15 +37,17 @@ public sealed class DataPipelinePointer
     [JsonPropertyName("steps")]
     public List<string> Steps { get; set; } = [];
 
+
     public DataPipelinePointer()
     {
     }
 
+
     public DataPipelinePointer(DataPipeline pipeline)
     {
-        this.Index = pipeline.Index;
-        this.DocumentId = pipeline.DocumentId;
-        this.ExecutionId = pipeline.ExecutionId;
-        this.Steps = pipeline.Steps;
+        Index = pipeline.Index;
+        DocumentId = pipeline.DocumentId;
+        ExecutionId = pipeline.ExecutionId;
+        Steps = pipeline.Steps;
     }
 }

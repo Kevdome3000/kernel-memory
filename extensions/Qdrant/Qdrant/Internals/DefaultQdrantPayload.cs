@@ -1,11 +1,12 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace Microsoft.KernelMemory.MemoryDb.Qdrant.Client;
+namespace Microsoft.KernelMemory.MemoryDb.Qdrant.Internals;
 
 #pragma warning disable CA1852 // The class is inherited, it cannot be sealed
+
 
 internal class DefaultQdrantPayload
 {

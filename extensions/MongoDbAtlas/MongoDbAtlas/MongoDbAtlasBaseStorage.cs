@@ -1,10 +1,11 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using Microsoft.KernelMemory.MongoDbAtlas.Internals;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.GridFS;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 
 namespace Microsoft.KernelMemory.MongoDbAtlas;
 
@@ -30,15 +31,17 @@ public abstract class MongoDbAtlasBaseStorage
     /// </summary>
     private Dictionary<string, object> Collections { get; set; } = [];
 
+
     /// <summary>
     /// Create an instance of the storage based on configuration
     /// </summary>
     /// <param name="config"></param>
     protected MongoDbAtlasBaseStorage(MongoDbAtlasConfig config)
     {
-        this.Database = MongoDbAtlasDatabaseHelper.GetDatabase(config.ConnectionString, config.DatabaseName);
-        this.Config = config;
+        Database = MongoDbAtlasDatabaseHelper.GetDatabase(config.ConnectionString, config.DatabaseName);
+        Config = config;
     }
+
 
     /// <summary>
     /// Get an instance of the collection given the collection name
@@ -47,8 +50,9 @@ public abstract class MongoDbAtlasBaseStorage
     /// <returns></returns>
     protected IMongoCollection<BsonDocument> GetCollection(string collectionName)
     {
-        return this.GetCollection<BsonDocument>(collectionName);
+        return GetCollection<BsonDocument>(collectionName);
     }
+
 
     /// <summary>
     /// Get a reference to a GridFS bucket for a specific index. Remember that each
@@ -58,12 +62,13 @@ public abstract class MongoDbAtlasBaseStorage
     /// <returns></returns>
     protected GridFSBucket<string> GetBucketForIndex(string indexName)
     {
-        return new GridFSBucket<string>(this.Database,
-            new GridFSBucketOptions()
+        return new GridFSBucket<string>(Database,
+            new GridFSBucketOptions
             {
                 BucketName = indexName
             });
     }
+
 
     /// <summary>
     /// Get a typed collection given the collection name, it uses a local cache to avoid
@@ -74,10 +79,10 @@ public abstract class MongoDbAtlasBaseStorage
     /// <returns></returns>
     protected IMongoCollection<T> GetCollection<T>(string collectionName)
     {
-        if (!this.Collections.TryGetValue(collectionName, out object? value))
+        if (!Collections.TryGetValue(collectionName, out object? value))
         {
-            value = this.Database.GetCollection<T>(collectionName);
-            this.Collections[collectionName] = value;
+            value = Database.GetCollection<T>(collectionName);
+            Collections[collectionName] = value;
         }
 
         return (IMongoCollection<T>)value;

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 namespace Microsoft.KernelMemory;
 
@@ -25,11 +25,13 @@ public static class Constants
         public const string ArgsField = "args";
     }
 
+
     public static class ModelType
     {
         public const string EmbeddingGeneration = "EmbeddingGeneration";
         public const string TextGeneration = "TextGeneration";
     }
+
 
     public static class CustomContext
     {
@@ -45,6 +47,7 @@ public static class Constants
             public const string ChunkHeader = "custom_partitioning_chunk_header_str";
         }
 
+
         public static class EmbeddingGeneration
         {
             // Used to override MaxBatchSize embedding generators config
@@ -56,6 +59,7 @@ public static class Constants
             public const string ModelName = "custom_embedding_generation_model_name";
         }
 
+
         public static class TextGeneration
         {
             // Used to override the name of the model used to generate text
@@ -63,6 +67,7 @@ public static class Constants
             // See https://github.com/microsoft/semantic-kernel/issues/9337
             public const string ModelName = "custom_text_generation_model_name";
         }
+
 
         public static class Rag
 
@@ -92,6 +97,7 @@ public static class Constants
             public const string NucleusSampling = "custom_rag_nucleus_sampling_float";
         }
 
+
         public static class Summary
         {
             // Used to override the summarization prompt
@@ -104,6 +110,7 @@ public static class Constants
             public const string OverlappingTokens = "custom_summary_overlapping_tokens_int";
         }
     }
+
 
     // // Default User ID owning documents uploaded without specifying a user
     // public const string DefaultDocumentOwnerUserId = "defaultUser";

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Collections.Generic;
 using Microsoft.KernelMemory.InteractiveSetup.UI;
@@ -18,7 +18,7 @@ internal static class Postgres
         {
             config = new Dictionary<string, object>
             {
-                { "ConnectionString", "" },
+                { "ConnectionString", "" }
             };
             AppSettings.AddService(ServiceName, config);
         }
@@ -28,7 +28,7 @@ internal static class Postgres
             {
                 "ConnectionString",
                 SetupUI.AskPassword("Postgres connection string (e.g. 'Host=..;Port=5432;Username=..;Password=..')", config["ConnectionString"].ToString(), optional: false)
-            },
+            }
         });
     }
 }

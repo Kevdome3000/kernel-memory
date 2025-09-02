@@ -2,7 +2,7 @@
 
 using System.Text.Json.Serialization;
 
-namespace Microsoft.KernelMemory.Sources.DiscordBot;
+namespace _301_discord_test_application.DiscordConnector;
 
 public class DiscordMessage
 {

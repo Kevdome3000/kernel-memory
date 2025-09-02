@@ -1,10 +1,13 @@
-// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.KernelMemory;
+
+namespace _111_dotnet_azure_ai_hybrid_search;
 
 public static class Program
 {
     private const string IndexName = "acronyms";
+
 
     public static async Task Main()
     {
@@ -15,8 +18,8 @@ public static class Program
 
         new ConfigurationBuilder()
             .AddJsonFile("appsettings.json")
-            .AddJsonFile("appsettings.development.json", optional: true)
-            .AddJsonFile("appsettings.Development.json", optional: true)
+            .AddJsonFile("appsettings.development.json", true)
+            .AddJsonFile("appsettings.Development.json", true)
             .Build()
             .BindSection("KernelMemory:Services:AzureOpenAIText", azureOpenAITextConfig)
             .BindSection("KernelMemory:Services:AzureOpenAIEmbedding", azureOpenAIEmbeddingConfig)
@@ -53,11 +56,13 @@ public static class Program
         // Output: 'Aliens Brewing Coffee'
     }
 
+
     private static async Task AskQuestion(IKernelMemory memory, string question)
     {
-        var answer = await memory.AskAsync(question, index: IndexName);
+        var answer = await memory.AskAsync(question, IndexName);
         Console.WriteLine(answer.Result);
     }
+
 
     private static async Task CreateIndexAndImportData(IKernelMemory memory)
     {
@@ -73,6 +78,7 @@ public static class Program
                    """;
 
         var rows = data.Split("\n");
+
         foreach (var acronym in rows)
         {
             await memory.ImportTextAsync(acronym, index: IndexName);

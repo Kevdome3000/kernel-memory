@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.KernelMemory.MemoryDb.Elasticsearch;
@@ -11,11 +11,13 @@ public class IndexNameTests : BaseFunctionalTestCase
 {
     private readonly ITestOutputHelper _output;
 
+
     public IndexNameTests(IConfiguration cfg, ITestOutputHelper output)
         : base(cfg, output)
     {
-        this._output = output ?? throw new ArgumentNullException(nameof(output));
+        _output = output ?? throw new ArgumentNullException(nameof(output));
     }
+
 
     [Theory]
     [Trait("Category", "Elasticsearch")]
@@ -26,11 +28,12 @@ public class IndexNameTests : BaseFunctionalTestCase
     [InlineData("123numberfirst")]
     public void GoodIndexNamesAreAccepted(string indexName)
     {
-        Assert.True(IndexNameHelper.TryConvert(indexName, base.ElasticsearchConfig, out var convResult));
+        Assert.True(IndexNameHelper.TryConvert(indexName, ElasticsearchConfig, out var convResult));
         Assert.Empty(convResult.Errors);
 
-        this._output.WriteLine($"The index name '{indexName}' will be translated to '{convResult.ActualIndexName}'.");
+        _output.WriteLine($"The index name '{indexName}' will be translated to '{convResult.ActualIndexName}'.");
     }
+
 
     [Theory]
     [Trait("Category", "Elasticsearch")]
@@ -64,16 +67,15 @@ public class IndexNameTests : BaseFunctionalTestCase
         // Creates the index using IMemoryDb
         var exception = Assert.Throws<InvalidIndexNameException>(() =>
         {
-            IndexNameHelper.Convert(indexName, base.ElasticsearchConfig);
+            IndexNameHelper.Convert(indexName, ElasticsearchConfig);
         });
 
-        this._output.WriteLine(
-            $"The index name '{indexName}' had the following errors:\n{string.Join("\n", exception.Errors)}" +
-            $"" +
-            $"The expected number of errors was {errorCount}.");
+        _output.WriteLine(
+            $"The index name '{indexName}' had the following errors:\n{string.Join("\n", exception.Errors)}" + $"" + $"The expected number of errors was {errorCount}.");
 
-        Assert.True(errorCount == exception.Errors.Count(), $"The number of errprs expected is different than the number of errors found.");
+        Assert.True(errorCount == exception.Errors.Count(), "The number of errprs expected is different than the number of errors found.");
     }
+
 
     [Fact]
     [Trait("Category", "Elasticsearch")]
@@ -82,7 +84,7 @@ public class IndexNameTests : BaseFunctionalTestCase
         var indexName = new string('a', 256);
         var exception = Assert.Throws<InvalidIndexNameException>(() =>
         {
-            IndexNameHelper.Convert(indexName, base.ElasticsearchConfig);
+            IndexNameHelper.Convert(indexName, ElasticsearchConfig);
         });
 
         Assert.Equal(1, exception.Errors.Count());

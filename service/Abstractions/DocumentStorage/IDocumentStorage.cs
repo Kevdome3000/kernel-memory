@@ -1,8 +1,9 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.KernelMemory.Models;
 
 namespace Microsoft.KernelMemory.DocumentStorage;
 
@@ -17,6 +18,7 @@ public interface IDocumentStorage
         string index,
         CancellationToken cancellationToken = default);
 
+
     /// <summary>
     /// Delete a container (aka index)
     /// </summary>
@@ -25,6 +27,7 @@ public interface IDocumentStorage
     Task DeleteIndexDirectoryAsync(
         string index,
         CancellationToken cancellationToken = default);
+
 
     /// <summary>
     /// Create a new container, if it doesn't exist already
@@ -37,6 +40,7 @@ public interface IDocumentStorage
         string documentId,
         CancellationToken cancellationToken = default);
 
+
     /// <summary>
     /// Delete all artifacts of a document, except for the status file
     /// </summary>
@@ -48,6 +52,7 @@ public interface IDocumentStorage
         string documentId,
         CancellationToken cancellationToken = default);
 
+
     /// <summary>
     /// Delete all artifacts of a document, including status file and the containing folder
     /// </summary>
@@ -58,6 +63,7 @@ public interface IDocumentStorage
         string index,
         string documentId,
         CancellationToken cancellationToken = default);
+
 
     /// <summary>
     /// Create/Overwrite a file
@@ -73,6 +79,7 @@ public interface IDocumentStorage
         string fileName,
         Stream streamContent,
         CancellationToken cancellationToken = default);
+
 
     /// <summary>
     /// Fetch a file from storage

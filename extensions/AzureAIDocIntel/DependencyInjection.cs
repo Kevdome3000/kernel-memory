@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.KernelMemory.DataFormats;
@@ -14,15 +14,19 @@ namespace Microsoft.KernelMemory;
 public static partial class KernelMemoryBuilderExtensions
 {
     public static IKernelMemoryBuilder WithAzureAIDocIntel(
-        this IKernelMemoryBuilder builder, AzureAIDocIntelConfig config)
+        this IKernelMemoryBuilder builder,
+        AzureAIDocIntelConfig config)
     {
         config.Validate();
         builder.Services.AddAzureAIDocIntel(config);
         return builder;
     }
 
+
     public static IKernelMemoryBuilder WithAzureAIDocIntel(
-        this IKernelMemoryBuilder builder, string endpoint, string apiKey)
+        this IKernelMemoryBuilder builder,
+        string endpoint,
+        string apiKey)
     {
         var config = new AzureAIDocIntelConfig
         {
@@ -36,13 +40,15 @@ public static partial class KernelMemoryBuilderExtensions
     }
 }
 
+
 /// <summary>
 /// .NET IServiceCollection dependency injection extensions.
 /// </summary>
 public static partial class DependencyInjection
 {
     public static IServiceCollection AddAzureAIDocIntel(
-        this IServiceCollection services, AzureAIDocIntelConfig config)
+        this IServiceCollection services,
+        AzureAIDocIntelConfig config)
     {
         config.Validate();
         return services
@@ -50,8 +56,11 @@ public static partial class DependencyInjection
             .AddSingleton<IOcrEngine, AzureAIDocIntelEngine>();
     }
 
+
     public static IServiceCollection AddAzureAIDocIntel(
-        this IServiceCollection services, string endpoint, string apiKey)
+        this IServiceCollection services,
+        string endpoint,
+        string apiKey)
     {
         var config = new AzureAIDocIntelConfig
         {

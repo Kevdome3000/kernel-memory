@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -7,9 +7,15 @@ namespace Microsoft.KernelMemory.InteractiveSetup.Doctor;
 
 public static class Orchestration
 {
-    public static void Run(KernelMemoryConfig config, List<Tuple<string, string>> stats, HashSet<string> services, List<Tuple<string, string>> warnings, List<Tuple<string, string>> errors)
+    public static void Run(
+        KernelMemoryConfig config,
+        List<Tuple<string, string>> stats,
+        HashSet<string> services,
+        List<Tuple<string, string>> warnings,
+        List<Tuple<string, string>> errors)
     {
         stats.Add("Orchestration", config.DataIngestion.OrchestrationType);
+
         if (string.Equals(stats.Get("Orchestration"), KernelMemoryConfig.OrchestrationTypeDistributed, StringComparison.OrdinalIgnoreCase))
         {
             stats.Add("Orchestration Service", config.DataIngestion.DistributedOrchestration.QueueType);
@@ -21,8 +27,9 @@ public static class Orchestration
         }
 
         // DefaultSteps
-        stats.Add("Default ingestion steps", config.DataIngestion.DefaultSteps.Count == 0
-            ? "system default"
-            : string.Join(", ", config.DataIngestion.DefaultSteps));
+        stats.Add("Default ingestion steps",
+            config.DataIngestion.DefaultSteps.Count == 0
+                ? "system default"
+                : string.Join(", ", config.DataIngestion.DefaultSteps));
     }
 }

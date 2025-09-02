@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using Microsoft.Extensions.Configuration;
@@ -17,6 +17,7 @@ public static class DefaultLogger<T>
     public static readonly ILogger<T> Instance = DefaultLogger.Factory.CreateLogger<T>();
 }
 
+
 /// <summary>
 /// Either create a local default log factory, or allow an external
 /// application to set the log factory to be used to instantiate loggers.
@@ -32,32 +33,38 @@ public static class DefaultLogger
 
     public static ILoggerFactory Factory
     {
-        get { return s_factory ??= DefaultLogFactory(); }
-        set { s_factory = value; }
+        get => s_factory ??= DefaultLogFactory();
+        set => s_factory = value;
     }
+
 
     private static ILoggerFactory DefaultLogFactory()
     {
         var env = Environment.GetEnvironmentVariable(AspNetEnvironment) ?? string.Empty;
         var cfgBuilder = new ConfigurationBuilder()
-            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-            .AddJsonFile($"appsettings.{env}.json", optional: true, reloadOnChange: true);
+            .AddJsonFile("appsettings.json", true, true)
+            .AddJsonFile($"appsettings.{env}.json", true, true);
         cfgBuilder.AddEnvironmentVariables();
         IConfigurationRoot cfg = cfgBuilder.Build();
 
         return LoggerFactory.Create(builder =>
         {
             builder.AddConsole();
+
             foreach (IConfigurationSection section in cfg.GetSection(LoggingSection).GetSection(LogLevelSection).GetChildren())
             {
                 if (!TryGetLogLevel(section.Value, out LogLevel level)) { continue; }
 
                 // if (section.Key == DefaultCategoryKey) { builder.SetMinimumLevel(level); }
                 // else { builder.AddFilter(section.Key, level); }
-                builder.AddFilter(category: (section.Key == DefaultCategoryKey) ? null : section.Key, level: level);
+                builder.AddFilter(section.Key == DefaultCategoryKey
+                        ? null
+                        : section.Key,
+                    level);
             }
         });
     }
+
 
     private static bool TryGetLogLevel(string? value, out LogLevel level)
     {

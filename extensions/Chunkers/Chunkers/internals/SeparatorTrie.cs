@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Collections.Generic;
 
@@ -15,21 +15,24 @@ internal class SeparatorTrie
         public string? Separator { get; set; }
     }
 
+
     private readonly TrieNode _root = new();
 
-    public int Length => this._root.Children.Count;
+    public int Length => _root.Children.Count;
+
 
     public SeparatorTrie(HashSet<string> separators)
     {
         foreach (var separator in separators)
         {
-            this.Insert(separator);
+            Insert(separator);
         }
     }
 
+
     public string? MatchLongest(string text, int startIndex)
     {
-        var node = this._root;
+        var node = _root;
         string? longestMatch = null;
 
         for (int i = startIndex; i < text.Length; i++)
@@ -48,9 +51,11 @@ internal class SeparatorTrie
         return longestMatch;
     }
 
+
     private void Insert(string separator)
     {
-        var node = this._root;
+        var node = _root;
+
         foreach (char c in separator)
         {
             if (!node.Children.TryGetValue(c, out TrieNode? value))

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Diagnostics.CodeAnalysis;
@@ -23,9 +23,12 @@ public static class IndexName
         }
 
         defaultName = defaultName?.Trim() ?? string.Empty;
+
         if (name == null) { return defaultName; }
 
         name = name.Trim();
-        return string.IsNullOrWhiteSpace(name) ? defaultName : name;
+        return string.IsNullOrWhiteSpace(name)
+            ? defaultName
+            : name;
     }
 }

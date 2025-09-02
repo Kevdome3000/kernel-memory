@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Diagnostics;
@@ -20,6 +20,7 @@ public static class Dashboard
         return builder;
     }
 
+
     /// <summary>
     /// Wait 5 seconds and automatically open the browser (when using 'dotnet run' the browser doesn't open)
     /// </summary>
@@ -33,6 +34,7 @@ public static class Dashboard
 
         return builder;
     }
+
 
     private static string GetUrl(IDistributedApplicationBuilder builder)
     {

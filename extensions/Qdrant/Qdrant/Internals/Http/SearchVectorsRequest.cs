@@ -1,11 +1,11 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Text.Json.Serialization;
 
-namespace Microsoft.KernelMemory.MemoryDb.Qdrant.Client.Http;
+namespace Microsoft.KernelMemory.MemoryDb.Qdrant.Internals.Http;
 
 internal sealed class SearchVectorsRequest
 {
@@ -33,28 +33,33 @@ internal sealed class SearchVectorsRequest
     [JsonPropertyName("score_threshold")]
     public double ScoreThreshold { get; set; } = -1;
 
+
     public static SearchVectorsRequest Create(string collectionName)
     {
         return new SearchVectorsRequest(collectionName);
     }
+
 
     public static SearchVectorsRequest Create(string collectionName, int vectorSize)
     {
         return new SearchVectorsRequest(collectionName).SimilarTo(new Embedding(vectorSize));
     }
 
+
     public SearchVectorsRequest SimilarTo(Embedding vector)
     {
-        this.StartingVector = vector;
+        StartingVector = vector;
         return this;
     }
+
 
     public SearchVectorsRequest HavingExternalId(string externalId)
     {
         ArgumentNullExceptionEx.ThrowIfNullOrWhiteSpace(externalId, nameof(externalId), "External ID cannot be empty");
-        this.Filters.AndValue(QdrantConstants.PayloadIdField, externalId);
+        Filters.AndValue(QdrantConstants.PayloadIdField, externalId);
         return this;
     }
+
 
     public SearchVectorsRequest HavingAllTags(IEnumerable<string>? tags)
     {
@@ -64,29 +69,33 @@ internal sealed class SearchVectorsRequest
         {
             if (!string.IsNullOrEmpty(tag))
             {
-                this.Filters.AndValue(QdrantConstants.PayloadTagsField, tag);
+                Filters.AndValue(QdrantConstants.PayloadTagsField, tag);
             }
         }
 
         return this;
     }
 
+
     public SearchVectorsRequest HavingSomeTags(IEnumerable<IEnumerable<string>?>? tagGroups)
     {
         if (tagGroups == null) { return this; }
 
         var list = tagGroups.ToList();
+
         if (list.Count < 2)
         {
-            return this.HavingAllTags(list.FirstOrDefault());
+            return HavingAllTags(list.FirstOrDefault());
         }
 
         var orFilter = new Filter.OrClause();
+
         foreach (var tags in list)
         {
             if (tags == null) { continue; }
 
             var andFilter = new Filter.AndClause();
+
             foreach (var tag in tags)
             {
                 if (!string.IsNullOrEmpty(tag))
@@ -98,71 +107,80 @@ internal sealed class SearchVectorsRequest
             orFilter.Or(andFilter);
         }
 
-        this.Filters.And(orFilter);
+        Filters.And(orFilter);
 
         return this;
     }
+
 
     public SearchVectorsRequest WithScoreThreshold(double scoreThreshold)
     {
-        this.ScoreThreshold = scoreThreshold;
+        ScoreThreshold = scoreThreshold;
         return this;
     }
+
 
     public SearchVectorsRequest IncludePayLoad()
     {
-        this.WithPayload = true;
+        WithPayload = true;
         return this;
     }
+
 
     public SearchVectorsRequest IncludeVectorData(bool withVector)
     {
-        this.WithVector = withVector;
+        WithVector = withVector;
         return this;
     }
+
 
     public SearchVectorsRequest FromPosition(int offset)
     {
-        this.Offset = offset;
+        Offset = offset;
         return this;
     }
+
 
     public SearchVectorsRequest Take(int count)
     {
-        this.Limit = count;
+        Limit = count;
         return this;
     }
 
+
     public SearchVectorsRequest TakeFirst()
     {
-        return this.FromPosition(0).Take(1);
+        return FromPosition(0).Take(1);
     }
+
 
     public HttpRequestMessage Build()
     {
-        this.Validate();
+        Validate();
         return HttpRequest.CreatePostRequest(
-            $"collections/{this._collectionName}/points/search",
-            payload: this);
+            $"collections/{_collectionName}/points/search",
+            this);
     }
+
 
     private void Validate()
     {
-        ArgumentNullExceptionEx.ThrowIfNull(this.StartingVector, nameof(this.StartingVector), "Missing target vector, either provide a vector or vector size");
-        ArgumentNullExceptionEx.ThrowIfNullOrWhiteSpace(this._collectionName, nameof(this._collectionName), "The collection name cannot be empty");
-        ArgumentOutOfRangeExceptionEx.ThrowIfZeroOrNegative(this.Limit, nameof(this.Limit), "The max number of vectors to retrieve must be greater than zero");
+        ArgumentNullExceptionEx.ThrowIfNull(StartingVector, nameof(StartingVector), "Missing target vector, either provide a vector or vector size");
+        ArgumentNullExceptionEx.ThrowIfNullOrWhiteSpace(_collectionName, nameof(_collectionName), "The collection name cannot be empty");
+        ArgumentOutOfRangeExceptionEx.ThrowIfZeroOrNegative(Limit, nameof(Limit), "The max number of vectors to retrieve must be greater than zero");
 
-        this.Filters.Validate();
+        Filters.Validate();
     }
+
 
     private SearchVectorsRequest(string collectionName)
     {
-        this._collectionName = collectionName;
-        this.Filters = new Filter.AndClause();
-        this.WithPayload = false;
-        this.WithVector = false;
+        _collectionName = collectionName;
+        Filters = new Filter.AndClause();
+        WithPayload = false;
+        WithVector = false;
 
         // By default take the closest vector only
-        this.FromPosition(0).TakeFirst();
+        FromPosition(0).TakeFirst();
     }
 }

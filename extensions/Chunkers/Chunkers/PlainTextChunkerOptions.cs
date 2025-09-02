@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 
@@ -14,10 +14,10 @@ public class PlainTextChunkerOptions
     /// </summary>
     public int MaxTokensPerChunk
     {
-        get => this._maxTokensPerChunk;
-        set => this._maxTokensPerChunk = value > 0
+        get => _maxTokensPerChunk;
+        set => _maxTokensPerChunk = value > 0
             ? value
-            : throw new ArgumentOutOfRangeException(nameof(this.MaxTokensPerChunk), "Value must be greater than zero.");
+            : throw new ArgumentOutOfRangeException(nameof(MaxTokensPerChunk), "Value must be greater than zero.");
     }
 
     /// <summary>
@@ -25,10 +25,10 @@ public class PlainTextChunkerOptions
     /// </summary>
     public int Overlap
     {
-        get => this._overlap;
-        set => this._overlap = value >= 0
+        get => _overlap;
+        set => _overlap = value >= 0
             ? value
-            : throw new ArgumentOutOfRangeException(nameof(this.Overlap), "Value must be zero or greater.");
+            : throw new ArgumentOutOfRangeException(nameof(Overlap), "Value must be zero or greater.");
     }
 
     /// <summary>

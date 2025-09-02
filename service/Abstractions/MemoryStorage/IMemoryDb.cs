@@ -1,8 +1,9 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.KernelMemory.Models;
 
 namespace Microsoft.KernelMemory.MemoryStorage;
 
@@ -22,12 +23,14 @@ public interface IMemoryDb
         int vectorSize,
         CancellationToken cancellationToken = default);
 
+
     /// <summary>
     /// List indexes from the memory DB
     /// </summary>
     /// <param name="cancellationToken"></param>
     /// <returns>List of indexes</returns>
     Task<IEnumerable<string>> GetIndexesAsync(CancellationToken cancellationToken = default);
+
 
     /// <summary>
     /// Delete an index/collection
@@ -37,6 +40,7 @@ public interface IMemoryDb
     Task DeleteIndexAsync(
         string index,
         CancellationToken cancellationToken = default);
+
 
     /// <summary>
     /// Insert/Update a vector + payload.
@@ -50,6 +54,7 @@ public interface IMemoryDb
         string index,
         MemoryRecord record,
         CancellationToken cancellationToken = default);
+
 
     /// <summary>
     /// Get list of similar vectors (+payload)
@@ -71,6 +76,7 @@ public interface IMemoryDb
         bool withEmbeddings = false,
         CancellationToken cancellationToken = default);
 
+
     /// <summary>
     /// Get list of records having a field matching a given value.
     /// E.g. searching vectors by tag, for deletions.
@@ -87,6 +93,7 @@ public interface IMemoryDb
         int limit = 1,
         bool withEmbeddings = false,
         CancellationToken cancellationToken = default);
+
 
     /// <summary>
     /// Delete a memory record

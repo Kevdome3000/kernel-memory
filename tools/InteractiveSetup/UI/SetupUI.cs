@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Globalization;
@@ -8,52 +8,87 @@ namespace Microsoft.KernelMemory.InteractiveSetup.UI;
 
 internal static class SetupUI
 {
-    public static string AskPassword(string question, string? defaultValue, bool trim = true, bool optional = false)
+    public static string AskPassword(
+        string question,
+        string? defaultValue,
+        bool trim = true,
+        bool optional = false)
     {
-        return AskOpenQuestion(question: question, defaultValue: defaultValue, trim: trim, optional: optional, isPassword: true);
+        return AskOpenQuestion(question,
+            defaultValue,
+            trim,
+            optional,
+            true);
     }
+
 
     public static bool AskBoolean(string question, bool defaultValue)
     {
         string[] yes = ["YES", "Y"];
         string[] no = ["NO", "N"];
+
         while (true)
         {
-            var answer = AskOpenQuestion(question: question, defaultValue: defaultValue ? "Yes" : "No", optional: false).ToUpperInvariant();
+            var answer = AskOpenQuestion(question,
+                    defaultValue
+                        ? "Yes"
+                        : "No",
+                    optional: false)
+                .ToUpperInvariant();
+
             if (yes.Contains(answer)) { return true; }
 
             if (no.Contains(answer)) { return false; }
         }
     }
 
+
     public static string AskOptionalOpenQuestion(string question, string? defaultValue)
     {
-        return AskOpenQuestion(question: question, defaultValue: defaultValue, optional: true);
+        return AskOpenQuestion(question, defaultValue, optional: true);
     }
+
 
     public static int AskOpenQuestionInt(string question, int defaultValue, bool optional = false)
     {
-        string value = AskOpenQuestion(question: question, defaultValue: $"{defaultValue}", trim: true, optional: optional, isPassword: false);
+        string value = AskOpenQuestion(question,
+            $"{defaultValue}",
+            true,
+            optional,
+            false);
         return int.Parse(value, NumberStyles.Integer, NumberFormatInfo.InvariantInfo);
     }
 
-    public static string AskOpenQuestion(string question, string? defaultValue, bool trim = true, bool optional = false, bool isPassword = false)
+
+    public static string AskOpenQuestion(
+        string question,
+        string? defaultValue,
+        bool trim = true,
+        bool optional = false,
+        bool isPassword = false)
     {
         if (!string.IsNullOrEmpty(defaultValue))
         {
-            question = isPassword ? $"{question} [current: ****hidden****]" : $"{question} [current: {defaultValue}]";
+            question = isPassword
+                ? $"{question} [current: ****hidden****]"
+                : $"{question} [current: {defaultValue}]";
         }
 
-        question = isPassword ? $"{question} (value will not show on screen): " : $"{question}: ";
+        question = isPassword
+            ? $"{question} (value will not show on screen): "
+            : $"{question}: ";
 
         string answer = string.Empty;
         var done = false;
+
         while (!done)
         {
             string? newAnswer;
+
             if (isPassword)
             {
                 newAnswer = ReadLine.ReadPassword(question);
+
                 if (string.IsNullOrEmpty(newAnswer))
                 {
                     newAnswer = defaultValue;
@@ -64,13 +99,16 @@ internal static class SetupUI
                 newAnswer = ReadLine.Read(question, defaultValue);
             }
 
-            answer = trim ? $"{newAnswer}".Trim() : $"{newAnswer}";
+            answer = trim
+                ? $"{newAnswer}".Trim()
+                : $"{newAnswer}";
 
-            done = (optional || !string.IsNullOrEmpty(answer));
+            done = optional || !string.IsNullOrEmpty(answer);
         }
 
         return answer;
     }
+
 
     public static void AskQuestionWithOptions(QuestionWithOptions question)
     {
@@ -83,6 +121,7 @@ internal static class SetupUI
             for (int index = 0; index < question.Options.Count; index++)
             {
                 Answer answer = question.Options[index];
+
                 if (index == selected)
                 {
                     Console.Write("> * ");
@@ -98,6 +137,7 @@ internal static class SetupUI
 
         // Find the active option
         int current = 0;
+
         for (int index = 0; index < question.Options.Count; index++)
         {
             if (question.Options[index].IsSelected)
@@ -112,12 +152,14 @@ internal static class SetupUI
         var maxPos = question.Options.Count - 1;
         var done = false;
         Action? action = null;
+
         while (!done)
         {
             // Always redraw, to take care of screen artifacts caused by keys pressed
             ShowQuestion(current);
 
             ConsoleKeyInfo pressedKey = Console.ReadKey();
+
             switch (pressedKey.Key)
             {
                 // Move down
@@ -166,10 +208,12 @@ internal static class SetupUI
         action?.Invoke();
     }
 
+
     public static void Exit()
     {
         Environment.Exit(0);
     }
+
 
     private static void ShowQuestionDescription(string desc)
     {
@@ -178,6 +222,7 @@ internal static class SetupUI
         const int MaxLineLen = 72;
         var parts = desc.Split(' ');
         var count = 0;
+
         foreach (var p in parts)
         {
             if (count + 1 + p.Length <= MaxLineLen)

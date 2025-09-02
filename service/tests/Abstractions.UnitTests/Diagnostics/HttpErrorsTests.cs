@@ -1,7 +1,8 @@
-// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft.All rights reserved.
 
 using System.Net;
 using Microsoft.KernelMemory.Diagnostics;
+using Xunit;
 
 namespace Microsoft.KM.Abstractions.UnitTests.Diagnostics;
 
@@ -16,6 +17,7 @@ public sealed class HttpErrorsTests
         Assert.False(statusCode.IsTransientError());
         Assert.False(statusCode.IsFatalError());
     }
+
 
     [Theory]
     [Trait("Category", "UnitTest")]
@@ -47,6 +49,7 @@ public sealed class HttpErrorsTests
         Assert.False(HttpErrors.IsFatalError((int)statusCode));
     }
 
+
     [Theory]
     [Trait("Category", "UnitTest")]
     [InlineData(HttpStatusCode.Continue)] // 100
@@ -74,6 +77,7 @@ public sealed class HttpErrorsTests
         Assert.False(statusCode.IsFatalError());
     }
 
+
     [Theory]
     [Trait("Category", "UnitTest")]
     [InlineData(HttpStatusCode.RequestTimeout)] // 408
@@ -94,6 +98,7 @@ public sealed class HttpErrorsTests
         Assert.False(HttpErrors.IsFatalError((int)statusCode));
     }
 
+
     [Theory]
     [Trait("Category", "UnitTest")]
     [InlineData(HttpStatusCode.RequestTimeout)] // 408
@@ -110,6 +115,7 @@ public sealed class HttpErrorsTests
         Assert.True(statusCode.IsTransientError());
         Assert.False(statusCode.IsFatalError());
     }
+
 
     [Theory]
     [Trait("Category", "UnitTest")]
@@ -146,6 +152,7 @@ public sealed class HttpErrorsTests
         Assert.True(statusCode.IsFatalError());
         Assert.True(HttpErrors.IsFatalError((int)statusCode));
     }
+
 
     [Theory]
     [Trait("Category", "UnitTest")]

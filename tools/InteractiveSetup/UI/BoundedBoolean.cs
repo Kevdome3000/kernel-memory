@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 namespace Microsoft.KernelMemory.InteractiveSetup.UI;
 
@@ -13,30 +13,28 @@ public sealed class BoundedBoolean
 
     public bool Value
     {
-        get
-        {
-            return this._value;
-        }
+        get => _value;
         set
         {
             if (!value)
             {
-                this._value = false;
+                _value = false;
                 return;
             }
 
-            if (this._changesToTrueCount < this._maxChangesToTrue)
+            if (_changesToTrueCount < _maxChangesToTrue)
             {
-                this._changesToTrueCount++;
-                this._value = true;
+                _changesToTrueCount++;
+                _value = true;
             }
         }
     }
 
+
     public BoundedBoolean(bool initialState = false, int maxChangesToTrue = 1)
     {
-        this._changesToTrueCount = 0;
-        this._maxChangesToTrue = maxChangesToTrue;
-        this._value = initialState;
+        _changesToTrueCount = 0;
+        _maxChangesToTrue = maxChangesToTrue;
+        _value = initialState;
     }
 }

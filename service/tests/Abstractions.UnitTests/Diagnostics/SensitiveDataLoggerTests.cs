@@ -1,6 +1,7 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.KernelMemory.Diagnostics;
+using Xunit;
 
 namespace Microsoft.KM.Abstractions.UnitTests.Diagnostics;
 
@@ -9,6 +10,7 @@ public sealed class SensitiveDataLoggerTests : IDisposable
     private const string AspNetCoreEnvVar = "ASPNETCORE_ENVIRONMENT";
     private const string DotNetEnvVar = "DOTNET_ENVIRONMENT";
 
+
     [Fact]
     [Trait("Category", "UnitTest")]
     public void ItIsDisabledByDefault()
@@ -16,6 +18,7 @@ public sealed class SensitiveDataLoggerTests : IDisposable
         // Assert
         Assert.False(SensitiveDataLogger.Enabled);
     }
+
 
     [Theory]
     [Trait("Category", "UnitTest")]
@@ -35,6 +38,7 @@ public sealed class SensitiveDataLoggerTests : IDisposable
         // Assert
         Assert.True(SensitiveDataLogger.Enabled);
     }
+
 
     [Theory]
     [Trait("Category", "UnitTest")]
@@ -57,6 +61,7 @@ public sealed class SensitiveDataLoggerTests : IDisposable
         // Act/Assert
         Assert.Throws<InvalidOperationException>(() => SensitiveDataLogger.Enabled = true);
     }
+
 
     [Theory]
     [Trait("Category", "UnitTest")]
@@ -86,6 +91,7 @@ public sealed class SensitiveDataLoggerTests : IDisposable
         // Assert
         Assert.False(SensitiveDataLogger.Enabled);
     }
+
 
     [Theory]
     [Trait("Category", "UnitTest")]
@@ -117,6 +123,7 @@ public sealed class SensitiveDataLoggerTests : IDisposable
             Assert.True(SensitiveDataLogger.Enabled);
         }
     }
+
 
     public void Dispose()
     {

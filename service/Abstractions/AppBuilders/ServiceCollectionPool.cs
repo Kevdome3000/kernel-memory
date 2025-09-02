@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections;
@@ -41,10 +41,11 @@ public sealed class ServiceCollectionPool : IServiceCollection
     /// <summary>
     /// The total number of service descriptors registered
     /// </summary>
-    public int Count => this._primaryCollection.Count;
+    public int Count => _primaryCollection.Count;
 
     /// <inheritdoc/>
-    public bool IsReadOnly => this._primaryCollection.IsReadOnly;
+    public bool IsReadOnly => _primaryCollection.IsReadOnly;
+
 
     /// <summary>
     /// Create a new instance, passing in the primary list of services
@@ -53,10 +54,11 @@ public sealed class ServiceCollectionPool : IServiceCollection
     public ServiceCollectionPool(IServiceCollection primaryCollection)
     {
         ArgumentNullExceptionEx.ThrowIfNull(primaryCollection, nameof(primaryCollection), "The primary service collection cannot be NULL");
-        this._poolSizeLocked = false;
-        this._primaryCollection = primaryCollection;
-        this._pool = [primaryCollection];
+        _poolSizeLocked = false;
+        _primaryCollection = primaryCollection;
+        _pool = [primaryCollection];
     }
+
 
     /// <summary>
     /// Add one more service collection to the pool
@@ -66,54 +68,62 @@ public sealed class ServiceCollectionPool : IServiceCollection
     {
         if (serviceCollection == null) { return; }
 
-        if (this._poolSizeLocked)
+        if (_poolSizeLocked)
         {
             throw new InvalidOperationException("The pool of service collections is already in use and cannot be extended");
         }
 
-        this._pool.Add(serviceCollection);
+        _pool.Add(serviceCollection);
     }
+
 
     /// <inheritdoc/>
     public void Add(ServiceDescriptor item)
     {
-        this.Lock();
-        foreach (var sc in this._pool)
+        Lock();
+
+        foreach (var sc in _pool)
         {
             sc.Add(item);
         }
     }
 
+
     /// <inheritdoc/>
     public bool Contains(ServiceDescriptor item)
     {
-        this.Lock();
-        return this._pool.First().Contains(item);
+        Lock();
+        return _pool.First().Contains(item);
     }
 
+
     /* IMPORTANT: iterations use the primary collection only. */
+
 
     /// <inheritdoc/>
     IEnumerator IEnumerable.GetEnumerator()
     {
-        this.Lock();
-        return this._primaryCollection.GetEnumerator();
+        Lock();
+        return _primaryCollection.GetEnumerator();
     }
+
 
     /// <inheritdoc/>
     public IEnumerator<ServiceDescriptor> GetEnumerator()
     {
-        this.Lock();
-        return this._primaryCollection.GetEnumerator();
+        Lock();
+        return _primaryCollection.GetEnumerator();
     }
+
 
     /// <inheritdoc/>
     public bool Remove(ServiceDescriptor item)
     {
-        this.Lock();
+        Lock();
 
         var result = false;
-        foreach (var service in this._pool)
+
+        foreach (var service in _pool)
         {
             result = result || service.Remove(item);
         }
@@ -121,114 +131,123 @@ public sealed class ServiceCollectionPool : IServiceCollection
         return result;
     }
 
+
     /// <inheritdoc/>
     public void Clear()
     {
-        this.Lock();
-        foreach (var service in this._pool)
+        Lock();
+
+        foreach (var service in _pool)
         {
             service.Clear();
         }
     }
+
 
     #region unsafe
 
     /// <inheritdoc/>
     public void CopyTo(ServiceDescriptor[] array, int arrayIndex)
     {
-        this.Lock();
+        Lock();
 
         // When using multiple service providers, the position is not consistent
         // If you need this API, e.g. to loop through the service descriptors:
         // * loop using the enumerator
-        if (this._pool.Count != 1) { throw AccessByPositionNotAllowed(); }
+        if (_pool.Count != 1) { throw AccessByPositionNotAllowed(); }
 
-        this._primaryCollection.CopyTo(array, arrayIndex);
+        _primaryCollection.CopyTo(array, arrayIndex);
     }
+
 
     /// <inheritdoc/>
     public void Insert(int index, ServiceDescriptor item)
     {
-        this.Lock();
+        Lock();
 
         // When using multiple service providers, the position is not consistent
         // If you need this API, e.g. to loop through the service descriptors:
         // * create a custom service collection and pass it to KernelMemoryBuilder ctor
-        if (this._pool.Count != 1) { throw AccessByPositionNotAllowed(); }
+        if (_pool.Count != 1) { throw AccessByPositionNotAllowed(); }
 
-        this._primaryCollection.Insert(index, item);
+        _primaryCollection.Insert(index, item);
     }
+
 
     /// <inheritdoc/>
     public int IndexOf(ServiceDescriptor item)
     {
-        this.Lock();
+        Lock();
 
         // When using multiple service providers, the position is not consistent
         // If you need this API, e.g. to loop through the service descriptors:
         // * loop using the enumerator
         // * create a custom service collection and pass it to KernelMemoryBuilder ctor
-        if (this._pool.Count != 1) { throw AccessByPositionNotAllowed(); }
+        if (_pool.Count != 1) { throw AccessByPositionNotAllowed(); }
 
-        return this._primaryCollection.IndexOf(item);
+        return _primaryCollection.IndexOf(item);
     }
+
 
     /// <inheritdoc/>
     public void RemoveAt(int index)
     {
-        this.Lock();
+        Lock();
 
         // When using multiple service providers, the position is not consistent
         // If you need this API, e.g. to loop through the service descriptors:
         // * loop using the enumerator
         // * create a custom service collection and pass it to KernelMemoryBuilder ctor
-        if (this._pool.Count != 1) { throw AccessByPositionNotAllowed(); }
+        if (_pool.Count != 1) { throw AccessByPositionNotAllowed(); }
 
-        this._primaryCollection.RemoveAt(index);
+        _primaryCollection.RemoveAt(index);
     }
+
 
     /// <inheritdoc/>
     public ServiceDescriptor this[int index]
     {
         get
         {
-            this.Lock();
+            Lock();
 
             // When using multiple service providers, the position is not consistent
             // If you need this API, e.g. to loop through the service descriptors:
             // * loop using the enumerator
             // * create a custom service collection and pass it to KernelMemoryBuilder ctor
-            if (this._pool.Count != 1) { throw AccessByPositionNotAllowed(); }
+            if (_pool.Count != 1) { throw AccessByPositionNotAllowed(); }
 
-            return this._primaryCollection[index];
+            return _primaryCollection[index];
         }
         set
         {
-            this.Lock();
+            Lock();
 
             // When using multiple service providers, the position is not consistent
             // If you need this API, e.g. to loop through the service descriptors:
             // * create a custom service collection and pass it to KernelMemoryBuilder ctor
-            if (this._pool.Count != 1) { throw AccessByPositionNotAllowed(); }
+            if (_pool.Count != 1) { throw AccessByPositionNotAllowed(); }
 
-            this._primaryCollection[index] = value;
+            _primaryCollection[index] = value;
         }
     }
 
     #endregion
 
+
     private void Lock()
     {
-        this._poolSizeLocked = true;
+        _poolSizeLocked = true;
     }
+
 
     /// <exception cref="InvalidOperationException"></exception>
     private static InvalidOperationException AccessByPositionNotAllowed()
     {
         return new InvalidOperationException(
-            $"{nameof(ServiceCollectionPool)} contains collections of different size, " +
-            "and direct access by position is not allowed, to avoid inconsistent results.");
+            $"{nameof(ServiceCollectionPool)} contains collections of different size, " + "and direct access by position is not allowed, to avoid inconsistent results.");
     }
+
 
 #pragma warning restore CA1065
 }

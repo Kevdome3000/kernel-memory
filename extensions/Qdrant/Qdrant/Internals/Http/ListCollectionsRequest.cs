@@ -1,8 +1,8 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Net.Http;
 
-namespace Microsoft.KernelMemory.MemoryDb.Qdrant.Client.Http;
+namespace Microsoft.KernelMemory.MemoryDb.Qdrant.Internals.Http;
 
 internal sealed class ListCollectionsRequest
 {
@@ -10,6 +10,7 @@ internal sealed class ListCollectionsRequest
     {
         return new ListCollectionsRequest();
     }
+
 
     public HttpRequestMessage Build()
     {

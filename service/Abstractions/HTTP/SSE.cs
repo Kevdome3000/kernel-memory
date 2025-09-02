@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -19,8 +19,10 @@ public static class SSE
     public const string LastToken = "[DONE]";
     public const string DoneMessage = $"{DataPrefix}{LastToken}";
 
-    public async static IAsyncEnumerable<T> ParseStreamAsync<T>(
-        Stream stream, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+
+    public static async IAsyncEnumerable<T> ParseStreamAsync<T>(
+        Stream stream,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         using var reader = new StreamReader(stream, Encoding.UTF8);
         StringBuilder buffer = new();
@@ -33,9 +35,11 @@ public static class SSE
 
                 string message = buffer.ToString();
                 buffer.Clear();
+
                 if (message.Trim() == DoneMessage) { yield break; }
 
                 var value = ParseMessage<T>(message);
+
                 if (value != null) { yield return value; }
             }
             else
@@ -48,12 +52,15 @@ public static class SSE
         if (buffer.Length > 0)
         {
             string message = buffer.ToString();
+
             if (message.Trim() == DoneMessage) { yield break; }
 
             var value = ParseMessage<T>(message);
+
             if (value != null) { yield return value; }
         }
     }
+
 
     public static T? ParseMessage<T>(string? message)
     {

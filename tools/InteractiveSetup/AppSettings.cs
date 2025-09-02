@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -17,6 +17,7 @@ internal static class AppSettings
     private const string DevelopmentSettingsFile = "appsettings.Development.json";
     private static readonly JsonSerializerSettings s_jsonOptions = new() { Formatting = Formatting.Indented };
 
+
     public static void Change(Action<KernelMemoryConfig> configChanges)
     {
         CreateFileIfNotExists();
@@ -27,6 +28,7 @@ internal static class AppSettings
 
         string json = File.ReadAllText(DevelopmentSettingsFile);
         JObject? data = JsonConvert.DeserializeObject<JObject>(json);
+
         if (data == null)
         {
             throw new SetupException("Unable to parse file");
@@ -38,10 +40,12 @@ internal static class AppSettings
         File.WriteAllText(DevelopmentSettingsFile, json);
     }
 
+
     public static void AddService(string serviceName, Dictionary<string, object> config)
     {
         Change(x => { x.Services.Add(serviceName, config); });
     }
+
 
     public static void GlobalChange(Action<JObject> configChanges)
     {
@@ -54,6 +58,7 @@ internal static class AppSettings
         var json = JsonConvert.SerializeObject(config, Formatting.Indented);
         File.WriteAllText(DevelopmentSettingsFile, json);
     }
+
 
     /// <summary>
     /// Read the configuration, if available
@@ -85,14 +90,16 @@ internal static class AppSettings
             return JsonConvert.DeserializeObject<KernelMemoryConfig>(JsonConvert.SerializeObject(devConf["KernelMemory"]));
         }
 
-        defaultConf.Merge(devConf, new JsonMergeSettings
-        {
-            MergeArrayHandling = MergeArrayHandling.Replace,
-            PropertyNameComparison = StringComparison.OrdinalIgnoreCase,
-        });
+        defaultConf.Merge(devConf,
+            new JsonMergeSettings
+            {
+                MergeArrayHandling = MergeArrayHandling.Replace,
+                PropertyNameComparison = StringComparison.OrdinalIgnoreCase
+            });
 
         return JsonConvert.DeserializeObject<KernelMemoryConfig>(JsonConvert.SerializeObject(defaultConf["KernelMemory"]));
     }
+
 
     /// <summary>
     /// Load current configuration from current folder, merging appsettings.json (if present) with appsettings.Development.json
@@ -101,7 +108,8 @@ internal static class AppSettings
     /// </summary>
     public static KernelMemoryConfig GetCurrentConfig()
     {
-        JObject data = GetGlobalConfig(includeDefaults: true);
+        JObject data = GetGlobalConfig(true);
+
         if (data["KernelMemory"] == null)
         {
             Console.WriteLine("KernelMemory property missing, using an empty configuration.");
@@ -111,6 +119,7 @@ internal static class AppSettings
         KernelMemoryConfig? config = JsonConvert
             .DeserializeObject<KernelMemoryConfig>(JsonConvert
                 .SerializeObject(data["KernelMemory"]));
+
         if (config == null)
         {
             throw new SetupException("Unable to parse configuration file");
@@ -118,6 +127,7 @@ internal static class AppSettings
 
         return config;
     }
+
 
     private static JObject GetGlobalConfig(bool includeDefaults = false)
     {
@@ -128,6 +138,7 @@ internal static class AppSettings
 
         string json = File.ReadAllText(DevelopmentSettingsFile);
         JObject? data = JsonConvert.DeserializeObject<JObject>(json);
+
         if (data == null)
         {
             throw new SetupException($"Unable to parse `{DevelopmentSettingsFile}` file");
@@ -137,22 +148,25 @@ internal static class AppSettings
         {
             json = File.ReadAllText(DefaultSettingsFile);
             JObject? defaultData = JsonConvert.DeserializeObject<JObject>(json);
+
             if (defaultData == null)
             {
                 throw new SetupException($"Unable to parse `{DefaultSettingsFile}` file");
             }
 
-            defaultData.Merge(data, new JsonMergeSettings
-            {
-                MergeArrayHandling = MergeArrayHandling.Replace,
-                PropertyNameComparison = StringComparison.OrdinalIgnoreCase,
-            });
+            defaultData.Merge(data,
+                new JsonMergeSettings
+                {
+                    MergeArrayHandling = MergeArrayHandling.Replace,
+                    PropertyNameComparison = StringComparison.OrdinalIgnoreCase
+                });
 
             data = defaultData;
         }
 
         return data;
     }
+
 
     private static void CreateFileIfNotExists()
     {
@@ -166,10 +180,10 @@ internal static class AppSettings
             {
                 LogLevel = new
                 {
-                    Default = "Information",
+                    Default = "Information"
                 }
             },
-            AllowedHosts = "*",
+            AllowedHosts = "*"
         };
 
         File.WriteAllText(DevelopmentSettingsFile, JsonConvert.SerializeObject(data, Formatting.Indented));

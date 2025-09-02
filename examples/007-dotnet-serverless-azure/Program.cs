@@ -1,7 +1,10 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.KernelMemory;
+using Microsoft.KernelMemory.Models;
 using Microsoft.KernelMemory.Safety.AzureAIContentSafety;
+
+namespace _007_dotnet_serverless_azure;
 
 /// <summary>
 /// This example uses all and only Azure services
@@ -22,6 +25,7 @@ public static class Program
     private const bool UseAzureAIDocIntelligence = true;
     private const bool UseAzureAIContentSafety = true;
 
+
     public static async Task Main()
     {
         var memoryConfiguration = new KernelMemoryConfig();
@@ -35,8 +39,8 @@ public static class Program
 
         new ConfigurationBuilder()
             .AddJsonFile("appsettings.json")
-            .AddJsonFile("appsettings.development.json", optional: true)
-            .AddJsonFile("appsettings.Development.json", optional: true)
+            .AddJsonFile("appsettings.development.json", true)
+            .AddJsonFile("appsettings.Development.json", true)
             .Build()
             .BindSection("KernelMemory", memoryConfiguration)
             .BindSection("KernelMemory:Services:AzureAIContentSafety", azureAIContentSafetyConfig)
@@ -74,7 +78,9 @@ public static class Program
         // ====== Answer some questions ======
 
         // When using hybrid search, relevance is much lower than cosine similarity
-        var minRelevance = azureAISearchConfig.UseHybridSearch ? 0 : 0.5;
+        var minRelevance = azureAISearchConfig.UseHybridSearch
+            ? 0
+            : 0.5;
 
         // Test 1 (answer from the web page)
         var question = "What's Kernel Memory?";
@@ -89,11 +95,13 @@ public static class Program
         Console.WriteLine($"Answer: {answer.Result}\n\n");
     }
 
+
     // Downloading web pages
     private static async Task StoreWebPageAsync()
     {
         const string DocId = "webPage1";
-        if (!await s_memory!.IsDocumentReadyAsync(DocId, index: IndexName))
+
+        if (!await s_memory!.IsDocumentReadyAsync(DocId, IndexName))
         {
             Console.WriteLine("Uploading https://raw.githubusercontent.com/microsoft/kernel-memory/main/README.md");
             await s_memory.ImportWebPageAsync("https://raw.githubusercontent.com/microsoft/kernel-memory/main/README.md", index: IndexName, documentId: DocId);
@@ -104,16 +112,18 @@ public static class Program
         }
     }
 
+
     // Extract memory from images (requires Azure AI Document Intelligence)
     private static async Task StoreImageAsync()
     {
         if (!UseAzureAIDocIntelligence) { return; }
 
         const string DocId = "img001";
-        if (!await s_memory!.IsDocumentReadyAsync(DocId, index: IndexName))
+
+        if (!await s_memory!.IsDocumentReadyAsync(DocId, IndexName))
         {
             Console.WriteLine("Uploading Image file with a news about a conference sponsored by Microsoft");
-            await s_memory.ImportDocumentAsync(new Document(DocId).AddFiles(["file6-ANWC-image.jpg"]), index: IndexName);
+            await s_memory.ImportDocumentAsync(new Document(DocId).AddFiles(["file6-ANWC-image.jpg"]), IndexName);
         }
         else
         {

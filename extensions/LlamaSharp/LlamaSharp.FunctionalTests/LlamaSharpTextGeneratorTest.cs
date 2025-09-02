@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Diagnostics;
 using System.Text;
@@ -14,17 +14,19 @@ public sealed class LlamaSharpTextGeneratorTest : BaseFunctionalTestCase
     private readonly LlamaSharpTextGenerator _target;
     private readonly Stopwatch _timer;
 
+
     public LlamaSharpTextGeneratorTest(
         IConfiguration cfg,
         ITestOutputHelper output) : base(cfg, output)
     {
-        this._timer = new Stopwatch();
+        _timer = new Stopwatch();
 
-        this.LlamaSharpConfig.Validate();
-        this._target = new LlamaSharpTextGenerator(this.LlamaSharpConfig.TextModel, loggerFactory: null);
-        var modelFilename = this.LlamaSharpConfig.TextModel.ModelPath.Split('/').Last().Split('\\').Last();
+        LlamaSharpConfig.Validate();
+        _target = new LlamaSharpTextGenerator(LlamaSharpConfig.TextModel, loggerFactory: null);
+        var modelFilename = LlamaSharpConfig.TextModel.ModelPath.Split('/').Last().Split('\\').Last();
         Console.WriteLine($"Model in use: {modelFilename}");
     }
+
 
     [Fact]
     [Trait("Category", "LlamaSharp")]
@@ -34,40 +36,42 @@ public sealed class LlamaSharpTextGeneratorTest : BaseFunctionalTestCase
         var text = "hello world, we can run llama";
 
         // Act
-        this._timer.Restart();
-        var tokenCount = this._target.CountTokens(text);
-        this._timer.Stop();
+        _timer.Restart();
+        var tokenCount = _target.CountTokens(text);
+        _timer.Stop();
 
         // Assert
         Console.WriteLine("Phi3 token count: " + tokenCount);
         Console.WriteLine("GPT4 token count: " + new CL100KTokenizer().CountTokens(text));
-        Console.WriteLine($"Time: {this._timer.ElapsedMilliseconds / 1000} secs");
+        Console.WriteLine($"Time: {_timer.ElapsedMilliseconds / 1000} secs");
 
         // Expected result with Phi-3-mini-4k-instruct-q4.gguf, without BoS (https://huggingface.co/microsoft/Phi-3-mini-4k-instruct-gguf)
         Assert.Equal(8, tokenCount);
     }
+
 
     [Fact]
     [Trait("Category", "LlamaSharp")]
     public void ItCountsTokensOfEmptyStrings()
     {
         // Act - No Exceptions should occur
-        this._target.CountTokens("");
-        this._target.CountTokens("\r");
+        _target.CountTokens("");
+        _target.CountTokens("\r");
 
         // Make sure these don't throw an exception
         // See https://github.com/SciSharp/LLamaSharp/issues/430
-        this._target.CountTokens("\n");
-        this._target.CountTokens("\n\n");
-        this._target.CountTokens("\t");
-        this._target.CountTokens("\t\t");
-        this._target.CountTokens("\v");
-        this._target.CountTokens("\v\v");
-        this._target.CountTokens("\0");
-        this._target.CountTokens("\0\0");
-        this._target.CountTokens("\b");
-        this._target.CountTokens("\b\b");
+        _target.CountTokens("\n");
+        _target.CountTokens("\n\n");
+        _target.CountTokens("\t");
+        _target.CountTokens("\t\t");
+        _target.CountTokens("\v");
+        _target.CountTokens("\v\v");
+        _target.CountTokens("\0");
+        _target.CountTokens("\0\0");
+        _target.CountTokens("\b");
+        _target.CountTokens("\b\b");
     }
+
 
     [Fact]
     [Trait("Category", "LlamaSharp")]
@@ -87,26 +91,28 @@ public sealed class LlamaSharpTextGeneratorTest : BaseFunctionalTestCase
         };
 
         // Act
-        this._timer.Restart();
-        var tokens = this._target.GenerateTextAsync(prompt, options);
+        _timer.Restart();
+        var tokens = _target.GenerateTextAsync(prompt, options);
         var result = new StringBuilder();
+
         await foreach (var token in tokens)
         {
             result.Append(token);
         }
 
-        this._timer.Stop();
+        _timer.Stop();
         var answer = result.ToString();
 
         // Assert
         Console.WriteLine($"Model Output:\n=============================\n{answer}\n=============================");
-        Console.WriteLine($"Time: {this._timer.ElapsedMilliseconds / 1000} secs");
+        Console.WriteLine($"Time: {_timer.ElapsedMilliseconds / 1000} secs");
         Assert.Contains("december", answer, StringComparison.OrdinalIgnoreCase);
     }
+
 
     protected override void Dispose(bool disposing)
     {
         base.Dispose(disposing);
-        this._target.Dispose();
+        _target.Dispose();
     }
 }

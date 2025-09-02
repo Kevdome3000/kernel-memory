@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.KernelMemory.InteractiveSetup.UI;
 
@@ -18,29 +18,33 @@ internal static class Webservice
             Description = "If the web service runs on a public network it should protected requiring clients to pass one of two secret API keys on each request. The API Key is passed using the `Authorization` HTTP header.",
             Options =
             [
-                new("Yes", config.ServiceAuthorization.Enabled, () =>
-                {
-                    AppSettings.Change(x =>
+                new Answer("Yes",
+                    config.ServiceAuthorization.Enabled,
+                    () =>
                     {
-                        x.ServiceAuthorization.Enabled = true;
-                        x.ServiceAuthorization.HttpHeaderName = "Authorization";
-                        x.ServiceAuthorization.AccessKey1 = SetupUI.AskPassword("API Key 1 (min 32 chars, alphanumeric ('- . _' allowed))", x.ServiceAuthorization.AccessKey1);
-                        x.ServiceAuthorization.AccessKey2 = SetupUI.AskPassword("API Key 2 (min 32 chars, alphanumeric ('- . _' allowed))", x.ServiceAuthorization.AccessKey2);
-                    });
-                }),
+                        AppSettings.Change(x =>
+                        {
+                            x.ServiceAuthorization.Enabled = true;
+                            x.ServiceAuthorization.HttpHeaderName = "Authorization";
+                            x.ServiceAuthorization.AccessKey1 = SetupUI.AskPassword("API Key 1 (min 32 chars, alphanumeric ('- . _' allowed))", x.ServiceAuthorization.AccessKey1);
+                            x.ServiceAuthorization.AccessKey2 = SetupUI.AskPassword("API Key 2 (min 32 chars, alphanumeric ('- . _' allowed))", x.ServiceAuthorization.AccessKey2);
+                        });
+                    }),
 
-                new("No", !config.ServiceAuthorization.Enabled, () =>
-                {
-                    AppSettings.Change(x =>
+                new Answer("No",
+                    !config.ServiceAuthorization.Enabled,
+                    () =>
                     {
-                        x.ServiceAuthorization.Enabled = false;
-                        x.ServiceAuthorization.HttpHeaderName = "Authorization";
-                        x.ServiceAuthorization.AccessKey1 = "";
-                        x.ServiceAuthorization.AccessKey2 = "";
-                    });
-                }),
+                        AppSettings.Change(x =>
+                        {
+                            x.ServiceAuthorization.Enabled = false;
+                            x.ServiceAuthorization.HttpHeaderName = "Authorization";
+                            x.ServiceAuthorization.AccessKey1 = "";
+                            x.ServiceAuthorization.AccessKey2 = "";
+                        });
+                    }),
 
-                new("-exit-", false, SetupUI.Exit)
+                new Answer("-exit-", false, SetupUI.Exit)
             ]
         });
 
@@ -49,9 +53,9 @@ internal static class Webservice
             Title = "Enable OpenAPI swagger doc at /swagger/index.html?",
             Options =
             [
-                new("Yes", config.Service.OpenApiEnabled, () => { AppSettings.Change(x => { x.Service.OpenApiEnabled = true; }); }),
-                new("No", !config.Service.OpenApiEnabled, () => { AppSettings.Change(x => { x.Service.OpenApiEnabled = false; }); }),
-                new("-exit-", false, SetupUI.Exit)
+                new Answer("Yes", config.Service.OpenApiEnabled, () => { AppSettings.Change(x => { x.Service.OpenApiEnabled = true; }); }),
+                new Answer("No", !config.Service.OpenApiEnabled, () => { AppSettings.Change(x => { x.Service.OpenApiEnabled = false; }); }),
+                new Answer("-exit-", false, SetupUI.Exit)
             ]
         });
     }

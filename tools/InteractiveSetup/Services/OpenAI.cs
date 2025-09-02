@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Collections.Generic;
 using Microsoft.KernelMemory.InteractiveSetup.UI;
@@ -22,7 +22,7 @@ internal static class OpenAI
                 { "EmbeddingModel", "text-embedding-ada-002" },
                 { "APIKey", "" },
                 { "OrgId", "" },
-                { "MaxRetries", 10 },
+                { "MaxRetries", 10 }
             };
             AppSettings.AddService(ServiceName, config);
         }
@@ -33,7 +33,7 @@ internal static class OpenAI
             { "EmbeddingModel", SetupUI.AskOpenQuestion("OpenAI <embedding model name>", config.TryGet("EmbeddingModel")) },
             { "APIKey", SetupUI.AskPassword("OpenAI <API Key>", config.TryGet("APIKey")) },
             { "OrgId", SetupUI.AskOptionalOpenQuestion("Optional OpenAI <Organization Id>", config.TryGet("OrgId")) },
-            { "MaxRetries", 10 },
+            { "MaxRetries", 10 }
         });
     }
 }

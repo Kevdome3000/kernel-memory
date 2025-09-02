@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Collections.Generic;
 using System.Linq;
@@ -11,11 +11,13 @@ public class O200KTokenizer : ITextTokenizer
     private static readonly Tokenizer s_tokenizer = ML.Tokenizers.TiktokenTokenizer.CreateForEncoding("o200k_base",
         new Dictionary<string, int> { { "<|im_start|>", 100264 }, { "<|im_end|>", 100265 } });
 
+
     /// <inheritdoc />
     public int CountTokens(string text)
     {
         return s_tokenizer.CountTokens(text);
     }
+
 
     /// <inheritdoc />
     public IReadOnlyList<string> GetTokens(string text)

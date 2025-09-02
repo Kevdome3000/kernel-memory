@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using Microsoft.Extensions.Logging;
@@ -25,6 +25,7 @@ public static class SensitiveDataLogger
 
     public static LogLevel LoggingLevel { get; set; } = LogLevel.Information;
 
+
     public static void LogSensitive(this ILogger logger, string? message, params object?[] args)
     {
         if (!Enabled) { return; }
@@ -32,6 +33,7 @@ public static class SensitiveDataLogger
         logger.Log(LoggingLevel, $"[PII] {message}", args);
     }
 
+
     public static void LogSensitive(
         this ILogger logger,
         Exception? exception,
@@ -40,8 +42,12 @@ public static class SensitiveDataLogger
     {
         if (!Enabled) { return; }
 
-        logger.Log(LoggingLevel, exception, message, args);
+        logger.Log(LoggingLevel,
+            exception,
+            message,
+            args);
     }
+
 
     public static void LogSensitive(
         this ILogger logger,
@@ -52,8 +58,13 @@ public static class SensitiveDataLogger
     {
         if (!Enabled) { return; }
 
-        logger.Log(LoggingLevel, eventId, exception, message, args);
+        logger.Log(LoggingLevel,
+            eventId,
+            exception,
+            message,
+            args);
     }
+
 
     public static void LogSensitive(
         this ILogger logger,
@@ -63,8 +74,12 @@ public static class SensitiveDataLogger
     {
         if (!Enabled) { return; }
 
-        logger.Log(LoggingLevel, eventId, message, args);
+        logger.Log(LoggingLevel,
+            eventId,
+            message,
+            args);
     }
+
 
     private static void EnsureDevelopmentEnvironment()
     {
@@ -73,6 +88,7 @@ public static class SensitiveDataLogger
 
         // The ASPNETCORE_ENVIRONMENT environment variable has the precedence. If it does not exist, checks for DOTNET_ENVIRONMENT.
         var env = Environment.GetEnvironmentVariable(AspNetCoreEnvVar) ?? Environment.GetEnvironmentVariable(DotNetEnvVar);
+
         if (!string.Equals(env, "Development", StringComparison.OrdinalIgnoreCase))
         {
             throw new InvalidOperationException($"Sensitive data logging can be enabled only in a development environment. Check {AspNetCoreEnvVar} or {DotNetEnvVar} env vars.");

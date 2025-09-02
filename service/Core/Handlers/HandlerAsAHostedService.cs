@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,29 +22,32 @@ public sealed class HandlerAsAHostedService<T> : IHostedService where T : IPipel
     private readonly string _stepName;
     private readonly ILogger<HandlerAsAHostedService<T>> _log;
 
+
     public HandlerAsAHostedService(
         string stepName,
         IPipelineOrchestrator orchestrator,
         T handler,
         ILoggerFactory? loggerFactory = null)
     {
-        this._stepName = stepName;
-        this._orchestrator = orchestrator;
-        this._handler = handler;
+        _stepName = stepName;
+        _orchestrator = orchestrator;
+        _handler = handler;
 
-        this._log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<HandlerAsAHostedService<T>>();
-        this._log.LogInformation("Handler as service created: {0}", stepName);
+        _log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<HandlerAsAHostedService<T>>();
+        _log.LogInformation("Handler as service created: {0}", stepName);
     }
+
 
     public Task StartAsync(CancellationToken cancellationToken = default)
     {
-        this._log.LogInformation("Handler service started: {0}", this._stepName);
-        return this._orchestrator.AddHandlerAsync(this._handler, cancellationToken);
+        _log.LogInformation("Handler service started: {0}", _stepName);
+        return _orchestrator.AddHandlerAsync(_handler, cancellationToken);
     }
+
 
     public Task StopAsync(CancellationToken cancellationToken = default)
     {
-        this._log.LogInformation("Stopping handler service: {0}", this._stepName);
-        return this._orchestrator.StopAllPipelinesAsync();
+        _log.LogInformation("Stopping handler service: {0}", _stepName);
+        return _orchestrator.StopAllPipelinesAsync();
     }
 }

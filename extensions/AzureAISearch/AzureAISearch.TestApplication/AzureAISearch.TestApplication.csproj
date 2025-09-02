@@ -3,7 +3,7 @@
     <PropertyGroup>
         <AssemblyName>Microsoft.AzureAISearch.TestApplication</AssemblyName>
         <RootNamespace>Microsoft.AzureAISearch.TestApplication</RootNamespace>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net9.0</TargetFramework>
         <RollForward>LatestMajor</RollForward>
         <OutputType>Exe</OutputType>
         <ImplicitUsings>enable</ImplicitUsings>
@@ -12,11 +12,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\AzureAISearch\AzureAISearch.csproj" />
+        <ProjectReference Include="..\AzureAISearch\AzureAISearch.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Azure.Search.Documents" />
+        <PackageReference Include="Azure.Search.Documents"/>
+        <PackageReference Include="xunit" />
     </ItemGroup>
 
 </Project>

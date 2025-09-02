@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -29,6 +29,7 @@ public sealed class TextExtractionHandler : IPipelineStepHandler, IDisposable
     /// <inheritdoc />
     public string StepName { get; }
 
+
     /// <summary>
     /// Handler responsible for extracting text from documents.
     /// Note: stepName and other params are injected with DI.
@@ -45,33 +46,35 @@ public sealed class TextExtractionHandler : IPipelineStepHandler, IDisposable
         IWebScraper? webScraper = null,
         ILoggerFactory? loggerFactory = null)
     {
-        this.StepName = stepName;
-        this._orchestrator = orchestrator;
-        this._decoders = decoders;
-        this._log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<TextExtractionHandler>();
-        this._webScraper = webScraper ?? new WebScraper();
+        StepName = stepName;
+        _orchestrator = orchestrator;
+        _decoders = decoders;
+        _log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<TextExtractionHandler>();
+        _webScraper = webScraper ?? new WebScraper();
 
-        this._log.LogInformation("Handler '{0}' ready", stepName);
+        _log.LogInformation("Handler '{0}' ready", stepName);
     }
+
 
     /// <inheritdoc />
     public async Task<(ReturnType returnType, DataPipeline updatedPipeline)> InvokeAsync(
-        DataPipeline pipeline, CancellationToken cancellationToken = default)
+        DataPipeline pipeline,
+        CancellationToken cancellationToken = default)
     {
-        this._log.LogDebug("Extracting text, pipeline '{0}/{1}'", pipeline.Index, pipeline.DocumentId);
+        _log.LogDebug("Extracting text, pipeline '{0}/{1}'", pipeline.Index, pipeline.DocumentId);
 
         foreach (DataPipeline.FileDetails uploadedFile in pipeline.Files)
         {
             if (uploadedFile.AlreadyProcessedBy(this))
             {
-                this._log.LogTrace("File {0} already processed by this handler", uploadedFile.Name);
+                _log.LogTrace("File {0} already processed by this handler", uploadedFile.Name);
                 continue;
             }
 
             var sourceFile = uploadedFile.Name;
             var destFile = $"{uploadedFile.Name}.extract.txt";
             var destFile2 = $"{uploadedFile.Name}.extract.json";
-            BinaryData fileContent = await this._orchestrator.ReadFileAsync(pipeline, sourceFile, cancellationToken).ConfigureAwait(false);
+            BinaryData fileContent = await _orchestrator.ReadFileAsync(pipeline, sourceFile, cancellationToken).ConfigureAwait(false);
 
             string text = string.Empty;
             FileContent content = new(MimeTypes.PlainText);
@@ -81,16 +84,17 @@ public sealed class TextExtractionHandler : IPipelineStepHandler, IDisposable
             {
                 if (uploadedFile.MimeType == MimeTypes.WebPageUrl)
                 {
-                    var (downloadedPage, pageContent, skip) = await this.DownloadContentAsync(uploadedFile, fileContent, cancellationToken).ConfigureAwait(false);
+                    var (downloadedPage, pageContent, skip) = await DownloadContentAsync(uploadedFile, fileContent, cancellationToken).ConfigureAwait(false);
                     skipFile = skip;
+
                     if (!skipFile)
                     {
-                        (text, content, skipFile) = await this.ExtractTextAsync(downloadedPage, pageContent, cancellationToken).ConfigureAwait(false);
+                        (text, content, skipFile) = await ExtractTextAsync(downloadedPage, pageContent, cancellationToken).ConfigureAwait(false);
                     }
                 }
                 else
                 {
-                    (text, content, skipFile) = await this.ExtractTextAsync(uploadedFile, fileContent, cancellationToken).ConfigureAwait(false);
+                    (text, content, skipFile) = await ExtractTextAsync(uploadedFile, fileContent, cancellationToken).ConfigureAwait(false);
                 }
             }
 
@@ -101,8 +105,12 @@ public sealed class TextExtractionHandler : IPipelineStepHandler, IDisposable
             if (!skipFile)
             {
                 // Text file
-                this._log.LogDebug("Saving extracted text file {0}", destFile);
-                await this._orchestrator.WriteFileAsync(pipeline, destFile, new BinaryData(text), cancellationToken).ConfigureAwait(false);
+                _log.LogDebug("Saving extracted text file {0}", destFile);
+                await _orchestrator.WriteFileAsync(pipeline,
+                        destFile,
+                        new BinaryData(text),
+                        cancellationToken)
+                    .ConfigureAwait(false);
                 var destFileDetails = new DataPipeline.GeneratedFileDetails
                 {
                     Id = Guid.NewGuid().ToString("N"),
@@ -111,14 +119,18 @@ public sealed class TextExtractionHandler : IPipelineStepHandler, IDisposable
                     Size = text.Length,
                     MimeType = content.MimeType,
                     ArtifactType = DataPipeline.ArtifactTypes.ExtractedText,
-                    Tags = pipeline.Tags,
+                    Tags = pipeline.Tags
                 };
                 destFileDetails.MarkProcessedBy(this);
                 uploadedFile.GeneratedFiles.Add(destFile, destFileDetails);
 
                 // Structured content (pages)
-                this._log.LogDebug("Saving extracted content {0}", destFile2);
-                await this._orchestrator.WriteFileAsync(pipeline, destFile2, new BinaryData(content), cancellationToken).ConfigureAwait(false);
+                _log.LogDebug("Saving extracted content {0}", destFile2);
+                await _orchestrator.WriteFileAsync(pipeline,
+                        destFile2,
+                        new BinaryData(content),
+                        cancellationToken)
+                    .ConfigureAwait(false);
                 var destFile2Details = new DataPipeline.GeneratedFileDetails
                 {
                     Id = Guid.NewGuid().ToString("N"),
@@ -127,7 +139,7 @@ public sealed class TextExtractionHandler : IPipelineStepHandler, IDisposable
                     Size = text.Length,
                     MimeType = content.MimeType,
                     ArtifactType = DataPipeline.ArtifactTypes.ExtractedContent,
-                    Tags = pipeline.Tags,
+                    Tags = pipeline.Tags
                 };
                 destFile2Details.MarkProcessedBy(this);
                 uploadedFile.GeneratedFiles.Add(destFile2, destFile2Details);
@@ -139,37 +151,43 @@ public sealed class TextExtractionHandler : IPipelineStepHandler, IDisposable
         return (ReturnType.Success, pipeline);
     }
 
+
     public void Dispose()
     {
-        if (this._webScraper is not IDisposable x) { return; }
+        if (_webScraper is not IDisposable x) { return; }
 
         x.Dispose();
     }
 
+
     private async Task<(DataPipeline.FileDetails downloadedPage, BinaryData pageContent, bool skip)> DownloadContentAsync(
-        DataPipeline.FileDetails uploadedFile, BinaryData fileContent, CancellationToken cancellationToken)
+        DataPipeline.FileDetails uploadedFile,
+        BinaryData fileContent,
+        CancellationToken cancellationToken)
     {
         var url = fileContent.ToString();
-        this._log.LogDebug("Downloading web page specified in '{0}' and extracting text from '{1}'", uploadedFile.Name, url);
+        _log.LogDebug("Downloading web page specified in '{0}' and extracting text from '{1}'", uploadedFile.Name, url);
+
         if (string.IsNullOrWhiteSpace(url))
         {
             uploadedFile.Log(this, "The web page URL is empty");
-            this._log.LogWarning("The web page URL is empty");
+            _log.LogWarning("The web page URL is empty");
             return (uploadedFile, fileContent, skip: true);
         }
 
-        var urlDownloadResult = await this._webScraper.GetContentAsync(url, cancellationToken).ConfigureAwait(false);
+        var urlDownloadResult = await _webScraper.GetContentAsync(url, cancellationToken).ConfigureAwait(false);
+
         if (!urlDownloadResult.Success)
         {
             uploadedFile.Log(this, $"Web page download error: {urlDownloadResult.Error}");
-            this._log.LogWarning("Web page download error: {0}", urlDownloadResult.Error);
+            _log.LogWarning("Web page download error: {0}", urlDownloadResult.Error);
             return (uploadedFile, fileContent, skip: true);
         }
 
         if (urlDownloadResult.Content.Length == 0)
         {
             uploadedFile.Log(this, "The web page has no text content, skipping it");
-            this._log.LogWarning("The web page has no text content, skipping it");
+            _log.LogWarning("The web page has no text content, skipping it");
             return (uploadedFile, fileContent, skip: true);
         }
 
@@ -183,6 +201,7 @@ public sealed class TextExtractionHandler : IPipelineStepHandler, IDisposable
         return (result, urlDownloadResult.Content, skip: false);
     }
 
+
     private async Task<(string text, FileContent content, bool skipFile)> ExtractTextAsync(
         DataPipeline.FileDetails uploadedFile,
         BinaryData fileContent,
@@ -194,30 +213,35 @@ public sealed class TextExtractionHandler : IPipelineStepHandler, IDisposable
         if (string.IsNullOrEmpty(uploadedFile.MimeType))
         {
             uploadedFile.Log(this, $"File MIME type is empty, ignoring the file {uploadedFile.Name}");
-            this._log.LogWarning("Empty MIME type, file '{0}' will be ignored", uploadedFile.Name);
+            _log.LogWarning("Empty MIME type, file '{0}' will be ignored", uploadedFile.Name);
             return (text: string.Empty, content, skipFile: true);
         }
 
         // Checks if there is a decoder that supports the file MIME type. If multiple decoders support this type, it means that
         // the decoder has been redefined, so it takes the last one.
-        var decoder = this._decoders.LastOrDefault(d => d.SupportsMimeType(uploadedFile.MimeType));
+        var decoder = _decoders.LastOrDefault(d => d.SupportsMimeType(uploadedFile.MimeType));
+
         if (decoder is not null)
         {
-            this._log.LogDebug("Extracting text from file '{0}' mime type '{1}' using extractor '{2}'",
-                uploadedFile.Name, uploadedFile.MimeType, decoder.GetType().FullName);
+            _log.LogDebug("Extracting text from file '{0}' mime type '{1}' using extractor '{2}'",
+                uploadedFile.Name,
+                uploadedFile.MimeType,
+                decoder.GetType().FullName);
             content = await decoder.DecodeAsync(fileContent, cancellationToken).ConfigureAwait(false);
         }
         else
         {
             uploadedFile.Log(this, $"File MIME type not supported: {uploadedFile.MimeType}. Ignoring the file {uploadedFile.Name}.");
-            this._log.LogWarning("File MIME type not supported: {0} - ignoring the file {1}", uploadedFile.MimeType, uploadedFile.Name);
+            _log.LogWarning("File MIME type not supported: {0} - ignoring the file {1}", uploadedFile.MimeType, uploadedFile.Name);
             return (text: string.Empty, content, skipFile: true);
         }
 
         var textBuilder = new StringBuilder();
+
         foreach (var section in content.Sections)
         {
             var sectionContent = section.Content.Trim();
+
             if (string.IsNullOrEmpty(sectionContent)) { continue; }
 
             textBuilder.Append(sectionContent);

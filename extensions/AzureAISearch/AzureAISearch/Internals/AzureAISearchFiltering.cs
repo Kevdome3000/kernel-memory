@@ -1,14 +1,16 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.KernelMemory.Models;
 
-namespace Microsoft.KernelMemory.MemoryDb.AzureAISearch;
+namespace Microsoft.KernelMemory.MemoryDb.AzureAISearch.Internals;
 
 internal static class AzureAISearchFiltering
 {
     private static readonly char[] s_searchInDelimitersAvailable = ['|', ',', ';', '-', '_', '.', ' ', '^', '$', '*', '`', '#', '@', '&', '/', '~'];
+
 
     /// <summary>
     /// Build a search query optimized to scale for in case a key has several (hundreds+) values
@@ -37,12 +39,11 @@ internal static class AzureAISearchFiltering
             .Where(g => g.Count() > 1)
             .Select(group => new
             {
-                Key = group.Key,
+                group.Key,
                 Values = group.Select(pair => $"{pair.Key}:{pair.Value?.Replace("'", "''", StringComparison.Ordinal)}").ToList(),
                 SearchInDelimiter = s_searchInDelimitersAvailable.FirstOrDefault(specialChar =>
                     !group.Any(pair =>
-                        (pair.Value != null && pair.Value.Contains(specialChar, StringComparison.Ordinal)) ||
-                        (pair.Key != null && pair.Key.Contains(specialChar, StringComparison.Ordinal))))
+                        pair.Value != null && pair.Value.Contains(specialChar, StringComparison.Ordinal) || pair.Key != null && pair.Key.Contains(specialChar, StringComparison.Ordinal)))
             })
             .Where(item => item.SearchInDelimiter != '\0') // Only items with a valid SearchInDelimiter
             .ToList();
@@ -85,6 +86,7 @@ internal static class AzureAISearchFiltering
         // (tags/any(s: s eq 'user:someone1') and tags/any(s: s eq 'type:news')) or (tags/any(s: s eq 'user:admin') and tags/any(s: s eq 'type:fact'))
         return string.Join(" or ", conditions);
     }
+
 
     /*
     /// <summary>

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -13,6 +13,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.KernelMemory.AI;
 using Microsoft.KernelMemory.Diagnostics;
 using Microsoft.KernelMemory.MemoryStorage;
+using Microsoft.KernelMemory.Models;
+using Microsoft.KernelMemory.Postgres.Internals;
 using Microsoft.KernelMemory.Text;
 using Pgvector;
 
@@ -29,6 +31,7 @@ public sealed class PostgresMemory : IMemoryDb, IDisposable, IAsyncDisposable
     private readonly ITextEmbeddingGenerator _embeddingGenerator;
     private readonly ILogger<PostgresMemory> _log;
 
+
     /// <summary>
     /// Create a new instance of Postgres KM connector
     /// </summary>
@@ -40,10 +43,11 @@ public sealed class PostgresMemory : IMemoryDb, IDisposable, IAsyncDisposable
         ITextEmbeddingGenerator embeddingGenerator,
         ILoggerFactory? loggerFactory = null)
     {
-        this._log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<PostgresMemory>();
+        _log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<PostgresMemory>();
 
-        this._embeddingGenerator = embeddingGenerator;
-        if (this._embeddingGenerator == null)
+        _embeddingGenerator = embeddingGenerator;
+
+        if (_embeddingGenerator == null)
         {
             throw new PostgresException("Embedding generator not configured");
         }
@@ -51,8 +55,9 @@ public sealed class PostgresMemory : IMemoryDb, IDisposable, IAsyncDisposable
         // Normalize underscore and check for invalid symbols
         config.TableNamePrefix = NormalizeTableNamePrefix(config.TableNamePrefix);
 
-        this._db = new PostgresDbClient(config, loggerFactory);
+        _db = new PostgresDbClient(config, loggerFactory);
     }
+
 
     /// <inheritdoc />
     public async Task CreateIndexAsync(
@@ -64,28 +69,31 @@ public sealed class PostgresMemory : IMemoryDb, IDisposable, IAsyncDisposable
 
         try
         {
-            if (await this._db.DoesTableExistAsync(index, cancellationToken).ConfigureAwait(false))
+            if (await _db.DoesTableExistAsync(index, cancellationToken).ConfigureAwait(false))
             {
                 return;
             }
 
-            await this._db.CreateTableAsync(index, vectorSize, cancellationToken).ConfigureAwait(false);
+            await _db.CreateTableAsync(index, vectorSize, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception e)
         {
-            this._log.LogError(e, "DB error while attempting to create index");
+            _log.LogError(e, "DB error while attempting to create index");
             throw new PostgresException("DB error while attempting to create index", e);
         }
     }
+
 
     /// <inheritdoc />
     public async Task<IEnumerable<string>> GetIndexesAsync(
         CancellationToken cancellationToken = default)
     {
         var result = new List<string>();
+
         try
         {
-            var tables = this._db.GetTablesAsync(cancellationToken).ConfigureAwait(false);
+            var tables = _db.GetTablesAsync(cancellationToken).ConfigureAwait(false);
+
             await foreach (string name in tables)
             {
                 result.Add(name);
@@ -93,12 +101,13 @@ public sealed class PostgresMemory : IMemoryDb, IDisposable, IAsyncDisposable
         }
         catch (Exception e)
         {
-            this._log.LogError(e, "DB error while fetching the list of indexes");
+            _log.LogError(e, "DB error while fetching the list of indexes");
             throw;
         }
 
         return result;
     }
+
 
     /// <inheritdoc />
     public async Task DeleteIndexAsync(
@@ -109,14 +118,15 @@ public sealed class PostgresMemory : IMemoryDb, IDisposable, IAsyncDisposable
 
         try
         {
-            await this._db.DeleteTableAsync(index, cancellationToken).ConfigureAwait(false);
+            await _db.DeleteTableAsync(index, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception e)
         {
-            this._log.LogError(e, "DB error while deleting index");
+            _log.LogError(e, "DB error while deleting index");
             throw;
         }
     }
+
 
     /// <inheritdoc />
     public async Task<string> UpsertAsync(
@@ -128,19 +138,21 @@ public sealed class PostgresMemory : IMemoryDb, IDisposable, IAsyncDisposable
 
         try
         {
-            await this._db.UpsertAsync(
-                tableName: index,
-                PostgresMemoryRecord.FromMemoryRecord(record),
-                cancellationToken).ConfigureAwait(false);
+            await _db.UpsertAsync(
+                    index,
+                    PostgresMemoryRecord.FromMemoryRecord(record),
+                    cancellationToken)
+                .ConfigureAwait(false);
         }
         catch (Exception e)
         {
-            this._log.LogError(e, "DB error upserting record");
+            _log.LogError(e, "DB error upserting record");
             throw;
         }
 
         return record.Id;
     }
+
 
     /// <inheritdoc />
     public async IAsyncEnumerable<(MemoryRecord, double)> GetSimilarListAsync(
@@ -154,25 +166,27 @@ public sealed class PostgresMemory : IMemoryDb, IDisposable, IAsyncDisposable
     {
         index = NormalizeIndexName(index);
 
-        var (sql, unsafeSqlUserValues) = this.PrepareSql(filters);
+        var (sql, unsafeSqlUserValues) = PrepareSql(filters);
 
-        Embedding textEmbedding = await this._embeddingGenerator.GenerateEmbeddingAsync(text, cancellationToken).ConfigureAwait(false);
+        Embedding textEmbedding = await _embeddingGenerator.GenerateEmbeddingAsync(text, cancellationToken).ConfigureAwait(false);
 
-        var records = this._db.GetSimilarAsync(
-            index,
-            target: new Vector(textEmbedding.Data),
-            minSimilarity: minRelevance,
-            filterSql: sql,
-            sqlUserValues: unsafeSqlUserValues,
-            limit: limit,
-            withEmbeddings: withEmbeddings,
-            cancellationToken: cancellationToken).ConfigureAwait(false);
+        var records = _db.GetSimilarAsync(
+                index,
+                new Vector(textEmbedding.Data),
+                minRelevance,
+                sql,
+                unsafeSqlUserValues,
+                limit,
+                withEmbeddings: withEmbeddings,
+                cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
 
         await foreach ((PostgresMemoryRecord record, double similarity) result in records)
         {
             yield return (PostgresMemoryRecord.ToMemoryRecord(result.record), result.similarity);
         }
     }
+
 
     /// <inheritdoc />
     public async IAsyncEnumerable<MemoryRecord> GetListAsync(
@@ -184,21 +198,23 @@ public sealed class PostgresMemory : IMemoryDb, IDisposable, IAsyncDisposable
     {
         index = NormalizeIndexName(index);
 
-        var (sql, unsafeSqlUserValues) = this.PrepareSql(filters);
+        var (sql, unsafeSqlUserValues) = PrepareSql(filters);
 
-        var records = this._db.GetListAsync(
-            index,
-            filterSql: sql,
-            sqlUserValues: unsafeSqlUserValues,
-            limit: limit,
-            withEmbeddings: withEmbeddings,
-            cancellationToken: cancellationToken).ConfigureAwait(false);
+        var records = _db.GetListAsync(
+                index,
+                sql,
+                unsafeSqlUserValues,
+                limit: limit,
+                withEmbeddings: withEmbeddings,
+                cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
 
         await foreach (PostgresMemoryRecord pgRecord in records)
         {
             yield return PostgresMemoryRecord.ToMemoryRecord(pgRecord);
         }
     }
+
 
     /// <inheritdoc />
     public Task DeleteAsync(
@@ -208,21 +224,23 @@ public sealed class PostgresMemory : IMemoryDb, IDisposable, IAsyncDisposable
     {
         index = NormalizeIndexName(index);
 
-        return this._db.DeleteAsync(tableName: index, id: record.Id, cancellationToken);
+        return _db.DeleteAsync(index, record.Id, cancellationToken);
     }
+
 
     /// <inheritdoc/>
     public void Dispose()
     {
-        this._db?.Dispose();
+        _db?.Dispose();
     }
+
 
     /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
         try
         {
-            await this._db.DisposeAsync().ConfigureAwait(false);
+            await _db.DisposeAsync().ConfigureAwait(false);
         }
         catch (NullReferenceException)
         {
@@ -230,11 +248,13 @@ public sealed class PostgresMemory : IMemoryDb, IDisposable, IAsyncDisposable
         }
     }
 
+
     #region private ================================================================================
 
     // Note: "_" is allowed in Postgres, but we normalize it to "-" for consistency with other DBs
     private static readonly Regex s_replaceIndexNameCharsRegex = new(@"[\s|\\|/|.|_|:]");
     private const string ValidSeparator = "-";
+
 
     private static string NormalizeIndexName(string index)
     {
@@ -246,6 +266,7 @@ public sealed class PostgresMemory : IMemoryDb, IDisposable, IAsyncDisposable
         return index;
     }
 
+
     private static string NormalizeTableNamePrefix(string? name)
     {
         if (name == null) { return string.Empty; }
@@ -255,6 +276,7 @@ public sealed class PostgresMemory : IMemoryDb, IDisposable, IAsyncDisposable
 
         return name;
     }
+
 
     private (string sql, Dictionary<string, object> unsafeSqlUserValues) PrepareSql(
         ICollection<MemoryFilter>? filters = null)
@@ -312,4 +334,6 @@ public sealed class PostgresMemory : IMemoryDb, IDisposable, IAsyncDisposable
     }
 
     #endregion
+
+
 }

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
@@ -19,6 +19,7 @@ public class AzureQueuesConfig
 
     private static readonly Regex s_validPoisonQueueSuffixRegex = new(@"^[a-z0-9-]{1}(?!.*--)[a-z0-9-]{0,28}[a-z0-9]$");
 
+
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum AuthTypes
     {
@@ -34,8 +35,9 @@ public class AzureQueuesConfig
         AccountKey,
         ManualStorageSharedKeyCredential,
         ManualAzureSasCredential,
-        ManualTokenCredential,
+        ManualTokenCredential
     }
+
 
     /// <summary>
     /// Azure authentication type
@@ -78,75 +80,82 @@ public class AzureQueuesConfig
     /// </summary>
     public string PoisonQueueSuffix { get; set; } = "-poison";
 
+
     public void SetCredential(StorageSharedKeyCredential credential)
     {
-        this.Auth = AuthTypes.ManualStorageSharedKeyCredential;
-        this._storageSharedKeyCredential = credential;
+        Auth = AuthTypes.ManualStorageSharedKeyCredential;
+        _storageSharedKeyCredential = credential;
     }
+
 
     public void SetCredential(AzureSasCredential credential)
     {
-        this.Auth = AuthTypes.ManualAzureSasCredential;
-        this._azureSasCredential = credential;
+        Auth = AuthTypes.ManualAzureSasCredential;
+        _azureSasCredential = credential;
     }
+
 
     public void SetCredential(TokenCredential credential)
     {
-        this.Auth = AuthTypes.ManualTokenCredential;
-        this._tokenCredential = credential;
+        Auth = AuthTypes.ManualTokenCredential;
+        _tokenCredential = credential;
     }
+
 
     public StorageSharedKeyCredential GetStorageSharedKeyCredential()
     {
-        return this._storageSharedKeyCredential
-               ?? throw new ConfigurationException("Azure Queues: StorageSharedKeyCredential not defined");
+        return _storageSharedKeyCredential
+            ?? throw new ConfigurationException("Azure Queues: StorageSharedKeyCredential not defined");
     }
+
 
     public AzureSasCredential GetAzureSasCredential()
     {
-        return this._azureSasCredential
-               ?? throw new ConfigurationException("Azure Queues: AzureSasCredential not defined");
+        return _azureSasCredential
+            ?? throw new ConfigurationException("Azure Queues: AzureSasCredential not defined");
     }
+
 
     public TokenCredential GetTokenCredential()
     {
-        return this._tokenCredential
-               ?? throw new ConfigurationException("Azure Queues: TokenCredential not defined");
+        return _tokenCredential
+            ?? throw new ConfigurationException("Azure Queues: TokenCredential not defined");
     }
+
 
     /// <summary>
     /// Verify that the current state is valid.
     /// </summary>
     public void Validate()
     {
-        if (this.PollDelayMsecs < 1)
+        if (PollDelayMsecs < 1)
         {
-            throw new ConfigurationException($"Azure Queues: {nameof(this.PollDelayMsecs)} must be a positive number");
+            throw new ConfigurationException($"Azure Queues: {nameof(PollDelayMsecs)} must be a positive number");
         }
 
-        if (this.FetchBatchSize < 1)
+        if (FetchBatchSize < 1)
         {
-            throw new ConfigurationException($"Azure Queues: {nameof(this.FetchBatchSize)} must be a positive number");
+            throw new ConfigurationException($"Azure Queues: {nameof(FetchBatchSize)} must be a positive number");
         }
 
-        if (this.FetchLockSeconds < 30)
+        if (FetchLockSeconds < 30)
         {
-            throw new ConfigurationException($"Azure Queues: {nameof(this.FetchLockSeconds)} cannot be less than 30 (seconds)");
+            throw new ConfigurationException($"Azure Queues: {nameof(FetchLockSeconds)} cannot be less than 30 (seconds)");
         }
 
-        if (this.MaxRetriesBeforePoisonQueue < 0)
+        if (MaxRetriesBeforePoisonQueue < 0)
         {
-            throw new ConfigurationException($"Azure Queues: {nameof(this.MaxRetriesBeforePoisonQueue)} cannot be a negative number");
+            throw new ConfigurationException($"Azure Queues: {nameof(MaxRetriesBeforePoisonQueue)} cannot be a negative number");
         }
 
-        if (string.IsNullOrWhiteSpace(this.PoisonQueueSuffix))
+        if (string.IsNullOrWhiteSpace(PoisonQueueSuffix))
         {
-            throw new ConfigurationException($"Azure Queues: {nameof(this.PoisonQueueSuffix)} is empty");
+            throw new ConfigurationException($"Azure Queues: {nameof(PoisonQueueSuffix)} is empty");
         }
 
-        if (string.CompareOrdinal(this.PoisonQueueSuffix, this.PoisonQueueSuffix.ToLowerInvariant()) != 0)
+        if (string.CompareOrdinal(PoisonQueueSuffix, PoisonQueueSuffix.ToLowerInvariant()) != 0)
         {
-            throw new ConfigurationException($"Azure Queues: {nameof(this.PoisonQueueSuffix)} value must be lower case");
+            throw new ConfigurationException($"Azure Queues: {nameof(PoisonQueueSuffix)} value must be lower case");
         }
 
         // Queue names must follow the rules described at
@@ -155,9 +164,9 @@ public class AzureQueuesConfig
         // (for example, as it is a suffix, it can safely start with a dash (-) character).
         // Queue names can be up to 63 characters long, so for the suffix we define a maximum length
         // of 30, so there is room for the other name part.
-        if (!s_validPoisonQueueSuffixRegex.IsMatch(this.PoisonQueueSuffix))
+        if (!s_validPoisonQueueSuffixRegex.IsMatch(PoisonQueueSuffix))
         {
-            throw new ConfigurationException($"Azure Queues: {nameof(this.PoisonQueueSuffix)} is too long or contains invalid chars");
+            throw new ConfigurationException($"Azure Queues: {nameof(PoisonQueueSuffix)} is too long or contains invalid chars");
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 /* This example shows how to setup KM pipeline with custom handlers and queues, to process files with custom logic and durable queues.
  * In this example handlers are executed asynchronously, using queues, when calling "ImportDocumentAsync".
@@ -23,6 +23,7 @@
 
 using Microsoft.KernelMemory;
 using Microsoft.KernelMemory.Handlers;
+using Microsoft.KernelMemory.Models;
 
 // Alternative for web apps: var host = WebApplication.CreateBuilder();
 var host = new HostApplicationBuilder();
@@ -84,7 +85,8 @@ string docId = await memory.ImportDocumentAsync(
 Console.WriteLine("* File import started.");
 
 // Wait for import to complete
-var status = await memory.GetDocumentStatusAsync(documentId: docId);
+var status = await memory.GetDocumentStatusAsync(docId);
+
 while (status is { Completed: false })
 {
     Console.WriteLine("* Work in progress...");
@@ -93,7 +95,7 @@ while (status is { Completed: false })
     Console.WriteLine("Remaining: " + string.Join(", ", status.RemainingSteps));
     Console.WriteLine();
     await Task.Delay(TimeSpan.FromSeconds(1));
-    status = await memory.GetDocumentStatusAsync(documentId: docId);
+    status = await memory.GetDocumentStatusAsync(docId);
 }
 
 Console.WriteLine("* File import completed.");

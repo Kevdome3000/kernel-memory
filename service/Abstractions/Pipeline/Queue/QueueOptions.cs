@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 
@@ -11,29 +11,37 @@ public struct QueueOptions : IEquatable<QueueOptions>
 
     public bool DequeueEnabled { get; set; } = true;
 
+
     public QueueOptions()
     {
     }
 
+
     public override readonly bool Equals(object? obj)
     {
-        return obj is QueueOptions options && this.Equals(options);
+        return obj is QueueOptions options && Equals(options);
     }
+
 
     public readonly bool Equals(QueueOptions other)
     {
-        return this.DequeueEnabled == other.DequeueEnabled;
+        return DequeueEnabled == other.DequeueEnabled;
     }
+
 
     public override readonly int GetHashCode()
     {
-        return this.DequeueEnabled ? 1 : 2;
+        return DequeueEnabled
+            ? 1
+            : 2;
     }
+
 
     public static bool operator ==(QueueOptions obj1, QueueOptions obj2)
     {
         return obj1.Equals(obj2);
     }
+
 
     public static bool operator !=(QueueOptions obj1, QueueOptions obj2)
     {

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 namespace Microsoft.KernelMemory.AI;
 
@@ -8,6 +8,7 @@ namespace Microsoft.KernelMemory.AI;
 public sealed class GPT3Tokenizer : P50KTokenizer
 {
 }
+
 
 /// <summary>
 /// gpt-3.5-turbo
@@ -20,6 +21,7 @@ public sealed class GPT3Tokenizer : P50KTokenizer
 public sealed class GPT4Tokenizer : CL100KTokenizer
 {
 }
+
 
 /// <summary>
 /// GPT 4o / 4o mini tokenizer

@@ -1,6 +1,8 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.KernelMemory;
+
+namespace _206_dotnet_configuration_and_logging;
 
 public static class Program
 {
@@ -51,10 +53,7 @@ public static class Program
 
         // Run some code and observe the console for log entries. With LogLevel.Warning the console should be empty.
         // Change the log level to LogLevel.Information / LogLevel.Debug / LogLevel.Trace to see more log entries.
-        await memory.ImportTextAsync("In physics, mass–energy equivalence is the relationship between mass and energy " +
-                                     "in a system's rest frame, where the two quantities differ only by a multiplicative " +
-                                     "constant and the units of measurement. The principle is described by the physicist " +
-                                     "Albert Einstein's formula: E = m*c^2", documentId: "test");
+        await memory.ImportTextAsync("In physics, mass–energy equivalence is the relationship between mass and energy " + "in a system's rest frame, where the two quantities differ only by a multiplicative " + "constant and the units of measurement. The principle is described by the physicist " + "Albert Einstein's formula: E = m*c^2", "test");
 
         Console.WriteLine("# END");
     }

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Threading;
 
@@ -13,8 +13,9 @@ public class RequestContextProvider : IContextProvider
     /// <inheritdoc />
     public IContext GetContext()
     {
-        return this.Context;
+        return Context;
     }
+
 
     #region private ================================================================================
 
@@ -31,4 +32,6 @@ public class RequestContextProvider : IContextProvider
     }
 
     #endregion
+
+
 }

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 #pragma warning disable IDE0130 // reduce number of "using" statements
 // ReSharper disable once CheckNamespace - reduce number of "using" statements
@@ -14,6 +14,7 @@ public sealed class SearchOptions
     /// </summary>
     public bool Stream { get; set; } = false;
 }
+
 
 public static class SearchOptionsExtensions
 {

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.ClientModel;
@@ -27,10 +27,11 @@ internal static class AzureOpenAIClientBuilder
         }
 
         var clientOptions = GetClientOptions(config, httpClient, loggerFactory);
+
         switch (config.Auth)
         {
             case AzureOpenAIConfig.AuthTypes.AzureIdentity:
-                return new AzureOpenAIClient(endpoint: new Uri(config.Endpoint), credential: new DefaultAzureCredential(), clientOptions);
+                return new AzureOpenAIClient(new Uri(config.Endpoint), new DefaultAzureCredential(), clientOptions);
 
             case AzureOpenAIConfig.AuthTypes.ManualTokenCredential:
                 return new AzureOpenAIClient(new Uri(config.Endpoint), config.GetTokenCredential(), clientOptions);
@@ -48,6 +49,7 @@ internal static class AzureOpenAIClientBuilder
         }
     }
 
+
     /// <summary>
     /// Options used by the Azure OpenAI client, e.g. Retry strategy, User Agent, SSL certs, Auth tokens audience, etc.
     /// </summary>
@@ -58,8 +60,8 @@ internal static class AzureOpenAIClientBuilder
     {
         AzureOpenAIClientOptions options = new()
         {
-            RetryPolicy = new ClientSequentialRetryPolicy(maxRetries: Math.Max(0, config.MaxRetries), loggerFactory),
-            UserAgentApplicationId = Telemetry.HttpUserAgent,
+            RetryPolicy = new ClientSequentialRetryPolicy(Math.Max(0, config.MaxRetries), loggerFactory),
+            UserAgentApplicationId = Telemetry.HttpUserAgent
         };
 
         // Custom audience for sovereign clouds. See:
@@ -90,6 +92,7 @@ internal static class AzureOpenAIClientBuilder
         return options;
     }
 
+
     private static HttpClient BuildHttpClientWithCustomCertificateValidation(AzureOpenAIConfig config)
     {
 #pragma warning disable CA2000 // False Positive: https://github.com/dotnet/roslyn-analyzers/issues/4636
@@ -98,13 +101,18 @@ internal static class AzureOpenAIClientBuilder
 
         handler.ClientCertificateOptions = ClientCertificateOption.Manual;
         handler.ServerCertificateCustomValidationCallback =
-            (_, cert, _, policyErrors) =>
+            (
+                _,
+                cert,
+                _,
+                policyErrors) =>
             {
                 // Pass if there are no policy errors.
                 if (policyErrors == SslPolicyErrors.None) { return true; }
 
                 // Attempt to get the thumbprint of the remote certificate.
                 string? remoteCert;
+
                 try
                 {
                     remoteCert = cert?.GetCertHashString();
@@ -124,8 +132,7 @@ internal static class AzureOpenAIClientBuilder
                 if (remoteCert == null) { return false; }
 
                 // Success if the remote cert thumbprint matches any of the trusted ones.
-                return config.TrustedCertificateThumbprints.Any(
-                    trustedCert => string.Equals(remoteCert, trustedCert, StringComparison.OrdinalIgnoreCase));
+                return config.TrustedCertificateThumbprints.Any(trustedCert => string.Equals(remoteCert, trustedCert, StringComparison.OrdinalIgnoreCase));
             };
 
         return new HttpClient(handler);

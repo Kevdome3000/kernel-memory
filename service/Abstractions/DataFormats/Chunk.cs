@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Collections.Generic;
 using System.Text;
@@ -51,20 +51,14 @@ public class Chunk
     ///        and the last sentence may continue into the next section.
     /// </summary>
     [JsonIgnore]
-    public bool SentencesAreComplete
-    {
-        get
-        {
-            return this.Metadata.TryGetValue(MetaSentencesAreComplete, out var value) && JsonSerializer.Deserialize<bool>(value);
-        }
-    }
+    public bool SentencesAreComplete => Metadata.TryGetValue(MetaSentencesAreComplete, out var value) && JsonSerializer.Deserialize<bool>(value);
 
     [JsonIgnore]
     public int PageNumber
     {
         get
         {
-            if (this.Metadata.TryGetValue(MetaPageNumber, out var value))
+            if (Metadata.TryGetValue(MetaPageNumber, out var value))
             {
                 return JsonSerializer.Deserialize<int>(value);
             }
@@ -73,6 +67,7 @@ public class Chunk
         }
     }
 
+
     /// <summary>
     /// Create new instance
     /// </summary>
@@ -80,10 +75,11 @@ public class Chunk
     /// <param name="text">Text content</param>
     public Chunk(string? text, int number)
     {
-        this.Content = text ?? string.Empty;
-        this.Number = number;
-        this.Metadata = new();
+        Content = text ?? string.Empty;
+        Number = number;
+        Metadata = new Dictionary<string, string>();
     }
+
 
     /// <summary>
     /// Create new instance
@@ -92,10 +88,11 @@ public class Chunk
     /// <param name="text">Text content</param>
     public Chunk(char text, int number)
     {
-        this.Content = text.ToString();
-        this.Number = number;
-        this.Metadata = new();
+        Content = text.ToString();
+        Number = number;
+        Metadata = new Dictionary<string, string>();
     }
+
 
     /// <summary>
     /// Create new instance
@@ -104,10 +101,11 @@ public class Chunk
     /// <param name="text">Text content</param>
     public Chunk(StringBuilder text, int number)
     {
-        this.Content = text.ToString();
-        this.Number = number;
-        this.Metadata = new();
+        Content = text.ToString();
+        Number = number;
+        Metadata = new Dictionary<string, string>();
     }
+
 
     /// <summary>
     /// Create new instance
@@ -117,10 +115,11 @@ public class Chunk
     /// <param name="metadata">Chunk metadata</param>
     public Chunk(string? text, int number, Dictionary<string, string> metadata)
     {
-        this.Content = text ?? string.Empty;
-        this.Number = number;
-        this.Metadata = metadata;
+        Content = text ?? string.Empty;
+        Number = number;
+        Metadata = metadata;
     }
+
 
     /// <summary>
     /// Metadata builder

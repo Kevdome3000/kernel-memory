@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -7,7 +7,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.KernelMemory.MemoryStorage;
 
-namespace Microsoft.KernelMemory.MemoryDb.Qdrant.Client;
+namespace Microsoft.KernelMemory.MemoryDb.Qdrant.Internals;
 
 /// <summary>
 /// A record structure used by Qdrant that contains an embedding and metadata.
@@ -24,28 +24,32 @@ internal class QdrantPoint<T> where T : DefaultQdrantPayload, new()
     [JsonPropertyName(QdrantConstants.PointPayloadField)]
     public T Payload { get; set; } = new();
 
+
     public MemoryRecord ToMemoryRecord(bool withEmbedding = true)
     {
         MemoryRecord result = new()
         {
-            Id = this.Payload.Id,
-            Payload = JsonSerializer.Deserialize<Dictionary<string, object>>(this.Payload.Payload, QdrantConfig.JSONOptions) ?? []
+            Id = Payload.Id,
+            Payload = JsonSerializer.Deserialize<Dictionary<string, object>>(Payload.Payload, QdrantConfig.JSONOptions) ?? []
         };
 
         if (withEmbedding)
         {
-            result.Vector = this.Vector;
+            result.Vector = Vector;
         }
 
-        foreach (string[] keyValue in this.Payload.Tags.Select(tag => tag.Split(Constants.ReservedEqualsChar, 2)))
+        foreach (string[] keyValue in Payload.Tags.Select(tag => tag.Split(Constants.ReservedEqualsChar, 2)))
         {
             string key = keyValue[0];
-            string? value = keyValue.Length == 1 ? null : keyValue[1];
+            string? value = keyValue.Length == 1
+                ? null
+                : keyValue[1];
             result.Tags.Add(key, value);
         }
 
         return result;
     }
+
 
     public static QdrantPoint<T> FromMemoryRecord(MemoryRecord record)
     {
@@ -56,7 +60,7 @@ internal class QdrantPoint<T> where T : DefaultQdrantPayload, new()
             {
                 Id = record.Id,
                 Tags = record.Tags.Pairs.Select(tag => $"{tag.Key}{Constants.ReservedEqualsChar}{tag.Value}").ToList(),
-                Payload = JsonSerializer.Serialize(record.Payload, QdrantConfig.JSONOptions),
+                Payload = JsonSerializer.Serialize(record.Payload, QdrantConfig.JSONOptions)
             }
         };
     }

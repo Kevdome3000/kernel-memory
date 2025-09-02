@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Text;
 using Microsoft.KernelMemory;
@@ -15,12 +15,13 @@ internal static class Program
 {
     private const string QueueName = "test queue";
 
+
     public static async Task Main()
     {
         var cfg = new ConfigurationBuilder()
             .AddJsonFile("appsettings.json")
-            .AddJsonFile("appsettings.development.json", optional: true)
-            .AddJsonFile("appsettings.Development.json", optional: true)
+            .AddJsonFile("appsettings.development.json", true)
+            .AddJsonFile("appsettings.Development.json", true)
             .Build();
 
         var rabbitMQConfig = cfg.GetSection("KernelMemory:Services:RabbitMQ").Get<RabbitMQConfig>();
@@ -59,6 +60,7 @@ internal static class Program
         }
     }
 
+
     private static async Task ListenToDeadLetterQueueAsync(RabbitMQConfig config)
     {
         var factory = new ConnectionFactory
@@ -67,11 +69,13 @@ internal static class Program
             Port = config.Port,
             UserName = config.Username,
             Password = config.Password,
-            VirtualHost = !string.IsNullOrWhiteSpace(config.VirtualHost) ? config.VirtualHost : "/",
+            VirtualHost = !string.IsNullOrWhiteSpace(config.VirtualHost)
+                ? config.VirtualHost
+                : "/",
             Ssl = new SslOption
             {
                 Enabled = config.SslEnabled,
-                ServerName = config.Host,
+                ServerName = config.Host
             }
         };
 
@@ -79,7 +83,7 @@ internal static class Program
         var channel = await connection.CreateChannelAsync();
         var consumer = new AsyncEventingBasicConsumer(channel);
 
-        consumer.ReceivedAsync += async (object _, BasicDeliverEventArgs args) =>
+        consumer.ReceivedAsync += async (_, args) =>
         {
             byte[] body = args.Body.ToArray();
             string message = Encoding.UTF8.GetString(body);
@@ -88,8 +92,8 @@ internal static class Program
             await Task.Delay(0);
         };
 
-        await channel.BasicConsumeAsync(queue: $"{QueueName}{config.PoisonQueueSuffix}",
-            autoAck: true,
-            consumer: consumer);
+        await channel.BasicConsumeAsync($"{QueueName}{config.PoisonQueueSuffix}",
+            true,
+            consumer);
     }
 }

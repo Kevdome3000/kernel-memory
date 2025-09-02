@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -10,6 +10,7 @@ using Amazon.S3;
 using Amazon.S3.Model;
 using Microsoft.Extensions.Logging;
 using Microsoft.KernelMemory.Diagnostics;
+using Microsoft.KernelMemory.Models;
 
 namespace Microsoft.KernelMemory.DocumentStorage.AWSS3;
 
@@ -19,23 +20,24 @@ public sealed class AWSS3Storage : IDocumentStorage, IDisposable
     private readonly ILogger<AWSS3Storage> _log;
     private readonly string _bucketName;
 
+
     public AWSS3Storage(
         AWSS3Config config,
         ILogger<AWSS3Storage>? log = null)
     {
         config.Validate();
 
-        this._log = log ?? DefaultLogger<AWSS3Storage>.Instance;
-        this._bucketName = config.BucketName;
+        _log = log ?? DefaultLogger<AWSS3Storage>.Instance;
+        _bucketName = config.BucketName;
 
         switch (config.Auth)
         {
             case AWSS3Config.AuthTypes.AccessKey:
             {
-                this._client = new AmazonS3Client(
-                    awsAccessKeyId: config.AccessKey,
-                    awsSecretAccessKey: config.SecretAccessKey,
-                    clientConfig: new AmazonS3Config
+                _client = new AmazonS3Client(
+                    config.AccessKey,
+                    config.SecretAccessKey,
+                    new AmazonS3Config
                     {
                         ForcePathStyle = config.ForcePathStyle,
                         ServiceURL = config.Endpoint,
@@ -46,7 +48,7 @@ public sealed class AWSS3Storage : IDocumentStorage, IDisposable
             }
             case AWSS3Config.AuthTypes.CredentialChain:
             {
-                this._client = new AmazonS3Client(new AmazonS3Config
+                _client = new AmazonS3Client(new AmazonS3Config
                 {
                     ForcePathStyle = config.ForcePathStyle,
                     ServiceURL = config.Endpoint,
@@ -56,10 +58,11 @@ public sealed class AWSS3Storage : IDocumentStorage, IDisposable
             }
 
             default:
-                this._log.LogCritical("Authentication type '{0}' undefined or not supported", config.Auth);
+                _log.LogCritical("Authentication type '{0}' undefined or not supported", config.Auth);
                 throw new DocumentStorageException($"Authentication type '{config.Auth}' undefined or not supported");
         }
     }
+
 
     /// <inheritdoc />
     public Task CreateIndexDirectoryAsync(
@@ -75,17 +78,20 @@ public sealed class AWSS3Storage : IDocumentStorage, IDisposable
         return Task.CompletedTask;
     }
 
+
     /// <inheritdoc />
     public async Task DeleteIndexDirectoryAsync(string index, CancellationToken cancellationToken = default)
     {
-        this._log.LogTrace("Deleting index '{0}'", index);
+        _log.LogTrace("Deleting index '{0}'", index);
+
         if (string.IsNullOrWhiteSpace(index))
         {
             throw new DocumentStorageException("The index name is empty, stopping the process to prevent data loss");
         }
 
-        await this.DeleteObjectsByPrefixAsync(index, cancellationToken).ConfigureAwait(false);
+        await DeleteObjectsByPrefixAsync(index, cancellationToken).ConfigureAwait(false);
     }
+
 
     /// <inheritdoc />
     public Task CreateDocumentDirectoryAsync(
@@ -99,17 +105,20 @@ public sealed class AWSS3Storage : IDocumentStorage, IDisposable
         return Task.CompletedTask;
     }
 
+
     /// <inheritdoc />
     public async Task EmptyDocumentDirectoryAsync(string index, string documentId, CancellationToken cancellationToken = default)
     {
         var directoryName = $"{index}/{documentId}";
+
         if (string.IsNullOrWhiteSpace(index) || string.IsNullOrWhiteSpace(documentId) || string.IsNullOrWhiteSpace(directoryName))
         {
             throw new DocumentStorageException("The index, or document ID, or directory name is empty, stopping the process to prevent data loss");
         }
 
-        await this.DeleteObjectsByPrefixAsync(directoryName, cancellationToken).ConfigureAwait(false);
+        await DeleteObjectsByPrefixAsync(directoryName, cancellationToken).ConfigureAwait(false);
     }
+
 
     /// <inheritdoc />
     public async Task DeleteDocumentDirectoryAsync(
@@ -118,13 +127,15 @@ public sealed class AWSS3Storage : IDocumentStorage, IDisposable
         CancellationToken cancellationToken = default)
     {
         var directoryName = $"{index}/{documentId}";
+
         if (string.IsNullOrWhiteSpace(index) || string.IsNullOrWhiteSpace(documentId) || string.IsNullOrWhiteSpace(directoryName))
         {
             throw new DocumentStorageException("The index, or document ID, or directory name is empty, stopping the process to prevent data loss");
         }
 
-        await this.DeleteObjectsByPrefixAsync(directoryName, cancellationToken).ConfigureAwait(false);
+        await DeleteObjectsByPrefixAsync(directoryName, cancellationToken).ConfigureAwait(false);
     }
+
 
     /// <inheritdoc />
     public async Task WriteFileAsync(
@@ -137,22 +148,25 @@ public sealed class AWSS3Storage : IDocumentStorage, IDisposable
         var objectKey = $"{index}/{documentId}/{fileName}";
         var len = streamContent.Length;
 
-        this._log.LogTrace("Writing object {0} ...", objectKey);
+        _log.LogTrace("Writing object {0} ...", objectKey);
 
         if (streamContent.Length == 0)
         {
-            this._log.LogWarning("The file {0} is empty", objectKey);
+            _log.LogWarning("The file {0} is empty", objectKey);
         }
 
-        await this._client.PutObjectAsync(new PutObjectRequest
-        {
-            BucketName = this._bucketName,
-            Key = objectKey,
-            InputStream = streamContent
-        }, cancellationToken: cancellationToken).ConfigureAwait(false);
+        await _client.PutObjectAsync(new PutObjectRequest
+                {
+                    BucketName = _bucketName,
+                    Key = objectKey,
+                    InputStream = streamContent
+                },
+                cancellationToken)
+            .ConfigureAwait(false);
 
-        this._log.LogTrace("Object {0} ready, size {1}", objectKey, len);
+        _log.LogTrace("Object {0} ready, size {1}", objectKey, len);
     }
+
 
     /// <inheritdoc />
     public async Task<StreamableFileContent> ReadFileAsync(
@@ -166,8 +180,8 @@ public sealed class AWSS3Storage : IDocumentStorage, IDisposable
 
         try
         {
-            GetObjectRequest request = new() { BucketName = this._bucketName, Key = objectKey };
-            var response = await this._client.GetObjectAsync(request, cancellationToken).ConfigureAwait(false);
+            GetObjectRequest request = new() { BucketName = _bucketName, Key = objectKey };
+            var response = await _client.GetObjectAsync(request, cancellationToken).ConfigureAwait(false);
 
             var memoryStream = new MemoryStream();
             await response.ResponseStream.CopyToAsync(memoryStream, cancellationToken).ConfigureAwait(false);
@@ -176,7 +190,7 @@ public sealed class AWSS3Storage : IDocumentStorage, IDisposable
                 fileName,
                 response.ContentLength,
                 response.Headers.ContentType,
-                response.LastModified,
+                (DateTimeOffset)response.LastModified,
                 () =>
                 {
                     memoryStream.Seek(0, SeekOrigin.Begin);
@@ -188,18 +202,20 @@ public sealed class AWSS3Storage : IDocumentStorage, IDisposable
         {
             if (logErrIfNotFound)
             {
-                this._log.LogInformation("File not found: {0}", objectKey);
+                _log.LogInformation("File not found: {0}", objectKey);
             }
 
             throw new DocumentStorageFileNotFoundException("File not found", e);
         }
     }
 
+
     /// <inheritdoc />
     public void Dispose()
     {
-        this._client.Dispose();
+        _client.Dispose();
     }
+
 
     #region private
 
@@ -210,27 +226,28 @@ public sealed class AWSS3Storage : IDocumentStorage, IDisposable
             throw new DocumentStorageException("The object prefix is empty, stopping the process to prevent data loss");
         }
 
-        this._log.LogTrace("Deleting objects with prefix '{0}'", prefix);
+        _log.LogTrace("Deleting objects with prefix '{0}'", prefix);
 
         var allObjects = new List<S3Object>();
         var request = new ListObjectsV2Request
         {
-            BucketName = this._bucketName,
+            BucketName = _bucketName,
             Prefix = prefix
         };
 
         do
         {
-            ListObjectsV2Response? response = await this._client.ListObjectsV2Async(
-                request,
-                cancellationToken: cancellationToken
-            ).ConfigureAwait(false);
+            ListObjectsV2Response? response = await _client.ListObjectsV2Async(
+                    request,
+                    cancellationToken
+                )
+                .ConfigureAwait(false);
 
             if (response == null) { break; }
 
             allObjects.AddRange(response.S3Objects);
 
-            if (!response.IsTruncated)
+            if ((bool)!response.IsTruncated)
             {
                 // Exit the loop if there are no more objects to retrieve
                 break;
@@ -246,27 +263,33 @@ public sealed class AWSS3Storage : IDocumentStorage, IDisposable
             // Don't delete the pipeline status file
             if (fileName == Constants.PipelineStatusFilename) { continue; }
 
-            this._log.LogInformation("Deleting blob '{0}', filename '{1}' from bucket '{2}'", obj.Key, fileName, this._bucketName);
+            _log.LogInformation("Deleting blob '{0}', filename '{1}' from bucket '{2}'",
+                obj.Key,
+                fileName,
+                _bucketName);
 
-            var response = await this._client.DeleteObjectAsync(
-                bucketName: this._bucketName,
-                key: obj.Key,
-                cancellationToken: cancellationToken
-            ).ConfigureAwait(false);
+            var response = await _client.DeleteObjectAsync(
+                    _bucketName,
+                    obj.Key,
+                    cancellationToken
+                )
+                .ConfigureAwait(false);
 
             // 204 No Content: This status code indicates that the object was successfully deleted
             // from the bucket. The request was processed successfully, and there is no content
             // to return in the response.
             if (response.HttpStatusCode == HttpStatusCode.NoContent)
             {
-                this._log.LogDebug("Delete response: {0}", response.HttpStatusCode);
+                _log.LogDebug("Delete response: {0}", response.HttpStatusCode);
             }
             else
             {
-                this._log.LogWarning("Unexpected delete response: {0}", response.HttpStatusCode);
+                _log.LogWarning("Unexpected delete response: {0}", response.HttpStatusCode);
             }
         }
     }
 
     #endregion
+
+
 }

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.KernelMemory.AI;
 using Microsoft.KernelMemory.Context;
 using Microsoft.KernelMemory.MemoryStorage;
+using Microsoft.KernelMemory.Models;
 
 namespace Microsoft.KernelMemory.Pipeline;
 
@@ -18,6 +19,7 @@ public interface IPipelineOrchestrator
     /// </summary>
     List<string> HandlerNames { get; }
 
+
     /// <summary>
     /// Attach a handler for a specific task
     /// </summary>
@@ -25,12 +27,14 @@ public interface IPipelineOrchestrator
     /// <param name="cancellationToken">Async task cancellation token</param>
     Task AddHandlerAsync(IPipelineStepHandler handler, CancellationToken cancellationToken = default);
 
+
     /// <summary>
     /// Attach a handler for a specific task
     /// </summary>
     /// <param name="handler">Handler instance</param>
     /// <param name="cancellationToken">Async task cancellation token</param>
     Task TryAddHandlerAsync(IPipelineStepHandler handler, CancellationToken cancellationToken = default);
+
 
     /// <summary>
     /// Upload a file and start the processing pipeline
@@ -40,7 +44,12 @@ public interface IPipelineOrchestrator
     /// <param name="context">Unstructured data supporting custom business logic in the current request.</param>
     /// <param name="cancellationToken">Async task cancellation token</param>
     /// <returns>Pipeline/Document ID</returns>
-    Task<string> ImportDocumentAsync(string index, DocumentUploadRequest uploadRequest, IContext? context = null, CancellationToken cancellationToken = default);
+    Task<string> ImportDocumentAsync(
+        string index,
+        DocumentUploadRequest uploadRequest,
+        IContext? context = null,
+        CancellationToken cancellationToken = default);
+
 
     /// <summary>
     /// Create a new pipeline value object for files upload
@@ -51,7 +60,13 @@ public interface IPipelineOrchestrator
     /// <param name="contextArgs">Optional data to pass into pipeline handlers, mirroring IContext.Arguments used during web requests</param>
     /// <param name="filesToUpload">List of files provided before starting the pipeline, to be uploaded into the container before starting.</param>
     /// <returns>Pipeline representation</returns>
-    DataPipeline PrepareNewDocumentUpload(string index, string documentId, TagCollection tags, IEnumerable<DocumentUploadRequest.UploadedFile>? filesToUpload = null, IDictionary<string, object?>? contextArgs = null);
+    DataPipeline PrepareNewDocumentUpload(
+        string index,
+        string documentId,
+        TagCollection tags,
+        IEnumerable<DocumentUploadRequest.UploadedFile>? filesToUpload = null,
+        IDictionary<string, object?>? contextArgs = null);
+
 
     /// <summary>
     /// Start a new data pipeline execution
@@ -59,6 +74,7 @@ public interface IPipelineOrchestrator
     /// <param name="pipeline">Pipeline to execute</param>
     /// <param name="cancellationToken">Async task cancellation token</param>
     Task RunPipelineAsync(DataPipeline pipeline, CancellationToken cancellationToken = default);
+
 
     /// <summary>
     /// Fetch the pipeline status from storage
@@ -69,6 +85,7 @@ public interface IPipelineOrchestrator
     /// <returns>Pipeline status if available</returns>
     Task<DataPipeline?> ReadPipelineStatusAsync(string index, string documentId, CancellationToken cancellationToken = default);
 
+
     /// <summary>
     /// Fetch the pipeline status from storage
     /// </summary>
@@ -77,6 +94,7 @@ public interface IPipelineOrchestrator
     /// <param name="cancellationToken">Async task cancellation token</param>
     /// <returns>Pipeline status if available</returns>
     Task<DataPipelineStatus?> ReadPipelineSummaryAsync(string index, string documentId, CancellationToken cancellationToken = default);
+
 
     /// <summary>
     /// Check if a document ID exists in a user memory and is ready for usage.
@@ -87,12 +105,14 @@ public interface IPipelineOrchestrator
     /// <param name="documentId">Document ID</param>
     /// <param name="cancellationToken">Async task cancellation token</param>
     /// <returns>True if the document has been successfully uploaded and imported</returns>
-    public Task<bool> IsDocumentReadyAsync(string index, string documentId, CancellationToken cancellationToken = default);
+    Task<bool> IsDocumentReadyAsync(string index, string documentId, CancellationToken cancellationToken = default);
+
 
     /// <summary>
     /// Stop all the pipelines in progress
     /// </summary>
     Task StopAllPipelinesAsync();
+
 
     /// <summary>
     /// Fetch a file from document storage, streaming its content and details
@@ -103,6 +123,7 @@ public interface IPipelineOrchestrator
     /// <returns>File data</returns>
     Task<StreamableFileContent> ReadFileAsStreamAsync(DataPipeline pipeline, string fileName, CancellationToken cancellationToken = default);
 
+
     /// <summary>
     /// Fetch a file from document storage
     /// </summary>
@@ -110,6 +131,7 @@ public interface IPipelineOrchestrator
     /// <param name="fileName">Name of the file to fetch</param>
     /// <param name="cancellationToken">Async task cancellation token</param>
     Task<BinaryData> ReadFileAsync(DataPipeline pipeline, string fileName, CancellationToken cancellationToken = default);
+
 
     /// <summary>
     /// Fetch a file from document storage
@@ -119,6 +141,7 @@ public interface IPipelineOrchestrator
     /// <param name="cancellationToken">Async task cancellation token</param>
     Task<string> ReadTextFileAsync(DataPipeline pipeline, string fileName, CancellationToken cancellationToken = default);
 
+
     /// <summary>
     /// Write a text file from document storage
     /// </summary>
@@ -126,7 +149,12 @@ public interface IPipelineOrchestrator
     /// <param name="fileName">Name of the file to fetch</param>
     /// <param name="fileContent">File content</param>
     /// <param name="cancellationToken">Async task cancellation token</param>
-    Task WriteTextFileAsync(DataPipeline pipeline, string fileName, string fileContent, CancellationToken cancellationToken = default);
+    Task WriteTextFileAsync(
+        DataPipeline pipeline,
+        string fileName,
+        string fileContent,
+        CancellationToken cancellationToken = default);
+
 
     /// <summary>
     /// Write a file from document storage
@@ -135,7 +163,12 @@ public interface IPipelineOrchestrator
     /// <param name="fileName">Name of the file to fetch</param>
     /// <param name="fileContent">File content</param>
     /// <param name="cancellationToken">Async task cancellation token</param>
-    Task WriteFileAsync(DataPipeline pipeline, string fileName, BinaryData fileContent, CancellationToken cancellationToken = default);
+    Task WriteFileAsync(
+        DataPipeline pipeline,
+        string fileName,
+        BinaryData fileContent,
+        CancellationToken cancellationToken = default);
+
 
     /// <summary>
     /// Whether the pipeline generates and saves the vectors/embeddings in the memory DBs.
@@ -154,16 +187,19 @@ public interface IPipelineOrchestrator
     /// </summary>
     bool EmbeddingGenerationEnabled { get; }
 
+
     /// <summary>
     /// Get list of embedding generators to use during the ingestion, e.g. to create
     /// multiple vectors.
     /// </summary>
     List<ITextEmbeddingGenerator> GetEmbeddingGenerators();
 
+
     /// <summary>
     /// Get list of memory DBs where to store embeddings.
     /// </summary>
     List<IMemoryDb> GetMemoryDbs();
+
 
     /// <summary>
     /// Get the text generator used for prompts, synthetic data, answer generation, etc.
@@ -173,6 +209,7 @@ public interface IPipelineOrchestrator
     /// <returns>Instance of the text generator</returns>
     ITextGenerator GetTextGenerator();
 
+
     /// <summary>
     /// Start an asynchronous job, via handlers, to delete a specified index
     /// from vector and document storage. This might be a long-running
@@ -181,6 +218,7 @@ public interface IPipelineOrchestrator
     /// <param name="index">Optional index name</param>
     /// <param name="cancellationToken">Async task cancellation token</param>
     Task StartIndexDeletionAsync(string? index = null, CancellationToken cancellationToken = default);
+
 
     /// <summary>
     /// Start an asynchronous job, via handlers, to delete a specified document

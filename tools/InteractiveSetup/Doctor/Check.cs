@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -23,17 +23,32 @@ public static class Check
         var warnings = new List<Tuple<string, string>>();
         var errors = new List<Tuple<string, string>>();
 
-        Orchestration.Run(config, stats, services, warnings, errors);
+        Orchestration.Run(config,
+            stats,
+            services,
+            warnings,
+            errors);
         stats.AddSeparator();
-        EmbeddingGeneration.Run(config, stats, services, warnings, errors);
-        Storage.Run(config, stats, services, warnings, errors);
+        EmbeddingGeneration.Run(config,
+            stats,
+            services,
+            warnings,
+            errors);
+        Storage.Run(config,
+            stats,
+            services,
+            warnings,
+            errors);
         stats.AddSeparator();
 
         // Partitioning
         stats.Add("Text partitioning", $"Chunk:{config.DataIngestion.TextPartitioning.MaxTokensPerParagraph}; Overlapping:{config.DataIngestion.TextPartitioning.OverlappingTokens}");
 
         // Image OCR
-        stats.Add("Image OCR", string.IsNullOrWhiteSpace(config.DataIngestion.ImageOcrType) ? "Disabled" : config.DataIngestion.ImageOcrType);
+        stats.Add("Image OCR",
+            string.IsNullOrWhiteSpace(config.DataIngestion.ImageOcrType)
+                ? "Disabled"
+                : config.DataIngestion.ImageOcrType);
 
         // Text Generation
         if (string.IsNullOrWhiteSpace(config.TextGeneratorType))
@@ -46,18 +61,26 @@ public static class Check
         }
 
         // Moderation
-        stats.Add("Moderation", string.IsNullOrWhiteSpace(config.ContentModerationType) ? "Disabled" : config.ContentModerationType);
+        stats.Add("Moderation",
+            string.IsNullOrWhiteSpace(config.ContentModerationType)
+                ? "Disabled"
+                : config.ContentModerationType);
+
         if (string.IsNullOrWhiteSpace(config.ContentModerationType))
         {
             warnings.Add("Moderation", "No moderation service configured");
         }
 
         ShowStats("Service configuration", stats);
-        Services.CheckAndShow(config, services, warnings, errors);
+        Services.CheckAndShow(config,
+            services,
+            warnings,
+            errors);
         ShowStats("Warnings", warnings);
         ShowStats("Errors", errors);
         Environment.Exit(0);
     }
+
 
     private static void ShowStats(string title, List<Tuple<string, string>> stats)
     {
@@ -65,6 +88,7 @@ public static class Check
 
         Console.WriteLine($"\n\u001b[1;37m### {title}\u001b[0m\n");
         var count = 0;
+
         foreach (var kv in stats)
         {
             if (string.IsNullOrWhiteSpace(kv.Item1))

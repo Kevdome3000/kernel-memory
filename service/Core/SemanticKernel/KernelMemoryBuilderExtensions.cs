@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.Extensions.Logging;
 using Microsoft.KernelMemory.AI;
@@ -34,8 +34,12 @@ public static partial class KernelMemoryBuilderExtensions
     {
         if (service == null) { throw new ConfigurationException("Memory Builder: the semantic kernel text generation service instance is NULL"); }
 
-        return builder.AddSingleton<ITextGenerator>(new SemanticKernelTextGenerator(service, config, textTokenizer, loggerFactory));
+        return builder.AddSingleton<ITextGenerator>(new SemanticKernelTextGenerator(service,
+            config,
+            textTokenizer,
+            loggerFactory));
     }
+
 
     ///  <summary>
     /// Inject an implementation of<see cref="ITextEmbeddingGenerationService">SK text embedding generation service</see>
@@ -58,7 +62,10 @@ public static partial class KernelMemoryBuilderExtensions
     {
         if (service == null) { throw new ConfigurationException("Memory Builder: the semantic kernel text embedding generation service instance is NULL"); }
 
-        var generator = new SemanticKernelTextEmbeddingGenerator(service, config, textTokenizer, loggerFactory);
+        var generator = new SemanticKernelTextEmbeddingGenerator(service,
+            config,
+            textTokenizer,
+            loggerFactory);
         builder.AddSingleton<ITextEmbeddingGenerator>(generator);
 
         if (!onlyForRetrieval)

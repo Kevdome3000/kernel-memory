@@ -1,8 +1,9 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
-
+﻿// Copyright (c) Microsoft.All rights reserved.
 using Microsoft.KernelMemory;
 using Microsoft.KernelMemory.Diagnostics;
 using Microsoft.KernelMemory.Pipeline;
+
+namespace _201_dotnet_serverless_custom_handler;
 
 internal static class Program
 {
@@ -28,27 +29,32 @@ internal static class Program
     }
 }
 
+
 public class MyHandler : IPipelineStepHandler
 {
     private readonly IPipelineOrchestrator _orchestrator;
     private readonly ILogger<MyHandler> _log;
+
 
     public MyHandler(
         string stepName,
         IPipelineOrchestrator orchestrator,
         ILoggerFactory? loggerFactory = null)
     {
-        this.StepName = stepName;
-        this._orchestrator = orchestrator;
-        this._log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<MyHandler>();
+        StepName = stepName;
+        _orchestrator = orchestrator;
+        _log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<MyHandler>();
     }
+
 
     /// <inheritdoc />
     public string StepName { get; }
 
+
     /// <inheritdoc />
     public async Task<(ReturnType returnType, DataPipeline updatedPipeline)> InvokeAsync(
-        DataPipeline pipeline, CancellationToken cancellationToken = default)
+        DataPipeline pipeline,
+        CancellationToken cancellationToken = default)
     {
         /* ... your custom ...
          * ... handler ...

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft.All rights reserved.
 
 using System.Security.Cryptography;
 using Microsoft.KernelMemory;
@@ -16,6 +16,7 @@ public class SimpleVectorDbTest : BaseUnitTestCase
     public SimpleVectorDbTest(ITestOutputHelper output) : base(output)
     {
     }
+
 
     [Fact]
     [Trait("Category", "UnitTest")]
@@ -35,19 +36,28 @@ public class SimpleVectorDbTest : BaseUnitTestCase
         // Store 1000 records with random embeddings
         for (int i = 0; i < 1000; i++)
         {
-            await target.UpsertAsync(index, new MemoryRecord
-            {
-                Id = RandomLetter() + RandomLetter() + RandomLetter() + $"_{i}",
-                Vector = new Embedding([RandomNumber() / 1000f, RandomNumber() / 1000f, RandomNumber() / 1000f]),
-            });
+            await target.UpsertAsync(index,
+                new MemoryRecord
+                {
+                    Id = RandomLetter() + RandomLetter() + RandomLetter() + $"_{i}",
+                    Vector = new Embedding([RandomNumber() / 1000f, RandomNumber() / 1000f, RandomNumber() / 1000f])
+                });
         }
 
         // Act - Search top 25 records, result is ordered by similarity
         const int count = 25;
-        List<(MemoryRecord, double)> result1 = await target.GetSimilarListAsync(index, text, minRelevance: 0.3, limit: count).ToListAsync();
+        List<(MemoryRecord, double)> result1 = await target.GetSimilarListAsync(index,
+                text,
+                minRelevance: 0.3,
+                limit: count)
+            .ToListAsync();
 
         // Act - Search all records, result is ordered by similarity
-        List<(MemoryRecord, double)> result2 = await target.GetSimilarListAsync(index, text, minRelevance: 0.3, limit: -1).ToListAsync();
+        List<(MemoryRecord, double)> result2 = await target.GetSimilarListAsync(index,
+                text,
+                minRelevance: 0.3,
+                limit: -1)
+            .ToListAsync();
 
         // Assert - the two lists should have the same top 25
         for (int i = 0; i < count; i++)
@@ -56,6 +66,7 @@ public class SimpleVectorDbTest : BaseUnitTestCase
         }
     }
 
+
     private static string RandomLetter()
     {
         using RandomNumberGenerator rng = RandomNumberGenerator.Create();
@@ -63,10 +74,11 @@ public class SimpleVectorDbTest : BaseUnitTestCase
         rng.GetBytes(randomBytes);
 
         // ASCII code for 'A' is 65, and for 'Z' is 90
-        int randomAscii = (randomBytes[0] % 26) + 65;
+        int randomAscii = randomBytes[0] % 26 + 65;
         char randomLetter = (char)randomAscii;
         return $"{randomLetter}";
     }
+
 
     private static int RandomNumber()
     {

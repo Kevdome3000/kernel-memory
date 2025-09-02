@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.KernelMemory;
 using Microsoft.KernelMemory.MemoryDb.SQLServer;
 using Microsoft.KernelMemory.MemoryStorage;
+using Microsoft.KernelMemory.Models;
 using Microsoft.KM.Core.FunctionalTests.DefaultTestCases;
 using Microsoft.KM.TestHelpers;
 
@@ -16,111 +17,125 @@ public class DefaultTests : BaseFunctionalTestCase
     private readonly MemoryServerless _memory;
     private readonly IMemoryDb _memoryDb;
 
+
     public DefaultTests(IConfiguration cfg, ITestOutputHelper output) : base(cfg, output)
     {
-        Assert.False(string.IsNullOrEmpty(this.OpenAiConfig.APIKey));
+        Assert.False(string.IsNullOrEmpty(OpenAiConfig.APIKey));
 
         SqlServerConfig sqlServerConfig = cfg.GetSection("KernelMemory:Services:SqlServer").Get<SqlServerConfig>()!;
 
         var builder = new KernelMemoryBuilder();
 
-        this._memory = builder
+        _memory = builder
             .With(new KernelMemoryConfig { DefaultIndexName = "default4tests" })
             .Configure(kmb => kmb.Services.AddLogging(b => { b.AddConsole().SetMinimumLevel(LogLevel.Trace); }))
             .WithSearchClientConfig(new SearchClientConfig { EmptyAnswer = NotFound })
-            .WithOpenAI(this.OpenAiConfig)
+            .WithOpenAI(OpenAiConfig)
             // .WithAzureOpenAITextGeneration(this.AzureOpenAITextConfiguration)
             // .WithAzureOpenAITextEmbeddingGeneration(this.AzureOpenAIEmbeddingConfiguration)
             .WithSqlServerMemoryDb(sqlServerConfig)
             .Build<MemoryServerless>();
 
         var serviceProvider = builder.Services.BuildServiceProvider();
-        this._memoryDb = serviceProvider.GetService<IMemoryDb>()!;
+        _memoryDb = serviceProvider.GetService<IMemoryDb>()!;
     }
+
 
     [Fact]
     [Trait("Category", "SQLServer")]
     public async Task ItSupportsASingleFilter()
     {
-        await FilteringTest.ItSupportsASingleFilter(this._memory, this.Log);
+        await FilteringTest.ItSupportsASingleFilter(_memory, Log);
     }
+
 
     [Fact]
     [Trait("Category", "SQLServer")]
     public async Task ItSupportsMultipleFilters()
     {
-        await FilteringTest.ItSupportsMultipleFilters(this._memory, this.Log);
+        await FilteringTest.ItSupportsMultipleFilters(_memory, Log);
     }
+
 
     [Fact]
     [Trait("Category", "SQLServer")]
     public async Task ItIgnoresEmptyFilters()
     {
-        await FilteringTest.ItIgnoresEmptyFilters(this._memory, this.Log, true);
+        await FilteringTest.ItIgnoresEmptyFilters(_memory, Log, true);
     }
+
 
     [Fact]
     [Trait("Category", "SQLServer")]
     public async Task ItDoesntFailIfTheIndexExistsAlready()
     {
-        await IndexCreationTest.ItDoesntFailIfTheIndexExistsAlready(this._memory, this.Log);
+        await IndexCreationTest.ItDoesntFailIfTheIndexExistsAlready(_memory, Log);
     }
+
 
     [Fact]
     [Trait("Category", "SQLServer")]
     public async Task ItListsIndexes()
     {
-        await IndexListTest.ItListsIndexes(this._memory, this.Log);
+        await IndexListTest.ItListsIndexes(_memory, Log);
     }
+
 
     [Fact]
     [Trait("Category", "SQLServer")]
     public async Task ItNormalizesIndexNames()
     {
-        await IndexListTest.ItNormalizesIndexNames(this._memory, this.Log);
+        await IndexListTest.ItNormalizesIndexNames(_memory, Log);
     }
+
 
     [Fact]
     [Trait("Category", "SQLServer")]
     public async Task ItUsesDefaultIndexName()
     {
-        await IndexListTest.ItUsesDefaultIndexName(this._memory, this.Log, "default4tests");
+        await IndexListTest.ItUsesDefaultIndexName(_memory, Log, "default4tests");
     }
+
 
     [Fact]
     [Trait("Category", "SQLServer")]
     public async Task ItDeletesIndexes()
     {
-        await IndexDeletionTest.ItDeletesIndexes(this._memory, this.Log);
+        await IndexDeletionTest.ItDeletesIndexes(_memory, Log);
     }
+
 
     [Fact]
     [Trait("Category", "SQLServer")]
     public async Task ItHandlesMissingIndexesConsistently()
     {
-        await MissingIndexTest.ItHandlesMissingIndexesConsistently(this._memory, this.Log);
+        await MissingIndexTest.ItHandlesMissingIndexesConsistently(_memory, Log);
     }
+
 
     [Fact]
     [Trait("Category", "SQLServer")]
     public async Task ItUploadsPDFDocsAndDeletes()
     {
-        await DocumentUploadTest.ItUploadsPDFDocsAndDeletes(this._memory, this.Log);
+        await DocumentUploadTest.ItUploadsPDFDocsAndDeletes(_memory, Log);
     }
+
 
     [Fact]
     [Trait("Category", "SQLServer")]
     public async Task ItSupportsTags()
     {
-        await DocumentUploadTest.ItSupportsTags(this._memory, this.Log);
+        await DocumentUploadTest.ItSupportsTags(_memory, Log);
     }
+
 
     [Fact]
     [Trait("Category", "SQLServer")]
     public async Task ItDeletesRecords()
     {
-        await RecordDeletionTest.ItDeletesRecords(this._memory, this._memoryDb, this.Log);
+        await RecordDeletionTest.ItDeletesRecords(_memory, _memoryDb, Log);
     }
+
 
     [Fact]
     [Trait("Category", "SQLServer")]
@@ -140,15 +155,15 @@ public class DefaultTests : BaseFunctionalTestCase
             tags.AddSyntheticTag($"tagTest{i}");
         }
 
-        await this._memory.ImportDocumentAsync(
+        await _memory.ImportDocumentAsync(
             "file1-NASA-news.pdf",
-            documentId: Id,
-            tags: tags,
+            Id,
+            tags,
             steps: Constants.PipelineWithoutSummary);
 
-        while (!await this._memory.IsDocumentReadyAsync(documentId: Id))
+        while (!await _memory.IsDocumentReadyAsync(Id))
         {
-            this.Log("Waiting for memory ingestion to complete...");
+            Log("Waiting for memory ingestion to complete...");
             await Task.Delay(TimeSpan.FromSeconds(2));
         }
     }

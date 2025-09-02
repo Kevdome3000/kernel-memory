@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Text.Json.Serialization;
 
@@ -13,6 +13,7 @@ public class ElasticsearchTag
 
     public const string ValueField = "value";
 
+
     /// <summary>
     /// Instantiates a new instance of <see cref="ElasticsearchTag"/>.
     /// </summary>
@@ -23,9 +24,10 @@ public class ElasticsearchTag
     {
         ArgumentNullExceptionEx.ThrowIfNullOrWhiteSpace(name, nameof(name), "The tag name is NULL");
 
-        this.Name = name;
-        this.Value = value;
+        Name = name;
+        Value = value;
     }
+
 
     /// <summary>
     /// The name of this tag.
@@ -39,9 +41,10 @@ public class ElasticsearchTag
     [JsonPropertyName(ValueField)]
     public string? Value { get; set; }
 
+
     /// <inheritedDoc />
     public override string ToString()
     {
-        return $"{this.Name}={this.Value}";
+        return $"{Name}={Value}";
     }
 }

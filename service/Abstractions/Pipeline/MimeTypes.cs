@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -74,6 +74,7 @@ public static class MimeTypes
     public const string Archive7Zip = "application/x-7z-compressed";
 }
 
+
 public static class FileExtensions
 {
     public const string PlainText = ".txt";
@@ -138,11 +139,13 @@ public static class FileExtensions
     public const string Archive7Zip = ".7z";
 }
 
+
 public interface IMimeTypeDetection
 {
-    public string GetFileType(string filename);
-    public bool TryGetFileType(string filename, out string? mimeType);
+    string GetFileType(string filename);
+    bool TryGetFileType(string filename, out string? mimeType);
 }
+
 
 public class MimeTypesDetection : IMimeTypeDetection
 {
@@ -209,8 +212,9 @@ public class MimeTypesDetection : IMimeTypeDetection
             { FileExtensions.ArchiveGzip, MimeTypes.ArchiveGzip },
             { FileExtensions.ArchiveZip, MimeTypes.ArchiveZip },
             { FileExtensions.ArchiveRar, MimeTypes.ArchiveRar },
-            { FileExtensions.Archive7Zip, MimeTypes.Archive7Zip },
+            { FileExtensions.Archive7Zip, MimeTypes.Archive7Zip }
         };
+
 
     public string GetFileType(string filename)
     {
@@ -221,8 +225,9 @@ public class MimeTypesDetection : IMimeTypeDetection
             return mimeType;
         }
 
-        throw new MimeTypeException($"File type not supported: {filename}", isTransient: false);
+        throw new MimeTypeException($"File type not supported: {filename}", false);
     }
+
 
     public bool TryGetFileType(string filename, out string? mimeType)
     {

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -17,35 +17,41 @@ public class NoEmbeddingGenerator : ITextEmbeddingGenerator
 {
     private readonly ILogger<NoEmbeddingGenerator> _log;
 
+
     public NoEmbeddingGenerator(ILoggerFactory? loggerFactory = null)
     {
-        this._log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<NoEmbeddingGenerator>();
+        _log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<NoEmbeddingGenerator>();
     }
+
 
     /// <inheritdoc />
     public int MaxTokens => int.MaxValue;
 
+
     /// <inheritdoc />
     public int CountTokens(string text)
     {
-        throw this.Error();
+        throw Error();
     }
+
 
     /// <inheritdoc />
     public IReadOnlyList<string> GetTokens(string text)
     {
-        throw this.Error();
+        throw Error();
     }
+
 
     /// <inheritdoc />
     public Task<Embedding> GenerateEmbeddingAsync(string text, CancellationToken cancellationToken = default)
     {
-        throw this.Error();
+        throw Error();
     }
+
 
     private NotImplementedException Error()
     {
-        this._log.LogCritical("The application is attempting to generate embeddings even if embedding generation has been disabled");
+        _log.LogCritical("The application is attempting to generate embeddings even if embedding generation has been disabled");
         return new NotImplementedException("Embedding generation has been disabled");
     }
 }

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -15,6 +15,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.KernelMemory.AI;
 using Microsoft.KernelMemory.Diagnostics;
 using Microsoft.KernelMemory.FileSystem.DevTools;
+using Microsoft.KernelMemory.Models;
 
 namespace Microsoft.KernelMemory.MemoryStorage.DevTools;
 
@@ -29,6 +30,7 @@ public class SimpleVectorDb : IMemoryDb
     private readonly IFileSystem _fileSystem;
     private readonly ILogger<SimpleVectorDb> _log;
 
+
     /// <summary>
     /// Create new instance
     /// </summary>
@@ -40,22 +42,23 @@ public class SimpleVectorDb : IMemoryDb
         ITextEmbeddingGenerator embeddingGenerator,
         ILoggerFactory? loggerFactory = null)
     {
-        this._embeddingGenerator = embeddingGenerator;
+        _embeddingGenerator = embeddingGenerator;
 
-        if (this._embeddingGenerator == null)
+        if (_embeddingGenerator == null)
         {
             throw new SimpleVectorDbException("Embedding generator not configured");
         }
 
-        this._log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<SimpleVectorDb>();
+        _log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<SimpleVectorDb>();
+
         switch (config.StorageType)
         {
             case FileSystemTypes.Disk:
-                this._fileSystem = new DiskFileSystem(config.Directory, null, loggerFactory);
+                _fileSystem = new DiskFileSystem(config.Directory, null, loggerFactory);
                 break;
 
             case FileSystemTypes.Volatile:
-                this._fileSystem = VolatileFileSystem.GetInstance(config.Directory, null, loggerFactory);
+                _fileSystem = VolatileFileSystem.GetInstance(config.Directory, null, loggerFactory);
                 break;
 
             default:
@@ -63,34 +66,44 @@ public class SimpleVectorDb : IMemoryDb
         }
     }
 
+
     /// <inheritdoc />
     public Task CreateIndexAsync(string index, int vectorSize, CancellationToken cancellationToken = default)
     {
         index = NormalizeIndexName(index);
-        return this._fileSystem.CreateVolumeAsync(index, cancellationToken);
+        return _fileSystem.CreateVolumeAsync(index, cancellationToken);
     }
+
 
     /// <inheritdoc />
     public Task<IEnumerable<string>> GetIndexesAsync(CancellationToken cancellationToken = default)
     {
-        return this._fileSystem.ListVolumesAsync(cancellationToken);
+        return _fileSystem.ListVolumesAsync(cancellationToken);
     }
+
 
     /// <inheritdoc />
     public Task DeleteIndexAsync(string index, CancellationToken cancellationToken = default)
     {
         index = NormalizeIndexName(index);
-        return this._fileSystem.DeleteVolumeAsync(index, cancellationToken);
+        return _fileSystem.DeleteVolumeAsync(index, cancellationToken);
     }
+
 
     /// <inheritdoc />
     public async Task<string> UpsertAsync(string index, MemoryRecord record, CancellationToken cancellationToken = default)
     {
         // Note: if the index doesn't exist, it's automatically created (the index is just a folder)
         index = NormalizeIndexName(index);
-        await this._fileSystem.WriteFileAsync(index, "", EncodeId(record.Id), JsonSerializer.Serialize(record), cancellationToken).ConfigureAwait(false);
+        await _fileSystem.WriteFileAsync(index,
+                "",
+                EncodeId(record.Id),
+                JsonSerializer.Serialize(record),
+                cancellationToken)
+            .ConfigureAwait(false);
         return record.Id;
     }
+
 
     /// <inheritdoc />
     public async IAsyncEnumerable<(MemoryRecord, double)> GetSimilarListAsync(
@@ -106,20 +119,25 @@ public class SimpleVectorDb : IMemoryDb
 
         index = NormalizeIndexName(index);
 
-        var list = this.GetListAsync(index, filters, int.MaxValue, withEmbeddings, cancellationToken);
+        var list = GetListAsync(index,
+            filters,
+            int.MaxValue,
+            withEmbeddings,
+            cancellationToken);
         var records = new Dictionary<string, MemoryRecord>();
+
         await foreach (MemoryRecord r in list.WithCancellation(cancellationToken).ConfigureAwait(false))
         {
             records[r.Id] = r;
         }
 
-        this._log.LogDebug("{VectorCount} vectors loaded for similarity check", records.Count);
+        _log.LogDebug("{VectorCount} vectors loaded for similarity check", records.Count);
 
         // Calculate all the distances from the given vector
         // Note: this is a brute force search, very slow, not meant for production use cases
         var similarity = new Dictionary<string, double>();
-        Embedding textEmbedding = await this._embeddingGenerator.GenerateEmbeddingAsync
-            (text, cancellationToken).ConfigureAwait(false);
+        Embedding textEmbedding = await _embeddingGenerator.GenerateEmbeddingAsync(text, cancellationToken).ConfigureAwait(false);
+
         foreach (var record in records)
         {
             similarity[record.Value.Id] = textEmbedding.CosineSimilarity(record.Value.Vector);
@@ -134,6 +152,7 @@ public class SimpleVectorDb : IMemoryDb
 
         // Return <count> vectors, including the calculated distance
         var count = 0;
+
         foreach (string id in sorted)
         {
             if (count++ < limit)
@@ -142,6 +161,7 @@ public class SimpleVectorDb : IMemoryDb
             }
         }
     }
+
 
     /// <inheritdoc />
     public async IAsyncEnumerable<MemoryRecord> GetListAsync(
@@ -159,9 +179,10 @@ public class SimpleVectorDb : IMemoryDb
         filters = filters?.Where(f => !f.IsEmpty()).ToList();
 
         IDictionary<string, string> list;
+
         try
         {
-            list = await this._fileSystem.ReadAllFilesAsTextAsync(index, "", cancellationToken).ConfigureAwait(false);
+            list = await _fileSystem.ReadAllFilesAsTextAsync(index, "", cancellationToken).ConfigureAwait(false);
         }
         catch (DirectoryNotFoundException)
         {
@@ -172,6 +193,7 @@ public class SimpleVectorDb : IMemoryDb
         foreach (KeyValuePair<string, string> v in list)
         {
             var record = JsonSerializer.Deserialize<MemoryRecord>(v.Value);
+
             if (record == null) { continue; }
 
             if (TagsMatchFilters(record.Tags, filters))
@@ -183,18 +205,24 @@ public class SimpleVectorDb : IMemoryDb
         }
     }
 
+
     /// <inheritdoc />
     public Task DeleteAsync(string index, MemoryRecord record, CancellationToken cancellationToken = default)
     {
         index = NormalizeIndexName(index);
-        return this._fileSystem.DeleteFileAsync(index, "", EncodeId(record.Id), cancellationToken);
+        return _fileSystem.DeleteFileAsync(index,
+            "",
+            EncodeId(record.Id),
+            cancellationToken);
     }
+
 
     #region private
 
     // Note: normalize "_" to "-" for consistency with other DBs
     private static readonly Regex s_replaceIndexNameCharsRegex = new(@"[\s|\\|/|.|_|:]");
     private const string ValidSeparator = "-";
+
 
     private static string NormalizeIndexName(string index)
     {
@@ -203,6 +231,7 @@ public class SimpleVectorDb : IMemoryDb
 
         return index.Trim();
     }
+
 
     private static bool TagsMatchFilters(TagCollection tags, ICollection<MemoryFilter>? filters)
     {
@@ -219,7 +248,7 @@ public class SimpleVectorDb : IMemoryDb
                 // Check if the tag name + value is present
                 for (int index = 0; match && index < condition.Value.Count; index++)
                 {
-                    match = match && (tags.ContainsKey(condition.Key) && tags[condition.Key].Contains(condition.Value[index]));
+                    match = match && tags.ContainsKey(condition.Key) && tags[condition.Key].Contains(condition.Value[index]);
                 }
             }
 
@@ -229,11 +258,13 @@ public class SimpleVectorDb : IMemoryDb
         return false;
     }
 
+
     private static string EncodeId(string realId)
     {
         var bytes = Encoding.UTF8.GetBytes(realId);
         return Convert.ToBase64String(bytes).Replace('=', '_');
     }
+
 
     private static string DecodeId(string encodedId)
     {
@@ -242,4 +273,6 @@ public class SimpleVectorDb : IMemoryDb
     }
 
     #endregion
+
+
 }

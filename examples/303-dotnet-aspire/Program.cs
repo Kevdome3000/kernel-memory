@@ -6,6 +6,8 @@ using Microsoft.KernelMemory;
 using Microsoft.KernelMemory.Aspire;
 using Projects;
 
+namespace _303_dotnet_aspire;
+
 internal static class Program
 {
     private const string QdrantImage = "qdrant/qdrant";
@@ -15,12 +17,13 @@ internal static class Program
     private static readonly AzureOpenAIConfig s_azureOpenAITextConfig = new();
     private static readonly OpenAIConfig s_openAIConfig = new();
 
+
     internal static void Main()
     {
         new ConfigurationBuilder()
             .AddJsonFile("appsettings.json")
-            .AddJsonFile("appsettings.development.json", optional: true)
-            .AddJsonFile("appsettings.Development.json", optional: true)
+            .AddJsonFile("appsettings.development.json", true)
+            .AddJsonFile("appsettings.Development.json", true)
             .Build()
             .BindSection("KernelMemory:Services:OpenAI", s_openAIConfig)
             .BindSection("KernelMemory:Services:AzureOpenAIEmbedding", s_azureOpenAIEmbeddingConfig)
@@ -32,6 +35,7 @@ internal static class Program
 
         // RunFromDockerImage("latest");
     }
+
 
     private static void RunFromCode()
     {
@@ -70,14 +74,16 @@ internal static class Program
         builder
             .ShowDashboardUrl()
             .LaunchDashboard()
-            .Build().Run();
+            .Build()
+            .Run();
     }
+
 
     private static void RunFromDockerWithOpenAI(string openAIKey, string dockerTag = "latest")
     {
         var builder = DistributedApplication.CreateBuilder();
 
-        builder.AddContainer("kernel-memory", KMDockerImage, tag: dockerTag)
+        builder.AddContainer("kernel-memory", KMDockerImage, dockerTag)
             .WithEnvironment("KernelMemory__TextGeneratorType", "OpenAI")
             .WithEnvironment("KernelMemory__DataIngestion__EmbeddingGeneratorTypes__0", "OpenAI")
             .WithEnvironment("KernelMemory__Retrieval__EmbeddingGeneratorType", "OpenAI")
@@ -85,6 +91,7 @@ internal static class Program
 
         builder.Build().Run();
     }
+
 
     private static void RunFromDockerImage(string dockerTag = "latest")
     {
@@ -97,7 +104,7 @@ internal static class Program
         // Find Qdrant endpoint and pass the value to KM below
         var qdrantEndpoint = qdrant.GetEndpoint("http");
 
-        builder.AddContainer("kernel-memory", KMDockerImage, tag: dockerTag)
+        builder.AddContainer("kernel-memory", KMDockerImage, dockerTag)
             .WithHttpEndpoint(targetPort: 9001)
             // Wait for Qdrant to be ready
             .WaitFor(qdrant)

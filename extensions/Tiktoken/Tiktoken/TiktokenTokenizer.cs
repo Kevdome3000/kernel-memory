@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -11,11 +11,12 @@ public class TiktokenTokenizer : ITextTokenizer
 {
     private readonly Tokenizer _tokenizer;
 
+
     public TiktokenTokenizer(string modelId)
     {
         try
         {
-            this._tokenizer = Microsoft.ML.Tokenizers.TiktokenTokenizer.CreateForModel(modelId);
+            _tokenizer = ML.Tokenizers.TiktokenTokenizer.CreateForModel(modelId);
         }
         catch (NotSupportedException)
         {
@@ -27,13 +28,15 @@ public class TiktokenTokenizer : ITextTokenizer
         }
     }
 
+
     public int CountTokens(string text)
     {
-        return this._tokenizer.CountTokens(text);
+        return _tokenizer.CountTokens(text);
     }
+
 
     public IReadOnlyList<string> GetTokens(string text)
     {
-        return this._tokenizer.EncodeToTokens(text, out string? _).Select(t => t.Value).ToList();
+        return _tokenizer.EncodeToTokens(text, out string? _).Select(t => t.Value).ToList();
     }
 }

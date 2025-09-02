@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -10,6 +10,7 @@ using Microsoft.KernelMemory.Evaluators.ContextRecall;
 using Microsoft.KernelMemory.Evaluators.ContextRelevancy;
 using Microsoft.KernelMemory.Evaluators.Faithfulness;
 using Microsoft.KernelMemory.Evaluators.Relevance;
+using Microsoft.KernelMemory.Models;
 using Microsoft.SemanticKernel;
 
 namespace Microsoft.KernelMemory.Evaluation;
@@ -19,23 +20,25 @@ public sealed class TestSetEvaluator
     private readonly IKernelMemory _kernelMemory;
     private readonly Kernel _evaluatorKernel;
 
-    private FaithfulnessEvaluator Faithfulness => new(this._evaluatorKernel);
+    private FaithfulnessEvaluator Faithfulness => new(_evaluatorKernel);
 
-    private RelevanceEvaluator Relevance => new(this._evaluatorKernel);
+    private RelevanceEvaluator Relevance => new(_evaluatorKernel);
 
-    private AnswerSimilarityEvaluator AnswerSimilarity => new(this._evaluatorKernel);
+    private AnswerSimilarityEvaluator AnswerSimilarity => new(_evaluatorKernel);
 
-    private ContextRelevancyEvaluator ContextRelevancy => new(this._evaluatorKernel);
+    private ContextRelevancyEvaluator ContextRelevancy => new(_evaluatorKernel);
 
-    private AnswerCorrectnessEvaluator AnswerCorrectness => new(this._evaluatorKernel);
+    private AnswerCorrectnessEvaluator AnswerCorrectness => new(_evaluatorKernel);
 
-    private ContextRecallEvaluator ContextRecall => new(this._evaluatorKernel);
+    private ContextRecallEvaluator ContextRecall => new(_evaluatorKernel);
+
 
     internal TestSetEvaluator([FromKeyedServices("evaluation")] Kernel evaluatorKernel, IKernelMemory kernelMemory)
     {
-        this._evaluatorKernel = evaluatorKernel.Clone();
-        this._kernelMemory = kernelMemory;
+        _evaluatorKernel = evaluatorKernel.Clone();
+        _kernelMemory = kernelMemory;
     }
+
 
     /// <summary>
     /// Evaluate a set of questions against the memory
@@ -51,7 +54,7 @@ public sealed class TestSetEvaluator
     {
         foreach (var test in questions)
         {
-            var answer = await this._kernelMemory.AskAsync(test.Question, index, filters: this.MergeFilters(filters, test.Filters))
+            var answer = await _kernelMemory.AskAsync(test.Question, index, filters: MergeFilters(filters, test.Filters))
                 .ConfigureAwait(false);
 
             if (answer.NoResult)
@@ -60,7 +63,7 @@ public sealed class TestSetEvaluator
                 {
                     TestSet = test,
                     MemoryAnswer = answer,
-                    Metrics = new()
+                    Metrics = new EvaluationMetrics()
                 };
 
                 continue;
@@ -78,18 +81,19 @@ public sealed class TestSetEvaluator
                 TestSet = test,
                 MemoryAnswer = answer,
                 Metadata = metadata,
-                Metrics = new()
+                Metrics = new EvaluationMetrics
                 {
-                    AnswerRelevancy = await this.Relevance.Evaluate(answer, metadata).ConfigureAwait(false),
-                    AnswerSemanticSimilarity = await this.AnswerSimilarity.Evaluate(test, answer, metadata).ConfigureAwait(false),
-                    AnswerCorrectness = await this.AnswerCorrectness.Evaluate(test, answer, metadata).ConfigureAwait(false),
-                    Faithfulness = await this.Faithfulness.Evaluate(answer, metadata).ConfigureAwait(false),
-                    ContextPrecision = await this.ContextRelevancy.Evaluate(answer, metadata).ConfigureAwait(false),
-                    ContextRecall = await this.ContextRecall.Evaluate(test, answer, metadata).ConfigureAwait(false)
+                    AnswerRelevancy = await Relevance.Evaluate(answer, metadata).ConfigureAwait(false),
+                    AnswerSemanticSimilarity = await AnswerSimilarity.Evaluate(test, answer, metadata).ConfigureAwait(false),
+                    AnswerCorrectness = await AnswerCorrectness.Evaluate(test, answer, metadata).ConfigureAwait(false),
+                    Faithfulness = await Faithfulness.Evaluate(answer, metadata).ConfigureAwait(false),
+                    ContextPrecision = await ContextRelevancy.Evaluate(answer, metadata).ConfigureAwait(false),
+                    ContextRecall = await ContextRecall.Evaluate(test, answer, metadata).ConfigureAwait(false)
                 }
             };
         }
     }
+
 
     private ICollection<MemoryFilter>? MergeFilters(IList<MemoryFilter>? globalFilters, ICollection<MemoryFilter>? testFilters)
     {
@@ -122,6 +126,7 @@ public sealed class TestSetEvaluator
         return filters;
     }
 }
+
 
 public class QuestionEvaluation
 {

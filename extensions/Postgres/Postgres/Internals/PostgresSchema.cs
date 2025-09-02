@@ -1,8 +1,8 @@
-// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft.All rights reserved.
 
 using System.Text.RegularExpressions;
 
-namespace Microsoft.KernelMemory.Postgres;
+namespace Microsoft.KernelMemory.Postgres.Internals;
 
 internal static class PostgresSchema
 {
@@ -13,12 +13,14 @@ internal static class PostgresSchema
     // Note: "_" is allowed in field names
     private static readonly Regex s_validFieldNameRegex = new(@"^[a-zA-Z0-9\-_]+$");
 
+
     public static void ValidateSchemaName(string name)
     {
         if (s_validNameRegex.IsMatch(name)) { return; }
 
         throw new PostgresException($"The schema name '{name}' contains invalid chars");
     }
+
 
     public static void ValidateTableName(string name)
     {
@@ -27,12 +29,14 @@ internal static class PostgresSchema
         throw new PostgresException("The table/index name contains invalid chars");
     }
 
+
     public static void ValidateTableNamePrefix(string name)
     {
         if (s_validNameRegex.IsMatch(name)) { return; }
 
         throw new PostgresException($"The table name prefix '{name}' contains invalid chars");
     }
+
 
     public static void ValidateFieldName(string name)
     {

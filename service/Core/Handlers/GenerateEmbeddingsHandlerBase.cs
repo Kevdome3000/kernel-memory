@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -19,11 +19,13 @@ public abstract class GenerateEmbeddingsHandlerBase
 
     protected abstract IPipelineStepHandler ActualInstance { get; }
 
+
     protected GenerateEmbeddingsHandlerBase(IPipelineOrchestrator orchestrator, ILogger log)
     {
-        this._orchestrator = orchestrator;
-        this._log = log;
+        _orchestrator = orchestrator;
+        _log = log;
     }
+
 
     protected async Task<List<PartitionInfo>> GetListOfPartitionsToProcessAsync(
         DataPipeline pipeline,
@@ -32,8 +34,11 @@ public abstract class GenerateEmbeddingsHandlerBase
     {
         var partitionsToProcess = new List<PartitionInfo>();
 
-        this._log.LogTrace("Generating list of files to process, pipeline '{0}/{1}', sub-step '{2}'",
-            pipeline.Index, pipeline.DocumentId, subStepName);
+        _log.LogTrace("Generating list of files to process, pipeline '{0}/{1}', sub-step '{2}'",
+            pipeline.Index,
+            pipeline.DocumentId,
+            subStepName);
+
         foreach (DataPipeline.FileDetails uploadedFile in pipeline.Files)
         {
             foreach (KeyValuePair<string, DataPipeline.GeneratedFileDetails> generatedFile in uploadedFile.GeneratedFiles)
@@ -44,14 +49,14 @@ public abstract class GenerateEmbeddingsHandlerBase
                 if (partitionFile.ArtifactType is not DataPipeline.ArtifactTypes.TextPartition
                     and not DataPipeline.ArtifactTypes.SyntheticData)
                 {
-                    this._log.LogTrace("Skipping file {0} (not a partition, not synthetic data)", partitionFile.Name);
+                    _log.LogTrace("Skipping file {0} (not a partition, not synthetic data)", partitionFile.Name);
                     continue;
                 }
 
                 // Skip text partitions already processed by this handler+generator
-                if (partitionFile.AlreadyProcessedBy(this.ActualInstance, subStepName))
+                if (partitionFile.AlreadyProcessedBy(ActualInstance, subStepName))
                 {
-                    this._log.LogTrace("File {0} already processed by this handler (sub-step {1})", partitionFile.Name, subStepName);
+                    _log.LogTrace("File {0} already processed by this handler (sub-step {1})", partitionFile.Name, subStepName);
                     continue;
                 }
 
@@ -61,12 +66,12 @@ public abstract class GenerateEmbeddingsHandlerBase
                     case MimeTypes.PlainText:
                     case MimeTypes.MarkDown:
                         // TODO: handle Azure.RequestFailedException - BlobNotFound
-                        var partitionContent = await this._orchestrator.ReadTextFileAsync(pipeline, partitionFile.Name, cancellationToken).ConfigureAwait(false);
+                        var partitionContent = await _orchestrator.ReadTextFileAsync(pipeline, partitionFile.Name, cancellationToken).ConfigureAwait(false);
                         partitionsToProcess.Add(new PartitionInfo(generatedFile, uploadedFile, partitionContent));
                         break;
 
                     default:
-                        this._log.LogWarning("File {0} cannot be used to generate embeddings, type not supported", partitionFile.Name);
+                        _log.LogWarning("File {0} cannot be used to generate embeddings, type not supported", partitionFile.Name);
                         continue;
                 }
             }
@@ -74,6 +79,7 @@ public abstract class GenerateEmbeddingsHandlerBase
 
         return partitionsToProcess;
     }
+
 
     // Store embeddings in Azure Blobs/Disk/S3
     protected async Task SaveEmbeddingsToDocumentStorageAsync(
@@ -86,17 +92,22 @@ public abstract class GenerateEmbeddingsHandlerBase
     {
         if (partitions.Length != embeddings.Length)
         {
-            throw new ArgumentException("The list of embeddings doesn't match the list of text partitions. The two lists have different size: " +
-                                        $"{embeddings.Length} embeddings != {partitions.Length} text partitions.");
+            throw new ArgumentException("The list of embeddings doesn't match the list of text partitions. The two lists have different size: " + $"{embeddings.Length} embeddings != {partitions.Length} text partitions.");
         }
 
         for (int i = 0; i < partitions.Length; i++)
         {
-            await this.SaveEmbeddingToDocumentStorageAsync(
-                    pipeline, partitions[i], embeddings[i], generatorProvider, generatorName, cancellationToken)
+            await SaveEmbeddingToDocumentStorageAsync(
+                    pipeline,
+                    partitions[i],
+                    embeddings[i],
+                    generatorProvider,
+                    generatorName,
+                    cancellationToken)
                 .ConfigureAwait(false);
         }
     }
+
 
     // Store embedding in Azure Blobs/Disk/S3
     protected async Task SaveEmbeddingToDocumentStorageAsync(
@@ -123,32 +134,40 @@ public abstract class GenerateEmbeddingsHandlerBase
 
         string embeddingDataAsJson = JsonSerializer.Serialize(embeddingData);
         string embeddingDataFileName = GetEmbeddingFileName(partitionFile.Name, generatorProvider, generatorName);
-        await this._orchestrator.WriteTextFileAsync(pipeline, embeddingDataFileName, embeddingDataAsJson, cancellationToken).ConfigureAwait(false);
+        await _orchestrator.WriteTextFileAsync(pipeline,
+                embeddingDataFileName,
+                embeddingDataAsJson,
+                cancellationToken)
+            .ConfigureAwait(false);
 
-        this.TrackNewFileInPipelineStatus(
-            newFileName: embeddingDataFileName,
-            newFileSize: embeddingDataAsJson.Length,
-            sourcePartitionFile: partitionFile,
-            sourceUserFile: partition.UploadedFile);
+        TrackNewFileInPipelineStatus(
+            embeddingDataFileName,
+            embeddingDataAsJson.Length,
+            partitionFile,
+            partition.UploadedFile);
 
-        partition.GeneratedFile.Value.MarkProcessedBy(this.ActualInstance, GetSubStepName(generatorProvider, generatorName));
+        partition.GeneratedFile.Value.MarkProcessedBy(ActualInstance, GetSubStepName(generatorProvider, generatorName));
     }
+
 
     protected static string GetSubStepName(object generator)
     {
         return GetSubStepName(GetEmbeddingProviderName(generator), GetEmbeddingGeneratorName(generator));
     }
 
+
     protected static string GetSubStepName(string providerName, string generatorName)
     {
         return $"{providerName}/{generatorName}";
     }
+
 
     protected static string GetEmbeddingProviderName(object generator)
     {
         var generatorProviderClassName = generator.GetType().FullName ?? generator.GetType().Name;
         return string.Join('.', generatorProviderClassName.Split('.').TakeLast(3));
     }
+
 
     protected static string GetEmbeddingGeneratorName(object generator)
     {
@@ -171,6 +190,7 @@ public abstract class GenerateEmbeddingsHandlerBase
         return "__";
     }
 
+
     protected class PartitionInfo(
         KeyValuePair<string, DataPipeline.GeneratedFileDetails> generatedFile,
         DataPipeline.FileDetails uploadedFile,
@@ -180,6 +200,7 @@ public abstract class GenerateEmbeddingsHandlerBase
         public DataPipeline.FileDetails UploadedFile { get; set; } = uploadedFile;
         public string PartitionContent { get; set; } = partitionContent;
     }
+
 
     #region private =========================================================================================
 
@@ -201,10 +222,10 @@ public abstract class GenerateEmbeddingsHandlerBase
             ArtifactType = DataPipeline.ArtifactTypes.TextEmbeddingVector,
             PartitionNumber = sourcePartitionFile.PartitionNumber,
             SectionNumber = sourcePartitionFile.SectionNumber,
-            Tags = sourcePartitionFile.Tags,
+            Tags = sourcePartitionFile.Tags
         };
 
-        newFileDetails.MarkProcessedBy(this.ActualInstance);
+        newFileDetails.MarkProcessedBy(ActualInstance);
 
         // Add new files to pipeline status, under the file uploaded by the user
         lock (sourceUserFile.GeneratedFiles)
@@ -213,10 +234,13 @@ public abstract class GenerateEmbeddingsHandlerBase
         }
     }
 
+
     private static string GetEmbeddingFileName(string srcFilename, string type, string embeddingName)
     {
         return $"{srcFilename}.{type}.{embeddingName}{FileExtensions.TextEmbeddingVector}";
     }
 
     #endregion
+
+
 }

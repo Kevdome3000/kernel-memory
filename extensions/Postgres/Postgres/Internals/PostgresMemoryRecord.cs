@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -7,7 +7,7 @@ using System.Text.Json;
 using Microsoft.KernelMemory.MemoryStorage;
 using Pgvector;
 
-namespace Microsoft.KernelMemory.Postgres;
+namespace Microsoft.KernelMemory.Postgres.Internals;
 
 /// <summary>
 /// Postgres record schema
@@ -31,7 +31,7 @@ internal sealed class PostgresMemoryRecord
     /// <summary>
     /// Content embedding vector
     /// </summary>
-    public Vector Embedding { get; set; } = new Vector(new ReadOnlyMemory<float>());
+    public Vector Embedding { get; set; } = new(new ReadOnlyMemory<float>());
 
     /// <summary>
     /// List of tags
@@ -47,6 +47,7 @@ internal sealed class PostgresMemoryRecord
     /// Additional payload, not searchable
     /// </summary>
     public string Payload { get; set; } = string.Empty;
+
 
     /// <summary>
     /// Convert a Postgres record to a memory record instance
@@ -67,12 +68,15 @@ internal sealed class PostgresMemoryRecord
         foreach (string[] keyValue in pgRecord.Tags.Select(tag => tag.Split(Constants.ReservedEqualsChar, 2)))
         {
             string key = keyValue[0];
-            string? value = keyValue.Length == 1 ? null : keyValue[1];
+            string? value = keyValue.Length == 1
+                ? null
+                : keyValue[1];
             result.Tags.Add(key, value);
         }
 
         return result;
     }
+
 
     /// <summary>
     /// Convert a memory record to a Postgres record instance
@@ -84,7 +88,7 @@ internal sealed class PostgresMemoryRecord
         var result = new PostgresMemoryRecord
         {
             Id = record.Id,
-            Embedding = new Vector(record.Vector.Data),
+            Embedding = new Vector(record.Vector.Data)
         };
 
         if (record.Payload.TryGetValue(Constants.ReservedPayloadTextField, out object? value))

@@ -1,8 +1,9 @@
-// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft.All rights reserved.
 
 using System.Text.Json;
 using Microsoft.KernelMemory;
 using Microsoft.KernelMemory.MemoryStorage;
+using Xunit;
 
 namespace Microsoft.KM.Abstractions.UnitTests.MemoryStorage;
 
@@ -40,6 +41,7 @@ public class MemoryRecordTest
         Assert.Equal("foo", actual.Payload["bar"].ToString());
     }
 
+
     [Fact]
     [Trait("Category", "UnitTest")]
     public void ItSupportsSchemaVersioning()
@@ -60,6 +62,7 @@ public class MemoryRecordTest
         Assert.True(actual.Payload.ContainsKey("schema"));
         Assert.Equal("20231218A", record.Payload["schema"]);
     }
+
 
     [Fact]
     [Trait("Category", "UnitTest")]
@@ -89,6 +92,7 @@ public class MemoryRecordTest
         // Assert - the value persists even if an upgrade occurred
         Assert.Equal("foo", record2.Payload[Constants.ReservedPayloadUrlField]);
     }
+
 
     [Fact]
     [Trait("Category", "UnitTest")]

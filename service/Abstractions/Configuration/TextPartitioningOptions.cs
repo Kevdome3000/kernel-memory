@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 namespace Microsoft.KernelMemory.Configuration;
 
@@ -18,24 +18,25 @@ public class TextPartitioningOptions
     /// </summary>
     public int OverlappingTokens { get; set; } = 100;
 
+
     /// <summary>
     /// Verify that the current state is valid.
     /// </summary>
     public void Validate()
     {
-        if (this.MaxTokensPerParagraph < 1)
+        if (MaxTokensPerParagraph < 1)
         {
-            throw new ConfigurationException($"Text partitioning: {nameof(this.MaxTokensPerParagraph)} cannot be less than 1");
+            throw new ConfigurationException($"Text partitioning: {nameof(MaxTokensPerParagraph)} cannot be less than 1");
         }
 
-        if (this.OverlappingTokens < 0)
+        if (OverlappingTokens < 0)
         {
-            throw new ConfigurationException($"Text partitioning: {nameof(this.OverlappingTokens)} cannot be less than 0");
+            throw new ConfigurationException($"Text partitioning: {nameof(OverlappingTokens)} cannot be less than 0");
         }
 
-        if (this.OverlappingTokens >= this.MaxTokensPerParagraph)
+        if (OverlappingTokens >= MaxTokensPerParagraph)
         {
-            throw new ConfigurationException($"Text partitioning: {nameof(this.OverlappingTokens)} must be less than {nameof(this.MaxTokensPerParagraph)}");
+            throw new ConfigurationException($"Text partitioning: {nameof(OverlappingTokens)} must be less than {nameof(MaxTokensPerParagraph)}");
         }
     }
 }

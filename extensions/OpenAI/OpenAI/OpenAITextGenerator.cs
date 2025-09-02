@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.KernelMemory.AI.OpenAI.Internals;
 using Microsoft.KernelMemory.Diagnostics;
+using Microsoft.KernelMemory.Models;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using OpenAI;
@@ -36,6 +37,7 @@ public sealed class OpenAITextGenerator : ITextGenerator
     /// <inheritdoc/>
     public int MaxTokenTotal { get; }
 
+
     /// <summary>
     /// Create a new instance.
     /// </summary>
@@ -55,6 +57,7 @@ public sealed class OpenAITextGenerator : ITextGenerator
             loggerFactory)
     {
     }
+
 
     /// <summary>
     /// Create a new instance, using the given OpenAI pre-configured client
@@ -76,6 +79,7 @@ public sealed class OpenAITextGenerator : ITextGenerator
     {
     }
 
+
     /// <summary>
     /// Create a new instance, using the given OpenAI pre-configured client
     /// </summary>
@@ -89,10 +93,10 @@ public sealed class OpenAITextGenerator : ITextGenerator
         ITextTokenizer? textTokenizer = null,
         ILoggerFactory? loggerFactory = null)
     {
-        this._client = skClient;
-        this._log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<OpenAITextGenerator>();
-        this._textModel = config.TextModel;
-        this.MaxTokenTotal = config.TextModelMaxTokenTotal;
+        _client = skClient;
+        _log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<OpenAITextGenerator>();
+        _textModel = config.TextModel;
+        MaxTokenTotal = config.TextModelMaxTokenTotal;
 
         if (textTokenizer == null && !string.IsNullOrEmpty(config.TextModelTokenizer))
         {
@@ -100,28 +104,32 @@ public sealed class OpenAITextGenerator : ITextGenerator
         }
 
         textTokenizer ??= TokenizerFactory.GetTokenizerForModel(config.TextModel);
+
         if (textTokenizer == null)
         {
             textTokenizer = new O200KTokenizer();
-            this._log.LogWarning(
+            _log.LogWarning(
                 "Tokenizer not specified, will use {0}. The token count might be incorrect, causing unexpected errors",
                 textTokenizer.GetType().FullName);
         }
 
-        this._textTokenizer = textTokenizer;
+        _textTokenizer = textTokenizer;
     }
+
 
     /// <inheritdoc/>
     public int CountTokens(string text)
     {
-        return this._textTokenizer.CountTokens(text);
+        return _textTokenizer.CountTokens(text);
     }
+
 
     /// <inheritdoc/>
     public IReadOnlyList<string> GetTokens(string text)
     {
-        return this._textTokenizer.GetTokens(text);
+        return _textTokenizer.GetTokens(text);
     }
+
 
     /// <inheritdoc/>
     public async IAsyncEnumerable<GeneratedTextContent> GenerateTextAsync(
@@ -141,25 +149,28 @@ public sealed class OpenAITextGenerator : ITextGenerator
         if (options.StopSequences is { Count: > 0 })
         {
             skOptions.StopSequences = [];
+
             foreach (var s in options.StopSequences) { skOptions.StopSequences.Add(s); }
         }
 
         if (options.TokenSelectionBiases is { Count: > 0 })
         {
             skOptions.TokenSelectionBiases = new Dictionary<int, int>();
+
             foreach (var (token, bias) in options.TokenSelectionBiases) { skOptions.TokenSelectionBiases.Add(token, (int)bias); }
         }
 
-        this._log.LogTrace("Sending chat message generation request");
+        _log.LogTrace("Sending chat message generation request");
 
         IAsyncEnumerable<StreamingTextContent> result;
+
         try
         {
-            result = this._client.GetStreamingTextContentsAsync(prompt, skOptions, cancellationToken: cancellationToken);
+            result = _client.GetStreamingTextContentsAsync(prompt, skOptions, cancellationToken: cancellationToken);
         }
         catch (HttpOperationException e)
         {
-            throw new OpenAIException(e.Message, e, isTransient: e.StatusCode.IsTransientError());
+            throw new OpenAIException(e.Message, e, e.StatusCode.IsTransientError());
         }
 
         await foreach (StreamingTextContent x in result.WithCancellation(cancellationToken))
@@ -170,15 +181,17 @@ public sealed class OpenAITextGenerator : ITextGenerator
             // https://platform.openai.com/docs/api-reference/chat/create#chat-create-stream_options
             if (x.Metadata?["Usage"] is ChatTokenUsage { } usage)
             {
-                this._log.LogTrace("Usage report: input tokens {0}, output tokens {1}, output reasoning tokens {2}",
-                    usage.InputTokenCount, usage.OutputTokenCount, usage.OutputTokenDetails?.ReasoningTokenCount ?? 0);
+                _log.LogTrace("Usage report: input tokens {0}, output tokens {1}, output reasoning tokens {2}",
+                    usage.InputTokenCount,
+                    usage.OutputTokenCount,
+                    usage.OutputTokenDetails?.ReasoningTokenCount ?? 0);
 
                 tokenUsage = new TokenUsage
                 {
                     Timestamp = (DateTimeOffset?)x.Metadata["CreatedAt"] ?? DateTimeOffset.UtcNow,
                     ServiceType = "OpenAI",
                     ModelType = Constants.ModelType.TextGeneration,
-                    ModelName = this._textModel,
+                    ModelName = _textModel,
                     ServiceTokensIn = usage!.InputTokenCount,
                     ServiceTokensOut = usage.OutputTokenCount,
                     ServiceReasoningTokens = usage.OutputTokenDetails?.ReasoningTokenCount
@@ -190,7 +203,7 @@ public sealed class OpenAITextGenerator : ITextGenerator
             // x.Text is null, but tokenUsage is not (token usage statistics for the entire request are included in the last chunk).
             if (x.Text is null && tokenUsage is null) { continue; }
 
-            yield return new(x.Text ?? string.Empty, tokenUsage);
+            yield return new GeneratedTextContent(x.Text ?? string.Empty, tokenUsage);
         }
     }
 }

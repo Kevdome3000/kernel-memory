@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections;
@@ -6,119 +6,127 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Microsoft.KernelMemory;
+namespace Microsoft.KernelMemory.Models;
 
 // JSON serializable alternative to NameValueCollection
 public class TagCollection : IDictionary<string, List<string?>>
 {
     private readonly IDictionary<string, List<string?>> _data = new Dictionary<string, List<string?>>(StringComparer.OrdinalIgnoreCase);
 
-    public ICollection<string> Keys { get { return this._data.Keys; } }
+    public ICollection<string> Keys => _data.Keys;
 
-    public ICollection<List<string?>> Values { get { return this._data.Values; } }
+    public ICollection<List<string?>> Values => _data.Values;
 
-    public IEnumerable<KeyValuePair<string, string?>> Pairs
-    {
-        get
-        {
-            return from key in this._data.Keys
-                   from value in this._data[key]
-                   select new KeyValuePair<string, string?>(key, value);
-        }
-    }
+    public IEnumerable<KeyValuePair<string, string?>> Pairs => from key in _data.Keys
+                                                               from value in _data[key]
+                                                               select new KeyValuePair<string, string?>(key, value);
 
-    public int Count { get { return this._data.Count; } }
+    public int Count => _data.Count;
 
-    public bool IsReadOnly { get { return this._data.IsReadOnly; } }
+    public bool IsReadOnly => _data.IsReadOnly;
 
     public List<string?> this[string key]
     {
-        get => this._data[key];
+        get => _data[key];
         set
         {
             ValidateKey(key);
-            this._data[key] = value;
+            _data[key] = value;
         }
     }
 
+
     public IEnumerator<KeyValuePair<string, List<string?>>> GetEnumerator()
     {
-        return this._data.GetEnumerator();
+        return _data.GetEnumerator();
     }
+
 
     IEnumerator IEnumerable.GetEnumerator()
     {
-        return this.GetEnumerator();
+        return GetEnumerator();
     }
+
 
     public void Add(KeyValuePair<string, List<string?>> item)
     {
         ValidateKey(item.Key);
-        this._data.Add(item);
+        _data.Add(item);
     }
+
 
     public void Add(string key)
     {
-        if (!this._data.ContainsKey(key))
+        if (!_data.ContainsKey(key))
         {
-            this._data[key] = [];
+            _data[key] = [];
         }
     }
+
 
     public void Add(string key, string? value)
     {
         ValidateKey(key);
+
         // If the key exists
-        if (this._data.TryGetValue(key, out List<string?>? list) && list != null)
+        if (_data.TryGetValue(key, out List<string?>? list) && list != null)
         {
             if (value != null) { list.Add(value); }
         }
         else
         {
             // Add the key, but the value only if not null
-            this._data[key] = value == null ? [] : [value];
+            _data[key] = value == null
+                ? []
+                : [value];
         }
     }
+
 
     public void Add(string key, List<string?> value)
     {
         ValidateKey(key);
-        this._data.Add(key, value);
+        _data.Add(key, value);
     }
+
 
     public bool TryGetValue(string key, out List<string?> value)
     {
-        bool result = this._data.TryGetValue(key, out var valueOut);
+        bool result = _data.TryGetValue(key, out var valueOut);
         value = valueOut ?? [];
         return result;
     }
 
+
     public bool Contains(KeyValuePair<string, List<string?>> item)
     {
-        return this._data.Contains(item);
+        return _data.Contains(item);
     }
+
 
     public bool ContainsKey(string key)
     {
-        return this._data.ContainsKey(key);
+        return _data.ContainsKey(key);
     }
+
 
     public void CopyTo(KeyValuePair<string, List<string?>>[] array, int arrayIndex)
     {
-        this._data.CopyTo(array, arrayIndex);
+        _data.CopyTo(array, arrayIndex);
     }
+
 
     public void CopyTo(TagCollection tagCollection)
     {
-        foreach (string key in this._data.Keys)
+        foreach (string key in _data.Keys)
         {
-            if (this._data[key] == null || this._data[key].Count == 0)
+            if (_data[key] == null || _data[key].Count == 0)
             {
                 tagCollection.Add(key);
             }
             else
             {
-                foreach (string? value in this._data[key])
+                foreach (string? value in _data[key])
                 {
                     tagCollection.Add(key, value);
                 }
@@ -126,35 +134,42 @@ public class TagCollection : IDictionary<string, List<string?>>
         }
     }
 
+
     public IEnumerable<KeyValuePair<string, string?>> ToKeyValueList()
     {
-        return (from tag in this._data from tagValue in tag.Value select new KeyValuePair<string, string?>(tag.Key, tagValue));
+        return from tag in _data from tagValue in tag.Value select new KeyValuePair<string, string?>(tag.Key, tagValue);
     }
+
 
     public bool Remove(KeyValuePair<string, List<string?>> item)
     {
-        return this._data.Remove(item);
+        return _data.Remove(item);
     }
+
 
     public bool Remove(string key)
     {
-        return this._data.Remove(key);
+        return _data.Remove(key);
     }
+
 
     public void Clear()
     {
-        this._data.Clear();
+        _data.Clear();
     }
+
 
     public override string ToString()
     {
-        return ToString(this._data.Where(x => x.Value.Count > 0));
+        return ToString(_data.Where(x => x.Value.Count > 0));
     }
+
 
     public string ToStringExcludeReserved()
     {
-        return ToString(this._data.Where(x => x.Value.Count > 0 && !x.Key.StartsWith(Constants.ReservedTagsPrefix, StringComparison.Ordinal)));
+        return ToString(_data.Where(x => x.Value.Count > 0 && !x.Key.StartsWith(Constants.ReservedTagsPrefix, StringComparison.Ordinal)));
     }
+
 
     private static string ToString(IEnumerable<KeyValuePair<string, List<string?>>> list)
     {
@@ -176,6 +191,7 @@ public class TagCollection : IDictionary<string, List<string?>>
 
         return result.ToString().TrimEnd(';');
     }
+
 
     private static void ValidateKey(string key)
     {

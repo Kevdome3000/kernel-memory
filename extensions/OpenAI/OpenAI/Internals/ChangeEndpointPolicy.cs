@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.ClientModel.Primitives;
@@ -12,21 +12,24 @@ internal sealed class ChangeEndpointPolicy : PipelinePolicy
     internal const string DefaultEndpoint = "https://api.openai.com/v1";
     private readonly string _endpoint;
 
+
     public ChangeEndpointPolicy(string endpoint)
     {
-        this._endpoint = endpoint.TrimEnd('/');
+        _endpoint = endpoint.TrimEnd('/');
     }
+
 
     public override void Process(PipelineMessage message, IReadOnlyList<PipelinePolicy> pipeline, int currentIndex)
     {
         ProcessNext(message, pipeline, currentIndex);
     }
 
+
     public override ValueTask ProcessAsync(PipelineMessage message, IReadOnlyList<PipelinePolicy> pipeline, int currentIndex)
     {
         if (message.Request.Uri != null)
         {
-            var uri = message.Request.Uri.ToString().Replace(DefaultEndpoint, this._endpoint, StringComparison.OrdinalIgnoreCase);
+            var uri = message.Request.Uri.ToString().Replace(DefaultEndpoint, _endpoint, StringComparison.OrdinalIgnoreCase);
             message.Request.Uri = new Uri(uri);
         }
 

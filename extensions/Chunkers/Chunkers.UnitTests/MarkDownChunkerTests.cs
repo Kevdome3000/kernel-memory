@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.Chunkers.UnitTests.Helpers;
 using Microsoft.KernelMemory.AI;
@@ -13,6 +13,7 @@ public class MarkDownChunkerTests(ITestOutputHelper output) : BaseUnitTestCase(o
     private static readonly MarkDownChunker chunker1 = new(new OneCharTestTokenizer());
     private static readonly MarkDownChunker chunker2 = new(new TwoCharsTestTokenizer());
     private static readonly MarkDownChunker chunker4 = new(new FourCharsTestTokenizer());
+
 
     [Fact]
     [Trait("Category", "UnitTest")]
@@ -39,6 +40,7 @@ public class MarkDownChunkerTests(ITestOutputHelper output) : BaseUnitTestCase(o
         // Assert
         Assert.Equal(expected, chunks);
     }
+
 
     [Fact]
     [Trait("Category", "UnitTest")]
@@ -69,6 +71,7 @@ public class MarkDownChunkerTests(ITestOutputHelper output) : BaseUnitTestCase(o
         Assert.Equal(expected, chunks);
     }
 
+
     [Fact]
     [Trait("Category", "UnitTest")]
     [Trait("Category", "Chunking")]
@@ -87,6 +90,7 @@ public class MarkDownChunkerTests(ITestOutputHelper output) : BaseUnitTestCase(o
         Assert.Equal(expected, result);
     }
 
+
     [Fact]
     [Trait("Category", "UnitTest")]
     [Trait("Category", "Chunking")]
@@ -102,6 +106,7 @@ public class MarkDownChunkerTests(ITestOutputHelper output) : BaseUnitTestCase(o
         // Assert
         Assert.Equal(expected, chunks);
     }
+
 
     // A markdown example that splits on '\r' or '\n'
     [Fact]
@@ -147,6 +152,7 @@ public class MarkDownChunkerTests(ITestOutputHelper output) : BaseUnitTestCase(o
         Assert.Equal(expected2, chunks2);
     }
 
+
     [Fact]
     [Trait("Category", "UnitTest")]
     [Trait("Category", "Chunking")]
@@ -173,6 +179,7 @@ public class MarkDownChunkerTests(ITestOutputHelper output) : BaseUnitTestCase(o
         // Assert
         Assert.Equal(expected, chunks);
     }
+
 
     [Fact]
     [Trait("Category", "UnitTest")]
@@ -202,6 +209,7 @@ public class MarkDownChunkerTests(ITestOutputHelper output) : BaseUnitTestCase(o
         Assert.Equal(expected, chunks);
     }
 
+
     [Fact]
     [Trait("Category", "UnitTest")]
     [Trait("Category", "Chunking")]
@@ -223,6 +231,7 @@ public class MarkDownChunkerTests(ITestOutputHelper output) : BaseUnitTestCase(o
         Assert.Equal(expected, chunks);
     }
 
+
     [Fact]
     [Trait("Category", "UnitTest")]
     [Trait("Category", "Chunking")]
@@ -241,6 +250,7 @@ public class MarkDownChunkerTests(ITestOutputHelper output) : BaseUnitTestCase(o
         Assert.Equal(1, chunks4.Count);
         Assert.Equal(2, chunks2.Count);
     }
+
 
     [Fact]
     [Trait("Category", "UnitTest")]
@@ -269,6 +279,7 @@ public class MarkDownChunkerTests(ITestOutputHelper output) : BaseUnitTestCase(o
         // Assert
         Assert.Equal(expected, chunks);
     }
+
 
     [Fact]
     [Trait("Category", "UnitTest")]
@@ -301,6 +312,7 @@ public class MarkDownChunkerTests(ITestOutputHelper output) : BaseUnitTestCase(o
         Assert.Equal(expected, chunks);
     }
 
+
     [Fact]
     [Trait("Category", "UnitTest")]
     [Trait("Category", "Chunking")]
@@ -328,6 +340,7 @@ public class MarkDownChunkerTests(ITestOutputHelper output) : BaseUnitTestCase(o
         // Assert
         Assert.Equal(expected, chunks);
     }
+
 
     [Fact]
     [Trait("Category", "UnitTest")]
@@ -358,6 +371,7 @@ public class MarkDownChunkerTests(ITestOutputHelper output) : BaseUnitTestCase(o
         Assert.Equal(expected, chunks);
     }
 
+
     #region internals
 
     private static void DebugChunks(IEnumerable<string> chunks, ITextTokenizer tokenizer)
@@ -365,6 +379,7 @@ public class MarkDownChunkerTests(ITestOutputHelper output) : BaseUnitTestCase(o
         var list = chunks.ToList();
 
         Console.WriteLine("----------------------------------");
+
         for (int index = 0; index < list.Count; index++)
         {
             Console.WriteLine($"- {index}: \"{list[index]}\" [{tokenizer.CountTokens(list[index])} tokens]");
@@ -372,6 +387,7 @@ public class MarkDownChunkerTests(ITestOutputHelper output) : BaseUnitTestCase(o
 
         Console.WriteLine("----------------------------------");
     }
+
 
     private static void DebugFragments(List<Chunk> fragments)
     {
@@ -387,4 +403,6 @@ public class MarkDownChunkerTests(ITestOutputHelper output) : BaseUnitTestCase(o
     }
 
     #endregion
+
+
 }

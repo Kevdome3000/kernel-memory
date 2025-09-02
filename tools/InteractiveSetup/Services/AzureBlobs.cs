@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Collections.Generic;
 using Microsoft.KernelMemory.InteractiveSetup.UI;
@@ -21,7 +21,7 @@ internal static class AzureBlobs
                 { "Account", "" },
                 { "Container", "kmemory" },
                 { "Auth", "ConnectionString" },
-                { "ConnectionString", "" },
+                { "ConnectionString", "" }
             };
             AppSettings.AddService(ServiceName, config);
         }
@@ -31,16 +31,20 @@ internal static class AzureBlobs
             Title = $"[{ServiceName}] Which type of authentication do you want to use?",
             Options =
             [
-                new("Azure Identity (Entra)", config["Auth"].ToString() == "AzureIdentity", () => AppSettings.Change(x =>
-                {
-                    x.Services[ServiceName]["Auth"] = "AzureIdentity";
-                    x.Services[ServiceName].Remove("ConnectionString");
-                })),
-                new("Connection String", config["Auth"].ToString() != "AzureIdentity", () => AppSettings.Change(x =>
-                {
-                    x.Services[ServiceName]["Auth"] = "ConnectionString";
-                    x.Services[ServiceName]["ConnectionString"] = SetupUI.AskPassword("Azure Blobs <connection string>", config["ConnectionString"].ToString());
-                }))
+                new Answer("Azure Identity (Entra)",
+                    config["Auth"].ToString() == "AzureIdentity",
+                    () => AppSettings.Change(x =>
+                    {
+                        x.Services[ServiceName]["Auth"] = "AzureIdentity";
+                        x.Services[ServiceName].Remove("ConnectionString");
+                    })),
+                new Answer("Connection String",
+                    config["Auth"].ToString() != "AzureIdentity",
+                    () => AppSettings.Change(x =>
+                    {
+                        x.Services[ServiceName]["Auth"] = "ConnectionString";
+                        x.Services[ServiceName]["ConnectionString"] = SetupUI.AskPassword("Azure Blobs <connection string>", config["ConnectionString"].ToString());
+                    }))
             ]
         });
 

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 namespace Microsoft.KernelMemory.AI.Anthropic.Client;
 
@@ -6,9 +6,10 @@ internal sealed class CallClaudeStreamingParams
 {
     public CallClaudeStreamingParams(string modelName, string prompt)
     {
-        this.ModelName = modelName;
-        this.Prompt = prompt;
+        ModelName = modelName;
+        Prompt = prompt;
     }
+
 
     /// <summary>
     /// Name of the model

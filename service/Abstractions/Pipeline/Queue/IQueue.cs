@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Threading;
@@ -17,12 +17,14 @@ public interface IQueue : IDisposable
     /// <returns>Queue instance</returns>
     Task<IQueue> ConnectToQueueAsync(string queueName, QueueOptions options = default, CancellationToken cancellationToken = default);
 
+
     /// <summary>
     /// Add a message to the queue
     /// </summary>
     /// <param name="message">Message content</param>
     /// <param name="cancellationToken">Async task cancellation token</param>
     Task EnqueueAsync(string message, CancellationToken cancellationToken = default);
+
 
     /// <summary>
     /// Define the logic to execute when a new message is in the queue.

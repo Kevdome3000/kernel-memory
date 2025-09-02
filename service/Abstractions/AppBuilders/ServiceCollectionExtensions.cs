@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -7,6 +7,7 @@ using System.Linq;
 // ReSharper disable once CheckNamespace - reduce number of "using" statements
 namespace Microsoft.Extensions.DependencyInjection;
 #pragma warning restore IDE0130
+
 
 [Experimental("KMEXP00")]
 public static partial class ServiceCollectionExtensions
@@ -19,6 +20,6 @@ public static partial class ServiceCollectionExtensions
     /// <returns>True when the service collection contains T</returns>
     public static bool HasService<T>(this IServiceCollection services)
     {
-        return (services.Any<ServiceDescriptor>(x => x.ServiceType == typeof(T)));
+        return services.Any<ServiceDescriptor>(x => x.ServiceType == typeof(T));
     }
 }

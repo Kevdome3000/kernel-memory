@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 
@@ -24,6 +24,7 @@ public static class TokenizerFactory
 
         return null;
     }
+
 
     public static ITextTokenizer? GetTokenizerForModel(string modelId)
     {

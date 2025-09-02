@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft.All rights reserved.
 
 using System.Collections.Generic;
 using Microsoft.KernelMemory.InteractiveSetup.UI;
@@ -22,7 +22,7 @@ internal static class AWSS3
                 { "AccessKey", "" },
                 { "SecretAccessKey", "" },
                 { "BucketName", "" },
-                { "Endpoint", "https://s3.amazonaws.com" },
+                { "Endpoint", "https://s3.amazonaws.com" }
             };
             AppSettings.AddService(ServiceName, config);
         }
@@ -36,7 +36,7 @@ internal static class AWSS3
             { "AccessKey", SetupUI.AskOpenQuestion("AWS S3 <access key>", config["AccessKey"].ToString()) },
             { "SecretAccessKey", SetupUI.AskPassword("AWS S3 <secret access key>", config["SecretAccessKey"].ToString()) },
             { "BucketName", SetupUI.AskOpenQuestion("AWS S3 <bucket name>", config["BucketName"].ToString()) },
-            { "Endpoint", SetupUI.AskOpenQuestion("AWS S3 <endpoint>", config["Endpoint"].ToString()) },
+            { "Endpoint", SetupUI.AskOpenQuestion("AWS S3 <endpoint>", config["Endpoint"].ToString()) }
         });
     }
 }

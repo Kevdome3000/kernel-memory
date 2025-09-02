@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Elastic.Clients.Elasticsearch;
 using Elastic.Transport;
@@ -25,13 +25,17 @@ internal static class ElasticsearchConfigExtensions
 
                 // TODO: this needs to be more flexible.
                 .Authentication(new BasicAuthentication(config.UserName, config.Password))
-                .DisableDirectStreaming(true)
+                .DisableDirectStreaming()
                 // TODO: Not sure why I need this. Verify configuration maybe?
-                .ServerCertificateValidationCallback((sender, certificate, chain, errors) => true)
+                .ServerCertificateValidationCallback((
+                    sender,
+                    certificate,
+                    chain,
+                    errors) => true)
                 .CertificateFingerprint(config.CertificateFingerPrint)
-                .ThrowExceptions(true) // Much easier to work with
+                .ThrowExceptions() // Much easier to work with
 #if DEBUG
-                .DisableDirectStreaming(true)
+                .DisableDirectStreaming()
 #endif
             ;
 #pragma warning restore CA2000 // Dispose objects before losing scope

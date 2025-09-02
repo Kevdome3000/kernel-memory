@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -11,6 +11,7 @@ using LLama.Native;
 using LLama.Sampling;
 using Microsoft.Extensions.Logging;
 using Microsoft.KernelMemory.Diagnostics;
+using Microsoft.KernelMemory.Models;
 
 namespace Microsoft.KernelMemory.AI.LlamaSharp;
 
@@ -26,6 +27,7 @@ public sealed class LlamaSharpTextGenerator : ITextGenerator, IDisposable
     private readonly ITextTokenizer _textTokenizer;
     private readonly ILogger<LlamaSharpTextGenerator> _log;
 
+
     /// <summary>
     /// Create new instance
     /// </summary>
@@ -37,41 +39,45 @@ public sealed class LlamaSharpTextGenerator : ITextGenerator, IDisposable
         ITextTokenizer? textTokenizer = null,
         ILoggerFactory? loggerFactory = null)
     {
-        this._log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<LlamaSharpTextGenerator>();
+        _log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<LlamaSharpTextGenerator>();
 
         config.Validate();
-        this.MaxTokenTotal = (int)config.MaxTokenTotal;
+        MaxTokenTotal = (int)config.MaxTokenTotal;
 
         var parameters = new ModelParams(config.ModelPath)
         {
             ContextSize = config.MaxTokenTotal,
-            GpuLayerCount = config.GpuLayerCount ?? 20,
+            GpuLayerCount = config.GpuLayerCount ?? 20
         };
 
         var modelFilename = config.ModelPath.Split('/').Last().Split('\\').Last();
-        this._log.LogDebug("Loading LLama model: {1}", modelFilename);
+        _log.LogDebug("Loading LLama model: {1}", modelFilename);
 
-        this._model = LLamaWeights.LoadFromFile(parameters);
-        this._context = this._model.CreateContext(parameters);
-        this._log.LogDebug("LLama model loaded");
+        _model = LLamaWeights.LoadFromFile(parameters);
+        _context = _model.CreateContext(parameters);
+        _log.LogDebug("LLama model loaded");
 
-        this._textTokenizer = textTokenizer ?? new LlamaSharpTokenizer(this._context);
+        _textTokenizer = textTokenizer ?? new LlamaSharpTokenizer(_context);
     }
+
 
     /// <inheritdoc/>
     public int MaxTokenTotal { get; }
 
+
     /// <inheritdoc/>
     public int CountTokens(string text)
     {
-        return this._textTokenizer.CountTokens(text);
+        return _textTokenizer.CountTokens(text);
     }
+
 
     /// <inheritdoc/>
     public IReadOnlyList<string> GetTokens(string text)
     {
-        return this._textTokenizer.GetTokens(text);
+        return _textTokenizer.GetTokens(text);
     }
+
 
     /// <inheritdoc/>
     public IAsyncEnumerable<GeneratedTextContent> GenerateTextAsync(
@@ -79,7 +85,7 @@ public sealed class LlamaSharpTextGenerator : ITextGenerator, IDisposable
         TextGenerationOptions options,
         CancellationToken cancellationToken = default)
     {
-        var executor = new InteractiveExecutor(this._context);
+        var executor = new InteractiveExecutor(_context);
 
         var logitBias = options.TokenSelectionBiases.Count > 0
             ? options.TokenSelectionBiases.ToDictionary(pair => (LLamaToken)pair.Key, pair => pair.Value)
@@ -91,25 +97,26 @@ public sealed class LlamaSharpTextGenerator : ITextGenerator, IDisposable
             TopP = (float)options.NucleusSampling,
             PresencePenalty = (float)options.PresencePenalty,
             FrequencyPenalty = (float)options.FrequencyPenalty,
-            LogitBias = logitBias,
+            LogitBias = logitBias
         };
 
         var settings = new InferenceParams
         {
-            TokensKeep = this.MaxTokenTotal,
+            TokensKeep = MaxTokenTotal,
             MaxTokens = options.MaxTokens ?? -1,
             AntiPrompts = options.StopSequences?.ToList() ?? [],
             SamplingPipeline = samplingPipeline
         };
 
-        this._log.LogTrace("Generating text, temperature {0}, max tokens {1}", samplingPipeline.Temperature, settings.MaxTokens);
+        _log.LogTrace("Generating text, temperature {0}, max tokens {1}", samplingPipeline.Temperature, settings.MaxTokens);
         return executor.InferAsync(prompt, settings, cancellationToken).Select(x => new GeneratedTextContent(x));
     }
+
 
     /// <inheritdoc/>
     public void Dispose()
     {
-        this._model.Dispose();
-        this._context.Dispose();
+        _model.Dispose();
+        _context.Dispose();
     }
 }

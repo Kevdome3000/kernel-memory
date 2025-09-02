@@ -1,10 +1,10 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace Microsoft.KernelMemory;
+namespace Microsoft.KernelMemory.Models;
 
 public class Citation
 {
@@ -67,6 +67,7 @@ public class Citation
     [JsonPropertyOrder(8)]
     public List<Partition> Partitions { get; set; } = [];
 
+
     public class Partition
     {
         private TagCollection _tags = [];
@@ -114,15 +115,16 @@ public class Citation
         [JsonPropertyOrder(100)]
         public TagCollection Tags
         {
-            get { return this._tags; }
+            get => _tags;
             set
             {
-                this._tags = [];
+                _tags = [];
+
                 foreach (KeyValuePair<string, List<string?>> tag in value)
                 {
                     // Exclude internal tags
                     // if (tag.Key.StartsWith(Constants.ReservedTagsPrefix, StringComparison.OrdinalIgnoreCase)) { continue; }
-                    this._tags[tag.Key] = tag.Value;
+                    _tags[tag.Key] = tag.Value;
                 }
             }
         }

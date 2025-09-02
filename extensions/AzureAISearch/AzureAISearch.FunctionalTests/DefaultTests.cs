@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.KernelMemory;
@@ -11,101 +11,114 @@ public class DefaultTests : BaseFunctionalTestCase
 {
     private readonly MemoryServerless _memory;
 
+
     public DefaultTests(IConfiguration cfg, ITestOutputHelper output) : base(cfg, output)
     {
-        Assert.False(string.IsNullOrEmpty(this.AzureAiSearchConfig.Endpoint));
-        Assert.False(this.AzureAiSearchConfig.Auth == AzureAISearchConfig.AuthTypes.APIKey && string.IsNullOrEmpty(this.AzureAiSearchConfig.APIKey));
-        Assert.False(string.IsNullOrEmpty(this.OpenAiConfig.APIKey));
+        Assert.False(string.IsNullOrEmpty(AzureAiSearchConfig.Endpoint));
+        Assert.False(AzureAiSearchConfig.Auth == AzureAISearchConfig.AuthTypes.APIKey && string.IsNullOrEmpty(AzureAiSearchConfig.APIKey));
+        Assert.False(string.IsNullOrEmpty(OpenAiConfig.APIKey));
 
-        this._memory = new KernelMemoryBuilder()
+        _memory = new KernelMemoryBuilder()
             .With(new KernelMemoryConfig { DefaultIndexName = "default4tests" })
             .WithSearchClientConfig(new SearchClientConfig { EmptyAnswer = NotFound })
-            .WithOpenAI(this.OpenAiConfig)
-            .WithAzureAISearchMemoryDb(this.AzureAiSearchConfig)
+            .WithOpenAI(OpenAiConfig)
+            .WithAzureAISearchMemoryDb(AzureAiSearchConfig)
             .Build<MemoryServerless>();
     }
+
 
     [Fact]
     [Trait("Category", "AzAISearch")]
     public async Task ItSupportsASingleFilter()
     {
-        await FilteringTest.ItSupportsASingleFilter(this._memory, this.Log);
+        await FilteringTest.ItSupportsASingleFilter(_memory, Log);
     }
+
 
     [Fact]
     [Trait("Category", "AzAISearch")]
     public async Task ItSupportsMultipleFilters()
     {
-        await FilteringTest.ItSupportsMultipleFilters(this._memory, this.Log);
+        await FilteringTest.ItSupportsMultipleFilters(_memory, Log);
     }
+
 
     [Fact]
     [Trait("Category", "AzAISearch")]
     public async Task ItIgnoresEmptyFilters()
     {
-        await FilteringTest.ItIgnoresEmptyFilters(this._memory, this.Log, true);
+        await FilteringTest.ItIgnoresEmptyFilters(_memory, Log, true);
     }
+
 
     [Fact]
     [Trait("Category", "AzAISearch")]
     public async Task ItDoesntFailIfTheIndexExistsAlready()
     {
-        await IndexCreationTest.ItDoesntFailIfTheIndexExistsAlready(this._memory, this.Log);
+        await IndexCreationTest.ItDoesntFailIfTheIndexExistsAlready(_memory, Log);
     }
+
 
     [Fact]
     [Trait("Category", "AzAISearch")]
     public async Task ItListsIndexes()
     {
-        await IndexListTest.ItListsIndexes(this._memory, this.Log);
+        await IndexListTest.ItListsIndexes(_memory, Log);
     }
+
 
     [Fact]
     [Trait("Category", "AzAISearch")]
     public async Task ItNormalizesIndexNames()
     {
-        await IndexListTest.ItNormalizesIndexNames(this._memory, this.Log);
+        await IndexListTest.ItNormalizesIndexNames(_memory, Log);
     }
+
 
     [Fact]
     [Trait("Category", "AzAISearch")]
     public async Task ItUsesDefaultIndexName()
     {
-        await IndexListTest.ItUsesDefaultIndexName(this._memory, this.Log, "default4tests");
+        await IndexListTest.ItUsesDefaultIndexName(_memory, Log, "default4tests");
     }
+
 
     [Fact]
     [Trait("Category", "AzAISearch")]
     public async Task ItDeletesIndexes()
     {
-        await IndexDeletionTest.ItDeletesIndexes(this._memory, this.Log);
+        await IndexDeletionTest.ItDeletesIndexes(_memory, Log);
     }
+
 
     [Fact]
     [Trait("Category", "AzAISearch")]
     public async Task ItHandlesMissingIndexesConsistently()
     {
-        await MissingIndexTest.ItHandlesMissingIndexesConsistently(this._memory, this.Log);
+        await MissingIndexTest.ItHandlesMissingIndexesConsistently(_memory, Log);
     }
+
 
     [Fact]
     [Trait("Category", "AzAISearch")]
     public async Task ItUploadsPDFDocsAndDeletes()
     {
-        await DocumentUploadTest.ItUploadsPDFDocsAndDeletes(this._memory, this.Log);
+        await DocumentUploadTest.ItUploadsPDFDocsAndDeletes(_memory, Log);
     }
+
 
     [Fact]
     [Trait("Category", "AzAISearch")]
     public async Task ItSupportsTags()
     {
-        await DocumentUploadTest.ItSupportsTags(this._memory, this.Log, true);
+        await DocumentUploadTest.ItSupportsTags(_memory, Log, true);
     }
+
 
     [Fact]
     [Trait("Category", "AzAISearch")]
     public async Task ItDownloadsPDFDocs()
     {
-        await DocumentUploadTest.ItDownloadsPDFDocs(this._memory, this.Log);
+        await DocumentUploadTest.ItDownloadsPDFDocs(_memory, Log);
     }
 }

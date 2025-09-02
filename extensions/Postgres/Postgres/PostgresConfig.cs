@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -107,12 +107,13 @@ public class PostgresConfig
     /// </summary>
     public List<string> CreateTableSql { get; set; } = [];
 
+
     /// <summary>
     /// Create a new instance of the configuration
     /// </summary>
     public PostgresConfig()
     {
-        this.Columns = new Dictionary<string, string>
+        Columns = new Dictionary<string, string>
         {
             [ColumnId] = "id",
             [ColumnEmbedding] = "embedding",
@@ -122,27 +123,28 @@ public class PostgresConfig
         };
     }
 
+
     /// <summary>
     /// Verify that the current state is valid.
     /// </summary>
     public void Validate()
     {
-        this.TableNamePrefix = this.TableNamePrefix?.Trim() ?? string.Empty;
-        this.ConnectionString = this.ConnectionString?.Trim() ?? string.Empty;
+        TableNamePrefix = TableNamePrefix?.Trim() ?? string.Empty;
+        ConnectionString = ConnectionString?.Trim() ?? string.Empty;
 
-        if (string.IsNullOrWhiteSpace(this.ConnectionString))
+        if (string.IsNullOrWhiteSpace(ConnectionString))
         {
-            throw new ConfigurationException($"Postgres: {nameof(this.ConnectionString)} is empty.");
+            throw new ConfigurationException($"Postgres: {nameof(ConnectionString)} is empty.");
         }
 
-        if (string.IsNullOrWhiteSpace(this.TableNamePrefix))
+        if (string.IsNullOrWhiteSpace(TableNamePrefix))
         {
-            throw new ConfigurationException($"Postgres: {nameof(this.TableNamePrefix)} is empty.");
+            throw new ConfigurationException($"Postgres: {nameof(TableNamePrefix)} is empty.");
         }
 
         // ID
 
-        if (!this.Columns.TryGetValue(ColumnId, out var columnName))
+        if (!Columns.TryGetValue(ColumnId, out var columnName))
         {
             throw new ConfigurationException("Postgres: the name of the Id column is not defined.");
         }
@@ -154,7 +156,7 @@ public class PostgresConfig
 
         // Embedding
 
-        if (!this.Columns.TryGetValue(ColumnEmbedding, out columnName))
+        if (!Columns.TryGetValue(ColumnEmbedding, out columnName))
         {
             throw new ConfigurationException("Postgres: the name of the Embedding column is not defined.");
         }
@@ -166,7 +168,7 @@ public class PostgresConfig
 
         // Tags
 
-        if (!this.Columns.TryGetValue(ColumnTags, out columnName))
+        if (!Columns.TryGetValue(ColumnTags, out columnName))
         {
             throw new ConfigurationException("Postgres: the name of the Tags column is not defined.");
         }
@@ -178,7 +180,7 @@ public class PostgresConfig
 
         // Content
 
-        if (!this.Columns.TryGetValue(ColumnContent, out columnName))
+        if (!Columns.TryGetValue(ColumnContent, out columnName))
         {
             throw new ConfigurationException("Postgres: the name of the Content column is not defined.");
         }
@@ -190,7 +192,7 @@ public class PostgresConfig
 
         // Payload
 
-        if (!this.Columns.TryGetValue(ColumnPayload, out columnName))
+        if (!Columns.TryGetValue(ColumnPayload, out columnName))
         {
             throw new ConfigurationException("Postgres: the name of the Payload column is not defined.");
         }
@@ -202,28 +204,27 @@ public class PostgresConfig
 
         // Custom schema
 
-        if (this.CreateTableSql?.Count > 0)
+        if (CreateTableSql?.Count > 0)
         {
-            var sql = string.Join('\n', this.CreateTableSql).Trim();
+            var sql = string.Join('\n', CreateTableSql).Trim();
+
             if (!sql.Contains(SqlPlaceholdersTableName, StringComparison.Ordinal))
             {
                 throw new ConfigurationException(
-                    "Postgres: the custom SQL to create tables is not valid, " +
-                    $"it should contain a {SqlPlaceholdersTableName} placeholder.");
+                    "Postgres: the custom SQL to create tables is not valid, " + $"it should contain a {SqlPlaceholdersTableName} placeholder.");
             }
 
             if (!sql.Contains(SqlPlaceholdersVectorSize, StringComparison.Ordinal))
             {
                 throw new ConfigurationException(
-                    "Postgres: the custom SQL to create tables is not valid, " +
-                    $"it should contain a {SqlPlaceholdersVectorSize} placeholder.");
+                    "Postgres: the custom SQL to create tables is not valid, " + $"it should contain a {SqlPlaceholdersVectorSize} placeholder.");
             }
         }
 
-        this.Columns[ColumnId] = this.Columns[ColumnId].Trim();
-        this.Columns[ColumnEmbedding] = this.Columns[ColumnEmbedding].Trim();
-        this.Columns[ColumnTags] = this.Columns[ColumnTags].Trim();
-        this.Columns[ColumnContent] = this.Columns[ColumnContent].Trim();
-        this.Columns[ColumnPayload] = this.Columns[ColumnPayload].Trim();
+        Columns[ColumnId] = Columns[ColumnId].Trim();
+        Columns[ColumnEmbedding] = Columns[ColumnEmbedding].Trim();
+        Columns[ColumnTags] = Columns[ColumnTags].Trim();
+        Columns[ColumnContent] = Columns[ColumnContent].Trim();
+        Columns[ColumnPayload] = Columns[ColumnPayload].Trim();
     }
 }

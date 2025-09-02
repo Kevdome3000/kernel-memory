@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Diagnostics.CodeAnalysis;
@@ -22,6 +22,7 @@ public sealed class AzureAIDocIntelEngine : IOcrEngine
     private readonly DocumentAnalysisClient _recognizerClient;
     private readonly ILogger<AzureAIDocIntelEngine> _log;
 
+
     /// <summary>
     /// Creates a new instance of the Azure AI Document Intelligence.
     /// </summary>
@@ -31,30 +32,32 @@ public sealed class AzureAIDocIntelEngine : IOcrEngine
         AzureAIDocIntelConfig config,
         ILoggerFactory? loggerFactory = null)
     {
-        this._log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<AzureAIDocIntelEngine>();
+        _log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<AzureAIDocIntelEngine>();
 
         var clientOptions = GetClientOptions(config);
+
         switch (config.Auth)
         {
             case AzureAIDocIntelConfig.AuthTypes.AzureIdentity:
-                this._recognizerClient = new DocumentAnalysisClient(new Uri(config.Endpoint), new DefaultAzureCredential(), clientOptions);
+                _recognizerClient = new DocumentAnalysisClient(new Uri(config.Endpoint), new DefaultAzureCredential(), clientOptions);
                 break;
 
             case AzureAIDocIntelConfig.AuthTypes.APIKey:
                 if (string.IsNullOrEmpty(config.APIKey))
                 {
-                    this._log.LogCritical("Azure AI Document Intelligence API key is empty");
+                    _log.LogCritical("Azure AI Document Intelligence API key is empty");
                     throw new ConfigurationException("Azure AI Document Intelligence API key is empty");
                 }
 
-                this._recognizerClient = new DocumentAnalysisClient(new Uri(config.Endpoint), new AzureKeyCredential(config.APIKey), clientOptions);
+                _recognizerClient = new DocumentAnalysisClient(new Uri(config.Endpoint), new AzureKeyCredential(config.APIKey), clientOptions);
                 break;
 
             default:
-                this._log.LogCritical("Azure AI Document Intelligence authentication type '{0}' undefined or not supported", config.Auth);
+                _log.LogCritical("Azure AI Document Intelligence authentication type '{0}' undefined or not supported", config.Auth);
                 throw new ConfigurationException($"Azure AI Document Intelligence authentication type '{config.Auth}' undefined or not supported");
         }
     }
+
 
     ///<inheritdoc/>
     public async Task<string> ExtractTextFromImageAsync(Stream imageContent, CancellationToken cancellationToken = default)
@@ -62,7 +65,11 @@ public sealed class AzureAIDocIntelEngine : IOcrEngine
         try
         {
             // Start the OCR operation
-            var operation = await this._recognizerClient.AnalyzeDocumentAsync(WaitUntil.Completed, "prebuilt-read", imageContent, cancellationToken: cancellationToken).ConfigureAwait(false);
+            var operation = await _recognizerClient.AnalyzeDocumentAsync(WaitUntil.Completed,
+                    "prebuilt-read",
+                    imageContent,
+                    cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
 
             // Wait for the result
             Response<AnalyzeResult> operationResponse = await operation.WaitForCompletionAsync(cancellationToken).ConfigureAwait(false);
@@ -71,9 +78,10 @@ public sealed class AzureAIDocIntelEngine : IOcrEngine
         }
         catch (RequestFailedException e)
         {
-            throw new AzureAIDocIntelException(e.Message, e, isTransient: HttpErrors.IsTransientError(e.Status));
+            throw new AzureAIDocIntelException(e.Message, e, HttpErrors.IsTransientError(e.Status));
         }
     }
+
 
     /// <summary>
     /// Options used by the Azure AI Document Intelligence client, e.g. User Agent and Auth audience
@@ -85,7 +93,7 @@ public sealed class AzureAIDocIntelEngine : IOcrEngine
             Diagnostics =
             {
                 IsTelemetryEnabled = Telemetry.IsTelemetryEnabled,
-                ApplicationId = Telemetry.HttpUserAgent,
+                ApplicationId = Telemetry.HttpUserAgent
             }
         };
 

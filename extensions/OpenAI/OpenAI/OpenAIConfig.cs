@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Text.Json.Serialization;
 
@@ -16,8 +16,9 @@ public class OpenAIConfig
     {
         Auto = 0,
         TextCompletion,
-        Chat,
+        Chat
     }
+
 
     /// <summary>
     /// The type of OpenAI completion to use, either Text (legacy) or Chat.
@@ -97,29 +98,30 @@ public class OpenAIConfig
     /// </summary>
     public int MaxRetries { get; set; } = 10;
 
+
     /// <summary>
     /// Verify that the current state is valid.
     /// </summary>
     public void Validate()
     {
-        if (string.IsNullOrWhiteSpace(this.APIKey))
+        if (string.IsNullOrWhiteSpace(APIKey))
         {
-            throw new ConfigurationException($"OpenAI: {nameof(this.APIKey)} is empty");
+            throw new ConfigurationException($"OpenAI: {nameof(APIKey)} is empty");
         }
 
-        if (this.TextModelMaxTokenTotal < 1)
+        if (TextModelMaxTokenTotal < 1)
         {
-            throw new ConfigurationException($"OpenAI: {nameof(this.TextModelMaxTokenTotal)} cannot be less than 1");
+            throw new ConfigurationException($"OpenAI: {nameof(TextModelMaxTokenTotal)} cannot be less than 1");
         }
 
-        if (this.EmbeddingModelMaxTokenTotal < 1)
+        if (EmbeddingModelMaxTokenTotal < 1)
         {
-            throw new ConfigurationException($"OpenAI: {nameof(this.EmbeddingModelMaxTokenTotal)} cannot be less than 1");
+            throw new ConfigurationException($"OpenAI: {nameof(EmbeddingModelMaxTokenTotal)} cannot be less than 1");
         }
 
-        if (this.EmbeddingDimensions is < 1)
+        if (EmbeddingDimensions is < 1)
         {
-            throw new ConfigurationException($"OpenAI: {nameof(this.EmbeddingDimensions)} cannot be less than 1");
+            throw new ConfigurationException($"OpenAI: {nameof(EmbeddingDimensions)} cannot be less than 1");
         }
     }
 }

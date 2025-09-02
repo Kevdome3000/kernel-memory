@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -23,6 +23,7 @@ public sealed class InProcessPipelineOrchestrator : BaseOrchestrator
 
     private readonly IServiceProvider? _serviceProvider;
 
+
     /// <summary>
     /// Create a new instance of the synchronous orchestrator.
     /// </summary>
@@ -43,40 +44,43 @@ public sealed class InProcessPipelineOrchestrator : BaseOrchestrator
         IServiceProvider? serviceProvider = null,
         KernelMemoryConfig? config = null,
         ILoggerFactory? loggerFactory = null)
-        : base(documentStorage, embeddingGenerators, memoryDbs, textGenerator, mimeTypeDetection, config, loggerFactory?.CreateLogger<InProcessPipelineOrchestrator>())
+        : base(documentStorage,
+            embeddingGenerators,
+            memoryDbs,
+            textGenerator,
+            mimeTypeDetection,
+            config,
+            loggerFactory?.CreateLogger<InProcessPipelineOrchestrator>())
     {
-        this._serviceProvider = serviceProvider;
+        _serviceProvider = serviceProvider;
     }
 
+
     ///<inheritdoc />
-    public override List<string> HandlerNames
-    {
-        get
-        {
-            return this._handlers.Keys.OrderBy(x => x).ToList();
-        }
-    }
+    public override List<string> HandlerNames => _handlers.Keys.OrderBy(x => x).ToList();
+
 
     ///<inheritdoc />
     public override Task AddHandlerAsync(
         IPipelineStepHandler handler,
         CancellationToken cancellationToken = default)
     {
-        this.AddHandler(handler);
+        AddHandler(handler);
         return Task.CompletedTask;
     }
+
 
     ///<inheritdoc />
     public override Task TryAddHandlerAsync(IPipelineStepHandler handler, CancellationToken cancellationToken = default)
     {
         ArgumentNullExceptionEx.ThrowIfNullOrWhiteSpace(handler.StepName, nameof(handler.StepName), "The step name is empty");
 
-        if (this._handlers.ContainsKey(handler.StepName)) { return Task.CompletedTask; }
+        if (_handlers.ContainsKey(handler.StepName)) { return Task.CompletedTask; }
 
         try
         {
 #pragma warning disable CA1849 // AddHandler doesn't do any I/O
-            this.AddHandler(handler);
+            AddHandler(handler);
 #pragma warning restore CA1849
         }
         catch (ArgumentException)
@@ -88,6 +92,7 @@ public sealed class InProcessPipelineOrchestrator : BaseOrchestrator
         return Task.CompletedTask;
     }
 
+
     /// <summary>
     /// Register a pipeline handler. If a handler for the same step name already exists, it gets replaced.
     /// </summary>
@@ -95,13 +100,14 @@ public sealed class InProcessPipelineOrchestrator : BaseOrchestrator
     /// <typeparam name="T">Handler class</typeparam>
     public void AddHandler<T>(string stepName) where T : IPipelineStepHandler
     {
-        if (this._serviceProvider == null)
+        if (_serviceProvider == null)
         {
             throw new InvalidOperationException("Service provider is undefined. Try using <.AddHandler(handler instance)> method instead.");
         }
 
-        this.AddHandler(ActivatorUtilities.CreateInstance<T>(this._serviceProvider, stepName));
+        AddHandler(ActivatorUtilities.CreateInstance<T>(_serviceProvider, stepName));
     }
+
 
     /// <summary>
     /// Register a pipeline handler.
@@ -112,9 +118,10 @@ public sealed class InProcessPipelineOrchestrator : BaseOrchestrator
     {
         if (HandlerTypeLoader.TryGetHandlerType(config, out var handlerType))
         {
-            this.AddHandler(handlerType, stepName);
+            AddHandler(handlerType, stepName);
         }
     }
+
 
     /// <summary>
     /// Register a pipeline handler.
@@ -123,19 +130,21 @@ public sealed class InProcessPipelineOrchestrator : BaseOrchestrator
     /// <param name="stepName">Name of the queue/step associated with the handler</param>
     public void AddHandler(Type handlerType, string stepName)
     {
-        if (this._serviceProvider == null)
+        if (_serviceProvider == null)
         {
             throw new InvalidOperationException("Service provider is undefined. Try using <.AddHandler(handler instance)> method instead.");
         }
 
-        var handler = ActivatorUtilities.CreateInstance(this._serviceProvider, handlerType, stepName);
+        var handler = ActivatorUtilities.CreateInstance(_serviceProvider, handlerType, stepName);
+
         if (handler is not IPipelineStepHandler)
         {
             throw new InvalidOperationException($"Type '{handlerType}' is not valid: {nameof(IPipelineStepHandler)} not implemented.");
         }
 
-        this.AddHandler((IPipelineStepHandler)handler);
+        AddHandler((IPipelineStepHandler)handler);
     }
+
 
     /// <summary>
     /// Synchronous (queue less) version of AddHandlerAsync. Register a pipeline handler.
@@ -147,32 +156,33 @@ public sealed class InProcessPipelineOrchestrator : BaseOrchestrator
         ArgumentNullExceptionEx.ThrowIfNull(handler, nameof(handler), "The handler is NULL");
         ArgumentNullExceptionEx.ThrowIfNullOrWhiteSpace(handler.StepName, nameof(handler.StepName), "The step name is empty");
 
-        if (!this._handlers.TryAdd(handler.StepName, handler))
+        if (!_handlers.TryAdd(handler.StepName, handler))
         {
             throw new ArgumentException($"There is already a handler for step '{handler.StepName}'");
         }
     }
 
+
     ///<inheritdoc />
     public override async Task RunPipelineAsync(DataPipeline pipeline, CancellationToken cancellationToken = default)
     {
         // Files must be uploaded before starting any other task
-        await this.UploadFilesAsync(pipeline, cancellationToken).ConfigureAwait(false);
+        await UploadFilesAsync(pipeline, cancellationToken).ConfigureAwait(false);
 
-        await this.UpdatePipelineStatusAsync(pipeline, cancellationToken).ConfigureAwait(false);
+        await UpdatePipelineStatusAsync(pipeline, cancellationToken).ConfigureAwait(false);
 
         while (!pipeline.Complete)
         {
             string currentStepName = pipeline.RemainingSteps.First();
 
-            if (!this._handlers.TryGetValue(currentStepName, out var stepHandler))
+            if (!_handlers.TryGetValue(currentStepName, out var stepHandler))
             {
                 throw new OrchestrationException($"No handlers found for step '{currentStepName}'");
             }
 
             // Run handler
             (ReturnType returnType, DataPipeline updatedPipeline) = await stepHandler
-                .InvokeAsync(pipeline, this.CancellationTokenSource.Token)
+                .InvokeAsync(pipeline, CancellationTokenSource.Token)
                 .ConfigureAwait(false);
 
             switch (returnType)
@@ -180,26 +190,35 @@ public sealed class InProcessPipelineOrchestrator : BaseOrchestrator
                 case ReturnType.Success:
                     pipeline = updatedPipeline;
                     pipeline.LastUpdate = DateTimeOffset.UtcNow;
-                    this.Log.LogInformation("Handler '{0}' processed pipeline '{1}/{2}' successfully", currentStepName, pipeline.Index, pipeline.DocumentId);
+                    Log.LogInformation("Handler '{0}' processed pipeline '{1}/{2}' successfully",
+                        currentStepName,
+                        pipeline.Index,
+                        pipeline.DocumentId);
                     pipeline.MoveToNextStep();
-                    await this.UpdatePipelineStatusAsync(pipeline, cancellationToken).ConfigureAwait(false);
+                    await UpdatePipelineStatusAsync(pipeline, cancellationToken).ConfigureAwait(false);
                     break;
 
                 case ReturnType.TransientError:
-                    this.Log.LogError("Handler '{0}' failed to process pipeline '{1}/{2}'", currentStepName, pipeline.Index, pipeline.DocumentId);
-                    throw new OrchestrationException($"Pipeline error, step {currentStepName} failed", isTransient: true);
+                    Log.LogError("Handler '{0}' failed to process pipeline '{1}/{2}'",
+                        currentStepName,
+                        pipeline.Index,
+                        pipeline.DocumentId);
+                    throw new OrchestrationException($"Pipeline error, step {currentStepName} failed", true);
 
                 case ReturnType.FatalError:
-                    this.Log.LogError("Handler '{0}' failed to process pipeline '{1}/{2}' due to an unrecoverable error", currentStepName, pipeline.Index, pipeline.DocumentId);
-                    throw new OrchestrationException($"Unrecoverable pipeline error, step {currentStepName} failed and cannot be retried", isTransient: false);
+                    Log.LogError("Handler '{0}' failed to process pipeline '{1}/{2}' due to an unrecoverable error",
+                        currentStepName,
+                        pipeline.Index,
+                        pipeline.DocumentId);
+                    throw new OrchestrationException($"Unrecoverable pipeline error, step {currentStepName} failed and cannot be retried", false);
 
                 default:
                     throw new ArgumentOutOfRangeException($"Unknown {returnType:G} return type");
             }
         }
 
-        await this.CleanUpAfterCompletionAsync(pipeline, cancellationToken).ConfigureAwait(false);
+        await CleanUpAfterCompletionAsync(pipeline, cancellationToken).ConfigureAwait(false);
 
-        this.Log.LogInformation("Pipeline '{0}/{1}' complete", pipeline.Index, pipeline.DocumentId);
+        Log.LogInformation("Pipeline '{0}/{1}' complete", pipeline.Index, pipeline.DocumentId);
     }
 }

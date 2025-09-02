@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -8,7 +8,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.KernelMemory.MemoryStorage;
 
-namespace Microsoft.KernelMemory.MemoryDb.AzureAISearch;
+namespace Microsoft.KernelMemory.MemoryDb.AzureAISearch.Internals;
 
 // TODO: support bring your own index schema
 internal sealed class AzureAISearchMemoryRecord
@@ -42,42 +42,47 @@ internal sealed class AzureAISearchMemoryRecord
     [JsonPropertyName(PayloadField)]
     public string Payload { get; set; } = string.Empty;
 
+
     public static MemoryDbSchema GetSchema(int vectorSize)
     {
         return new MemoryDbSchema
         {
             Fields =
             [
-                new() { Name = IdField, Type = MemoryDbField.FieldType.Text, IsKey = true },
-                new() { Name = VectorField, Type = MemoryDbField.FieldType.Vector, VectorSize = vectorSize },
-                new() { Name = TagsField, Type = MemoryDbField.FieldType.ListOfStrings, IsFilterable = true },
-                new() { Name = PayloadField, Type = MemoryDbField.FieldType.Text, IsFilterable = false }
+                new MemoryDbField { Name = IdField, Type = MemoryDbField.FieldType.Text, IsKey = true },
+                new MemoryDbField { Name = VectorField, Type = MemoryDbField.FieldType.Vector, VectorSize = vectorSize },
+                new MemoryDbField { Name = TagsField, Type = MemoryDbField.FieldType.ListOfStrings, IsFilterable = true },
+                new MemoryDbField { Name = PayloadField, Type = MemoryDbField.FieldType.Text, IsFilterable = false }
             ]
         };
     }
+
 
     public MemoryRecord ToMemoryRecord(bool withEmbedding = true)
     {
         MemoryRecord result = new()
         {
-            Id = DecodeId(this.Id),
-            Payload = JsonSerializer.Deserialize<Dictionary<string, object>>(this.Payload, s_jsonOptions) ?? []
+            Id = DecodeId(Id),
+            Payload = JsonSerializer.Deserialize<Dictionary<string, object>>(Payload, s_jsonOptions) ?? []
         };
 
         if (withEmbedding)
         {
-            result.Vector = this.Vector;
+            result.Vector = Vector;
         }
 
-        foreach (string[] keyValue in this.Tags.Select(tag => tag.Split(Constants.ReservedEqualsChar, 2)))
+        foreach (string[] keyValue in Tags.Select(tag => tag.Split(Constants.ReservedEqualsChar, 2)))
         {
             string key = keyValue[0];
-            string? value = keyValue.Length == 1 ? null : keyValue[1];
+            string? value = keyValue.Length == 1
+                ? null
+                : keyValue[1];
             result.Tags.Add(key, value);
         }
 
         return result;
     }
+
 
     public static AzureAISearchMemoryRecord FromMemoryRecord(MemoryRecord record)
     {
@@ -96,11 +101,13 @@ internal sealed class AzureAISearchMemoryRecord
         return result;
     }
 
+
     private static string EncodeId(string realId)
     {
         var bytes = Encoding.UTF8.GetBytes(realId);
         return Convert.ToBase64String(bytes).Replace('=', '_');
     }
+
 
     private static string DecodeId(string encodedId)
     {

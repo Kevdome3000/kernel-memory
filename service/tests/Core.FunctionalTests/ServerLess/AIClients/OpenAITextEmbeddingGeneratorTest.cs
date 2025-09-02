@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.KernelMemory.AI.OpenAI;
@@ -10,12 +10,14 @@ public sealed class OpenAITextEmbeddingGeneratorTest : BaseFunctionalTestCase
 {
     private readonly OpenAITextEmbeddingGenerator _target;
 
+
     public OpenAITextEmbeddingGeneratorTest(IConfiguration cfg, ITestOutputHelper output) : base(cfg, output)
     {
-        var config = this.OpenAiConfig;
+        var config = OpenAiConfig;
         config.EmbeddingModel = "text-embedding-3-small";
-        this._target = new OpenAITextEmbeddingGenerator(config, loggerFactory: null);
+        _target = new OpenAITextEmbeddingGenerator(config, loggerFactory: null);
     }
+
 
     [Fact]
     [Trait("Category", "Serverless")]
@@ -27,9 +29,9 @@ public sealed class OpenAITextEmbeddingGeneratorTest : BaseFunctionalTestCase
         const string Text3 = "the cat is white";
 
         // Act
-        var e1 = await this._target.GenerateEmbeddingAsync(Text1);
-        var e2 = await this._target.GenerateEmbeddingAsync(Text2);
-        var e3 = await this._target.GenerateEmbeddingAsync(Text3);
+        var e1 = await _target.GenerateEmbeddingAsync(Text1);
+        var e2 = await _target.GenerateEmbeddingAsync(Text2);
+        var e3 = await _target.GenerateEmbeddingAsync(Text3);
 
         // Assert
         Console.WriteLine("e1 <--> e2: " + e1.CosineSimilarity(e2));

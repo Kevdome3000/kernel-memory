@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.KernelMemory;
 
@@ -20,8 +20,8 @@ var azureOpenAIEmbeddingConfig = new AzureOpenAIConfig();
 
 new ConfigurationBuilder()
     .AddJsonFile("appsettings.json")
-    .AddJsonFile("appsettings.development.json", optional: true)
-    .AddJsonFile("appsettings.Development.json", optional: true)
+    .AddJsonFile("appsettings.development.json", true)
+    .AddJsonFile("appsettings.Development.json", true)
     .Build()
     .BindSection("KernelMemory:Services:LlamaSharp", llamaConfig)
     .BindSection("KernelMemory:Services:AzureOpenAIEmbedding", azureOpenAIEmbeddingConfig);
@@ -29,7 +29,7 @@ new ConfigurationBuilder()
 var searchClientConfig = new SearchClientConfig
 {
     MaxMatchesCount = 2,
-    AnswerTokens = 100,
+    AnswerTokens = 100
 };
 
 var memory = new KernelMemoryBuilder()
@@ -57,7 +57,7 @@ var story = """
             While further studies are underway, this intriguing finding sparked a flurry of interest and speculation within and outside the scientific community. This new organic matter, playfully named ‘Rubio's Radiant Mold’ in honor of astronaut Frank Rubio, could potentially reshape our understanding of life in the cosmos and further blur the lines between science fiction and reality. With each passing day, the 'final frontier' appears to become more familiar and intriguingly alien at the same time.
             """;
 
-await memory.ImportTextAsync(story, documentId: "tomato01");
+await memory.ImportTextAsync(story, "tomato01");
 
 var question = "What happened to the tomato disappeared on the International Space Station?";
 Console.WriteLine($"Question: {question}");

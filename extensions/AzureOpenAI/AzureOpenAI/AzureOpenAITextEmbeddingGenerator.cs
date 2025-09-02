@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -11,8 +11,8 @@ using Azure.AI.OpenAI;
 using Microsoft.Extensions.Logging;
 using Microsoft.KernelMemory.AI.AzureOpenAI.Internals;
 using Microsoft.KernelMemory.Diagnostics;
+using Microsoft.KernelMemory.SemanticKernel;
 using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.AI.Embeddings;
 using Microsoft.SemanticKernel.Connectors.AzureOpenAI;
 
 namespace Microsoft.KernelMemory.AI.AzureOpenAI;
@@ -36,6 +36,7 @@ public sealed class AzureOpenAITextEmbeddingGenerator : ITextEmbeddingGenerator,
     /// <inheritdoc/>
     public int MaxBatchSize { get; }
 
+
     /// <summary>
     /// Create a new instance.
     /// </summary>
@@ -56,6 +57,7 @@ public sealed class AzureOpenAITextEmbeddingGenerator : ITextEmbeddingGenerator,
     {
     }
 
+
     /// <summary>
     /// Create a new instance.
     /// </summary>
@@ -70,11 +72,15 @@ public sealed class AzureOpenAITextEmbeddingGenerator : ITextEmbeddingGenerator,
         ILoggerFactory? loggerFactory = null)
         : this(
             config,
-            SkClientBuilder.BuildEmbeddingClient(config.Deployment, azureClient, config.EmbeddingDimensions, loggerFactory),
+            SkClientBuilder.BuildEmbeddingClient(config.Deployment,
+                azureClient,
+                config.EmbeddingDimensions,
+                loggerFactory),
             textTokenizer,
             loggerFactory)
     {
     }
+
 
     /// <summary>
     /// Create a new instance.
@@ -89,62 +95,69 @@ public sealed class AzureOpenAITextEmbeddingGenerator : ITextEmbeddingGenerator,
         ITextTokenizer? textTokenizer = null,
         ILoggerFactory? loggerFactory = null)
     {
-        this._client = skClient;
-        this._log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<AzureOpenAITextEmbeddingGenerator>();
-        this.MaxTokens = config.MaxTokenTotal;
-        this.MaxBatchSize = config.MaxEmbeddingBatchSize;
+        _client = skClient;
+        _log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<AzureOpenAITextEmbeddingGenerator>();
+        MaxTokens = config.MaxTokenTotal;
+        MaxBatchSize = config.MaxEmbeddingBatchSize;
 
         textTokenizer ??= TokenizerFactory.GetTokenizerForEncoding(config.Tokenizer);
+
         if (textTokenizer == null)
         {
             textTokenizer = new CL100KTokenizer();
-            this._log.LogWarning(
+            _log.LogWarning(
                 "Tokenizer not specified, will use {0}. The token count might be incorrect, causing unexpected errors",
                 textTokenizer.GetType().FullName);
         }
 
-        this._textTokenizer = textTokenizer;
+        _textTokenizer = textTokenizer;
     }
+
 
     /// <inheritdoc/>
     public int CountTokens(string text)
     {
-        return this._textTokenizer.CountTokens(text);
+        return _textTokenizer.CountTokens(text);
     }
+
 
     /// <inheritdoc/>
     public IReadOnlyList<string> GetTokens(string text)
     {
-        return this._textTokenizer.GetTokens(text);
+        return _textTokenizer.GetTokens(text);
     }
+
 
     /// <inheritdoc/>
     public Task<Embedding> GenerateEmbeddingAsync(string text, CancellationToken cancellationToken = default)
     {
-        this._log.LogTrace("Generating embedding");
+        _log.LogTrace("Generating embedding");
+
         try
         {
-            return this._client.GenerateEmbeddingAsync(text, cancellationToken);
+            return _client.GenerateEmbeddingAsync(text, cancellationToken);
         }
         catch (HttpOperationException e)
         {
-            throw new AzureOpenAIException(e.Message, e, isTransient: e.StatusCode.IsTransientError());
+            throw new AzureOpenAIException(e.Message, e, e.StatusCode.IsTransientError());
         }
     }
+
 
     /// <inheritdoc/>
     public async Task<Embedding[]> GenerateEmbeddingBatchAsync(IEnumerable<string> textList, CancellationToken cancellationToken = default)
     {
         var list = textList.ToList();
-        this._log.LogTrace("Generating embeddings, batch size '{0}'", list.Count);
+        _log.LogTrace("Generating embeddings, batch size '{0}'", list.Count);
+
         try
         {
-            IList<ReadOnlyMemory<float>> embeddings = await this._client.GenerateEmbeddingsAsync(list, cancellationToken: cancellationToken).ConfigureAwait(false);
+            IList<ReadOnlyMemory<float>> embeddings = await _client.GenerateEmbeddingsAsync(list, cancellationToken: cancellationToken).ConfigureAwait(false);
             return embeddings.Select(e => new Embedding(e)).ToArray();
         }
         catch (HttpOperationException e)
         {
-            throw new AzureOpenAIException(e.Message, e, isTransient: e.StatusCode.IsTransientError());
+            throw new AzureOpenAIException(e.Message, e, e.StatusCode.IsTransientError());
         }
     }
 }

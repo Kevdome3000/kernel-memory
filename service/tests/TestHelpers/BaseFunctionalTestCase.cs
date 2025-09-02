@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Reflection;
 using Microsoft.Extensions.Configuration;
@@ -9,6 +9,7 @@ using Microsoft.KernelMemory.DocumentStorage.DevTools;
 using Microsoft.KernelMemory.FileSystem.DevTools;
 using Microsoft.KernelMemory.MemoryStorage.DevTools;
 using Microsoft.KernelMemory.MongoDbAtlas;
+using Xunit.Abstractions;
 
 namespace Microsoft.KM.TestHelpers;
 
@@ -32,40 +33,43 @@ public abstract class BaseFunctionalTestCase : IDisposable
     protected readonly ElasticsearchConfig ElasticsearchConfig;
     protected readonly OnnxConfig OnnxConfig;
 
+
     // IMPORTANT: install Xunit.DependencyInjection package
     protected BaseFunctionalTestCase(IConfiguration cfg, ITestOutputHelper output)
     {
-        this._cfg = cfg;
-        this._output = new RedirectConsole(output);
-        Console.SetOut(this._output);
+        _cfg = cfg;
+        _output = new RedirectConsole(output);
+        Console.SetOut(_output);
 
-        this.OpenAiConfig = cfg.GetSection("KernelMemory:Services:OpenAI").Get<OpenAIConfig>() ?? new();
-        this.AzureOpenAITextConfiguration = cfg.GetSection("KernelMemory:Services:AzureOpenAIText").Get<AzureOpenAIConfig>() ?? new();
-        this.AzureOpenAIEmbeddingConfiguration = cfg.GetSection("KernelMemory:Services:AzureOpenAIEmbedding").Get<AzureOpenAIConfig>() ?? new();
-        this.AzureAiSearchConfig = cfg.GetSection("KernelMemory:Services:AzureAISearch").Get<AzureAISearchConfig>() ?? new();
-        this.QdrantConfig = cfg.GetSection("KernelMemory:Services:Qdrant").Get<QdrantConfig>() ?? new();
-        this.PostgresConfig = cfg.GetSection("KernelMemory:Services:Postgres").Get<PostgresConfig>() ?? new();
-        this.RedisConfig = cfg.GetSection("KernelMemory:Services:Redis").Get<RedisConfig>() ?? new();
-        this.MongoDbAtlasConfig = cfg.GetSection("KernelMemory:Services:MongoDbAtlas").Get<MongoDbAtlasConfig>() ?? new();
-        this.SimpleVectorDbConfig = cfg.GetSection("KernelMemory:Services:SimpleVectorDb").Get<SimpleVectorDbConfig>() ?? new();
-        this.LlamaSharpConfig = cfg.GetSection("KernelMemory:Services:LlamaSharp").Get<LlamaSharpConfig>() ?? new();
-        this.ElasticsearchConfig = cfg.GetSection("KernelMemory:Services:Elasticsearch").Get<ElasticsearchConfig>() ?? new();
-        this.OnnxConfig = cfg.GetSection("KernelMemory:Services:Onnx").Get<OnnxConfig>() ?? new();
+        OpenAiConfig = cfg.GetSection("KernelMemory:Services:OpenAI").Get<OpenAIConfig>() ?? new OpenAIConfig();
+        AzureOpenAITextConfiguration = cfg.GetSection("KernelMemory:Services:AzureOpenAIText").Get<AzureOpenAIConfig>() ?? new AzureOpenAIConfig();
+        AzureOpenAIEmbeddingConfiguration = cfg.GetSection("KernelMemory:Services:AzureOpenAIEmbedding").Get<AzureOpenAIConfig>() ?? new AzureOpenAIConfig();
+        AzureAiSearchConfig = cfg.GetSection("KernelMemory:Services:AzureAISearch").Get<AzureAISearchConfig>() ?? new AzureAISearchConfig();
+        QdrantConfig = cfg.GetSection("KernelMemory:Services:Qdrant").Get<QdrantConfig>() ?? new QdrantConfig();
+        PostgresConfig = cfg.GetSection("KernelMemory:Services:Postgres").Get<PostgresConfig>() ?? new PostgresConfig();
+        RedisConfig = cfg.GetSection("KernelMemory:Services:Redis").Get<RedisConfig>() ?? new RedisConfig();
+        MongoDbAtlasConfig = cfg.GetSection("KernelMemory:Services:MongoDbAtlas").Get<MongoDbAtlasConfig>() ?? new MongoDbAtlasConfig();
+        SimpleVectorDbConfig = cfg.GetSection("KernelMemory:Services:SimpleVectorDb").Get<SimpleVectorDbConfig>() ?? new SimpleVectorDbConfig();
+        LlamaSharpConfig = cfg.GetSection("KernelMemory:Services:LlamaSharp").Get<LlamaSharpConfig>() ?? new LlamaSharpConfig();
+        ElasticsearchConfig = cfg.GetSection("KernelMemory:Services:Elasticsearch").Get<ElasticsearchConfig>() ?? new ElasticsearchConfig();
+        OnnxConfig = cfg.GetSection("KernelMemory:Services:Onnx").Get<OnnxConfig>() ?? new OnnxConfig();
     }
+
 
     protected IKernelMemory GetMemoryWebClient()
     {
-        string endpoint = this._cfg.GetSection("KernelMemory:ServiceAuthorization").GetValue<string>("Endpoint", "http://127.0.0.1:9001/")!;
-        string? apiKey = this._cfg.GetSection("KernelMemory:ServiceAuthorization").GetValue<string>("AccessKey");
-        return new MemoryWebClient(endpoint, apiKey: apiKey);
+        string endpoint = _cfg.GetSection("KernelMemory:ServiceAuthorization").GetValue<string>("Endpoint", "http://127.0.0.1:9001/")!;
+        string? apiKey = _cfg.GetSection("KernelMemory:ServiceAuthorization").GetValue<string>("AccessKey");
+        return new MemoryWebClient(endpoint, apiKey);
     }
+
 
     protected IKernelMemory GetServerlessMemory(string memoryType)
     {
         var builder = new KernelMemoryBuilder()
             .Configure(kmb => kmb.Services.AddLogging(b => { b.AddConsole().SetMinimumLevel(LogLevel.Trace); }))
             .WithSearchClientConfig(new SearchClientConfig { EmptyAnswer = NotFound })
-            .WithOpenAI(this.OpenAiConfig);
+            .WithOpenAI(OpenAiConfig);
 
         switch (memoryType)
         {
@@ -89,15 +93,18 @@ public abstract class BaseFunctionalTestCase : IDisposable
         }
     }
 
+
     // Find the "Fixtures" directory (inside the project, requires source code)
     protected string? FindFixturesDir()
     {
         // start from the location of the executing assembly, and traverse up max 5 levels
         var path = Path.GetDirectoryName(Path.GetFullPath(Assembly.GetExecutingAssembly().Location));
+
         for (var i = 0; i < 5; i++)
         {
             Console.WriteLine($"Checking '{path}'");
             var test = Path.Join(path, "Fixtures");
+
             if (Directory.Exists(test)) { return test; }
 
             // up one level
@@ -107,22 +114,25 @@ public abstract class BaseFunctionalTestCase : IDisposable
         return null;
     }
 
+
     public void Dispose()
     {
-        this.Dispose(true);
+        Dispose(true);
         GC.SuppressFinalize(this);
     }
+
 
     protected virtual void Dispose(bool disposing)
     {
         if (disposing)
         {
-            this._output.Dispose();
+            _output.Dispose();
         }
     }
 
+
     protected void Log(string text)
     {
-        this._output.WriteLine(text);
+        _output.WriteLine(text);
     }
 }

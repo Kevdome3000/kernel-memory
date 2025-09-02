@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net9.0</TargetFramework>
         <RollForward>LatestMajor</RollForward>
         <AssemblyName>Microsoft.KernelMemory.AI.Tiktoken</AssemblyName>
         <RootNamespace>Microsoft.KernelMemory.AI</RootNamespace>
@@ -9,13 +9,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\..\service\Abstractions\Abstractions.csproj" />
+        <ProjectReference Include="..\..\..\service\Abstractions\Abstractions.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.ML.Tokenizers.Data.Cl100kBase" />
-        <PackageReference Include="Microsoft.ML.Tokenizers.Data.O200kBase" />
-        <PackageReference Include="Microsoft.ML.Tokenizers.Data.P50kBase" />
+        <PackageReference Include="Microsoft.ML.Tokenizers.Data.Cl100kBase"/>
+        <PackageReference Include="Microsoft.ML.Tokenizers.Data.O200kBase"/>
+        <PackageReference Include="Microsoft.ML.Tokenizers.Data.P50kBase"/>
     </ItemGroup>
 
     <PropertyGroup>
@@ -28,7 +28,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <None Include="..\README.md" Link="README.md" Pack="true" PackagePath="." Visible="false" />
+        <None Include="..\README.md" Link="README.md" Pack="true" PackagePath="." Visible="false"/>
     </ItemGroup>
 
 </Project>

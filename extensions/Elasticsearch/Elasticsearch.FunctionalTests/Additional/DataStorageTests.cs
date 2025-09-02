@@ -1,12 +1,12 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Globalization;
 using Microsoft.Extensions.Configuration;
-using Microsoft.KernelMemory;
 using Microsoft.KernelMemory.AI;
 using Microsoft.KernelMemory.Chunkers;
 using Microsoft.KernelMemory.MemoryDb.Elasticsearch.Internals;
 using Microsoft.KernelMemory.MemoryStorage;
+using Microsoft.KernelMemory.Models;
 
 namespace Microsoft.Elasticsearch.FunctionalTests.Additional;
 
@@ -19,62 +19,66 @@ public class DataStorageTests : MemoryDbFunctionalTest
     {
     }
 
+
     [Fact]
     [Trait("Category", "Elasticsearch")]
     public async Task CanUpsertOneTextDocumentAndDeleteAsync()
     {
         // We upsert the file
         var docIds = await UpsertTextFilesAsync(
-            memoryDb: this.MemoryDb,
-            textEmbeddingGenerator: this.TextEmbeddingGenerator,
-            output: this.Output,
-            indexName: nameof(this.CanUpsertOneTextDocumentAndDeleteAsync),
-            fileNames: [TestsHelper.WikipediaCarbonFileName]).ConfigureAwait(false);
+                MemoryDb,
+                TextEmbeddingGenerator,
+                Output,
+                nameof(CanUpsertOneTextDocumentAndDeleteAsync),
+                [TestsHelper.WikipediaCarbonFileName])
+            .ConfigureAwait(false);
 
         // Deletes the document
-        var deletes = docIds.Select(id => new MemoryRecord()
+        var deletes = docIds.Select(id => new MemoryRecord
         {
             Id = id
         });
 
         foreach (var deleteRec in deletes)
         {
-            await this.MemoryDb.DeleteAsync(nameof(this.CanUpsertOneTextDocumentAndDeleteAsync), deleteRec)
+            await MemoryDb.DeleteAsync(nameof(CanUpsertOneTextDocumentAndDeleteAsync), deleteRec)
                 .ConfigureAwait(false);
         }
 
         // Verifies that the documents are gone
-        var indexName = IndexNameHelper.Convert(nameof(this.CanUpsertOneTextDocumentAndDeleteAsync), base.ElasticsearchConfig);
-        var res = await this.Client.CountAsync(r => r.Index(indexName))
+        var indexName = IndexNameHelper.Convert(nameof(CanUpsertOneTextDocumentAndDeleteAsync), ElasticsearchConfig);
+        var res = await Client.CountAsync(r => r.Index(indexName))
             .ConfigureAwait(false);
         Assert.Equal(0, res.Count);
     }
+
 
     [Fact]
     [Trait("Category", "Elasticsearch")]
     public async Task CanUpsertTwoTextFilesAndGetSimilarListAsync()
     {
         await UpsertTextFilesAsync(
-            memoryDb: this.MemoryDb,
-            textEmbeddingGenerator: this.TextEmbeddingGenerator,
-            output: this.Output,
-            indexName: nameof(this.CanUpsertTwoTextFilesAndGetSimilarListAsync),
-            fileNames:
-            [
-                TestsHelper.WikipediaCarbonFileName,
-                TestsHelper.WikipediaMoonFilename
-            ]).ConfigureAwait(false);
+                MemoryDb,
+                TextEmbeddingGenerator,
+                Output,
+                nameof(CanUpsertTwoTextFilesAndGetSimilarListAsync),
+                [
+                    TestsHelper.WikipediaCarbonFileName,
+                    TestsHelper.WikipediaMoonFilename
+                ])
+            .ConfigureAwait(false);
 
         // Gets documents that are similar to the word "carbon" .
         var foundSomething = false;
 
         var textToMatch = "carbon";
-        await foreach (var result in this.MemoryDb.GetSimilarListAsync(
-                           index: nameof(this.CanUpsertTwoTextFilesAndGetSimilarListAsync),
-                           text: textToMatch,
-                           limit: 1))
+
+        await foreach (var result in MemoryDb.GetSimilarListAsync(
+            nameof(CanUpsertTwoTextFilesAndGetSimilarListAsync),
+            textToMatch,
+            limit: 1))
         {
-            this.Output.WriteLine($"Found a document matching '{textToMatch}': {result.Item1.Payload["file"]}.");
+            Output.WriteLine($"Found a document matching '{textToMatch}': {result.Item1.Payload["file"]}.");
             return;
         }
 
@@ -83,7 +87,12 @@ public class DataStorageTests : MemoryDbFunctionalTest
         Assert.True(foundSomething, "It should have found something...");
     }
 
-    public static string GuidWithoutDashes() => Guid.NewGuid().ToString().Replace("-", "", StringComparison.OrdinalIgnoreCase).ToLower(CultureInfo.CurrentCulture);
+
+    public static string GuidWithoutDashes()
+    {
+        return Guid.NewGuid().ToString().Replace("-", "", StringComparison.OrdinalIgnoreCase).ToLower(CultureInfo.CurrentCulture);
+    }
+
 
     public static async Task<IEnumerable<string>> UpsertTextFilesAsync(
         IMemoryDb memoryDb,
@@ -103,6 +112,7 @@ public class DataStorageTests : MemoryDbFunctionalTest
             .ConfigureAwait(false);
 
         var results = new List<string>();
+
         foreach (var fileName in fileNames)
         {
             // Reads the text from the file
@@ -132,10 +142,10 @@ public class DataStorageTests : MemoryDbFunctionalTest
 
                 var esId = $"d={documentId}//p={filePartId}";
 
-                var memoryRecord = new MemoryRecord()
+                var memoryRecord = new MemoryRecord
                 {
                     Id = esId,
-                    Payload = new Dictionary<string, object>()
+                    Payload = new Dictionary<string, object>
                     {
                         { "file", fileName },
                         { "text", paragraph },
@@ -144,7 +154,7 @@ public class DataStorageTests : MemoryDbFunctionalTest
                         { "last_update", DateTimeOffset.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss") },
                         { "text_embedding_generator", textEmbeddingGenerator.GetType().Name }
                     },
-                    Tags = new TagCollection()
+                    Tags = new TagCollection
                     {
                         { "__document_id", documentId },
                         { "__file_type", "text/plain" },

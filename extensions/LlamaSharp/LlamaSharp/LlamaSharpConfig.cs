@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 #pragma warning disable IDE0130 // reduce number of "using" statements
 // ReSharper disable once CheckNamespace - reduce number of "using" statements
@@ -16,12 +16,13 @@ public class LlamaSharpConfig
     /// </summary>
     public LlamaSharpModelConfig EmbeddingModel { get; set; } = new();
 
+
     /// <summary>
     /// Verify that the current state is valid.
     /// </summary>
     public void Validate(bool allowIO = true)
     {
-        this.TextModel.Validate();
-        this.EmbeddingModel.Validate();
+        TextModel.Validate();
+        EmbeddingModel.Validate();
     }
 }

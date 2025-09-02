@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Azure;
 using Azure.Search.Documents;
@@ -6,8 +6,9 @@ using Azure.Search.Documents.Indexes;
 using Azure.Search.Documents.Indexes.Models;
 using Azure.Search.Documents.Models;
 using Microsoft.KernelMemory;
-using Microsoft.KernelMemory.MemoryDb.AzureAISearch;
+using Microsoft.KernelMemory.MemoryDb.AzureAISearch.Internals;
 using Microsoft.KernelMemory.MemoryStorage;
+using Microsoft.KernelMemory.Models;
 using AISearchOptions = Azure.Search.Documents.SearchOptions;
 
 namespace Microsoft.AzureAISearch.TestApplication;
@@ -29,12 +30,13 @@ internal static class Program
 
     private static SearchIndexClient s_adminClient = null!;
 
+
     public static async Task Main()
     {
         var cfg = new ConfigurationBuilder()
             .AddJsonFile("appsettings.json")
-            .AddJsonFile("appsettings.development.json", optional: true)
-            .AddJsonFile("appsettings.Development.json", optional: true)
+            .AddJsonFile("appsettings.development.json", true)
+            .AddJsonFile("appsettings.Development.json", true)
             .Build();
 
         var config = cfg.GetSection("KernelMemory:Services:AzureAISearch").Get<AzureAISearchConfig>();
@@ -58,40 +60,41 @@ internal static class Program
 
         // Insert two records
         var recordId1 = await InsertRecordAsync(Index,
-            externalId: ExternalRecordId1,
-            payload: new Dictionary<string, object> { { "filename", "dotnet.pdf" }, { "text", "this is a sentence" }, },
-            tags: new TagCollection
+            ExternalRecordId1,
+            new Dictionary<string, object> { { "filename", "dotnet.pdf" }, { "text", "this is a sentence" } },
+            new TagCollection
             {
                 { "category", "demo" },
                 { "category", "dotnet" },
                 { "category", "search" },
-                { "year", "2024" },
+                { "year", "2024" }
             },
-            embedding: new[] { 0f, 0.5f, 1 });
+            new[] { 0f, 0.5f, 1 });
 
         var recordId2 = await InsertRecordAsync(Index,
-            externalId: ExternalRecordId2,
-            payload: new Dictionary<string, object> { { "filename", "python.pdf" }, { "text", "this is a sentence" }, },
-            tags: new TagCollection
+            ExternalRecordId2,
+            new Dictionary<string, object> { { "filename", "python.pdf" }, { "text", "this is a sentence" } },
+            new TagCollection
             {
                 { "category", "demo" },
                 { "category", "pyt'hon" },
                 { "category", "search" },
-                { "year", "2023" },
+                { "year", "2023" }
             },
-            embedding: new[] { 0f, 0.5f, 1 });
+            new[] { 0f, 0.5f, 1 });
 
         await Task.Delay(TimeSpan.FromSeconds(2));
 
         // Search by tags
         var records = await SearchByFieldValueAsync(Index,
-            fieldName: "tags",
+            "tags",
             fieldValue1: $"category{Constants.ReservedEqualsChar}pyt'hon",
             fieldValue2: $"year{Constants.ReservedEqualsChar}2023",
             fieldIsCollection: true,
             limit: 5);
 
         Console.WriteLine("Count: " + records.Count + $" ({(records.Count == 1 ? "OK" : "ERROR, should be 1")})");
+
         foreach (MemoryRecord rec in records)
         {
             Console.WriteLine(" - " + rec.Id);
@@ -100,13 +103,14 @@ internal static class Program
 
         // Search by tags
         records = await SearchByFieldValueAsync(Index,
-            fieldName: "tags",
+            "tags",
             fieldValue1: $"category{Constants.ReservedEqualsChar}pyt'hon",
             fieldValue2: $"year{Constants.ReservedEqualsChar}1999",
             fieldIsCollection: true,
             limit: 5);
 
         Console.WriteLine("Count: " + records.Count + $" ({(records.Count == 0 ? "OK" : "ERROR, should be 0")})");
+
         foreach (MemoryRecord rec in records)
         {
             Console.WriteLine(" - " + rec.Id);
@@ -117,6 +121,7 @@ internal static class Program
         await DeleteRecordAsync(Index, recordId1);
         await DeleteRecordAsync(Index, recordId2);
     }
+
 
     // ===============================================================================================
     private static async Task CreateIndexAsync(string name)
@@ -151,7 +156,7 @@ internal static class Program
             IsFilterable = true,
             IsFacetable = false,
             IsSortable = false,
-            IsSearchable = true,
+            IsSearchable = true
         });
 
         indexSchema.Fields.Add(new SimpleField("tags", SearchFieldDataType.Collection(SearchFieldDataType.String))
@@ -159,7 +164,7 @@ internal static class Program
             IsKey = false,
             IsFilterable = true,
             IsFacetable = false,
-            IsSortable = false,
+            IsSortable = false
         });
 
         indexSchema.Fields.Add(new SearchField("payload", SearchFieldDataType.String)
@@ -168,7 +173,7 @@ internal static class Program
             IsFilterable = true,
             IsFacetable = false,
             IsSortable = false,
-            IsSearchable = true,
+            IsSearchable = true
         });
 
         indexSchema.Fields.Add(new SearchField("embedding", SearchFieldDataType.Collection(SearchFieldDataType.Single))
@@ -179,7 +184,7 @@ internal static class Program
             IsFacetable = false,
             IsSortable = false,
             VectorSearchDimensions = EmbeddingSize,
-            VectorSearchProfileName = VectorSearchProfileName,
+            VectorSearchProfileName = VectorSearchProfileName
         });
 
         try
@@ -197,9 +202,14 @@ internal static class Program
         }
     }
 
+
     // ===============================================================================================
-    private static async Task<string> InsertRecordAsync(string index,
-        string externalId, Dictionary<string, object> payload, TagCollection tags, Embedding embedding)
+    private static async Task<string> InsertRecordAsync(
+        string index,
+        string externalId,
+        Dictionary<string, object> payload,
+        TagCollection tags,
+        Embedding embedding)
     {
         Console.WriteLine("\n== INSERT ==\n");
         var client = s_adminClient.GetSearchClient(index);
@@ -227,11 +237,15 @@ internal static class Program
 
         Console.WriteLine("[Results] Status: " + response.Value.Results.FirstOrDefault()?.Status);
         Console.WriteLine("[Results] Key: " + response.Value.Results.FirstOrDefault()?.Key);
-        Console.WriteLine("[Results] Succeeded: " + (response.Value.Results.FirstOrDefault()?.Succeeded ?? false ? "true" : "false"));
+        Console.WriteLine("[Results] Succeeded: "
+            + (response.Value.Results.FirstOrDefault()?.Succeeded ?? false
+                ? "true"
+                : "false"));
         Console.WriteLine("[Results] ErrorMessage: " + response.Value.Results.FirstOrDefault()?.ErrorMessage);
 
         return response.Value.Results.FirstOrDefault()?.Key ?? string.Empty;
     }
+
 
     // ===============================================================================================
     private static async Task<IList<MemoryRecord>> SearchByFieldValueAsync(
@@ -256,6 +270,7 @@ internal static class Program
         };
 
         Response<SearchResults<AzureAISearchMemoryRecord>>? searchResult = null;
+
         try
         {
             searchResult = await client.SearchAsync<AzureAISearchMemoryRecord>(null, options);
@@ -277,6 +292,7 @@ internal static class Program
         return results;
     }
 
+
     // ===============================================================================================
     private static async Task DeleteRecordAsync(string index, string recordId)
     {
@@ -294,7 +310,10 @@ internal static class Program
 
         Console.WriteLine("[Results] Status: " + response.Value.Results.FirstOrDefault()?.Status);
         Console.WriteLine("[Results] Key: " + response.Value.Results.FirstOrDefault()?.Key);
-        Console.WriteLine("[Results] Succeeded: " + (response.Value.Results.FirstOrDefault()?.Succeeded ?? false ? "true" : "false"));
+        Console.WriteLine("[Results] Succeeded: "
+            + (response.Value.Results.FirstOrDefault()?.Succeeded ?? false
+                ? "true"
+                : "false"));
         Console.WriteLine("[Results] ErrorMessage: " + response.Value.Results.FirstOrDefault()?.ErrorMessage);
     }
 }

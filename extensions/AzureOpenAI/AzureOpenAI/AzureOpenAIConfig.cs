@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -16,13 +16,15 @@ public class AzureOpenAIConfig
 {
     private TokenCredential? _tokenCredential;
 
+
     public enum AuthTypes
     {
         Unknown = -1,
         AzureIdentity,
         APIKey,
-        ManualTokenCredential,
+        ManualTokenCredential
     }
+
 
     public enum APITypes
     {
@@ -30,8 +32,9 @@ public class AzureOpenAIConfig
         TextCompletion,
         ChatCompletion,
         ImageGeneration,
-        EmbeddingGeneration,
+        EmbeddingGeneration
     }
+
 
     /// <summary>
     /// OpenAI API type, e.g. text completion, chat completion, image generation, etc.
@@ -106,63 +109,66 @@ public class AzureOpenAIConfig
     /// </summary>
     public HashSet<string> TrustedCertificateThumbprints { get; set; } = [];
 
+
     /// <summary>
     /// Set credentials manually from code
     /// </summary>
     /// <param name="credential">Token credentials</param>
     public void SetCredential(TokenCredential credential)
     {
-        this.Auth = AuthTypes.ManualTokenCredential;
-        this._tokenCredential = credential;
+        Auth = AuthTypes.ManualTokenCredential;
+        _tokenCredential = credential;
     }
+
 
     /// <summary>
     /// Fetch the credentials passed manually from code.
     /// </summary>
     public TokenCredential GetTokenCredential()
     {
-        return this._tokenCredential
-               ?? throw new ConfigurationException($"Azure OpenAI: {nameof(this._tokenCredential)} not defined");
+        return _tokenCredential
+            ?? throw new ConfigurationException($"Azure OpenAI: {nameof(_tokenCredential)} not defined");
     }
+
 
     /// <summary>
     /// Verify that the current state is valid.
     /// </summary>
     public void Validate()
     {
-        if (this.Auth == AuthTypes.Unknown)
+        if (Auth == AuthTypes.Unknown)
         {
-            throw new ConfigurationException($"Azure OpenAI: {nameof(this.Auth)} (authentication type) is not defined");
+            throw new ConfigurationException($"Azure OpenAI: {nameof(Auth)} (authentication type) is not defined");
         }
 
-        if (this.Auth == AuthTypes.APIKey && string.IsNullOrWhiteSpace(this.APIKey))
+        if (Auth == AuthTypes.APIKey && string.IsNullOrWhiteSpace(APIKey))
         {
-            throw new ConfigurationException($"Azure OpenAI: {nameof(this.APIKey)} is empty");
+            throw new ConfigurationException($"Azure OpenAI: {nameof(APIKey)} is empty");
         }
 
-        if (string.IsNullOrWhiteSpace(this.Endpoint))
+        if (string.IsNullOrWhiteSpace(Endpoint))
         {
-            throw new ConfigurationException($"Azure OpenAI: {nameof(this.Endpoint)} is empty");
+            throw new ConfigurationException($"Azure OpenAI: {nameof(Endpoint)} is empty");
         }
 
-        if (!this.Endpoint.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        if (!Endpoint.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
         {
-            throw new ConfigurationException($"Azure OpenAI: {nameof(this.Endpoint)} must start with https://");
+            throw new ConfigurationException($"Azure OpenAI: {nameof(Endpoint)} must start with https://");
         }
 
-        if (string.IsNullOrWhiteSpace(this.Deployment))
+        if (string.IsNullOrWhiteSpace(Deployment))
         {
-            throw new ConfigurationException($"Azure OpenAI: {nameof(this.Deployment)} (deployment name) is empty");
+            throw new ConfigurationException($"Azure OpenAI: {nameof(Deployment)} (deployment name) is empty");
         }
 
-        if (this.MaxTokenTotal < 1)
+        if (MaxTokenTotal < 1)
         {
-            throw new ConfigurationException($"Azure OpenAI: {nameof(this.MaxTokenTotal)} cannot be less than 1");
+            throw new ConfigurationException($"Azure OpenAI: {nameof(MaxTokenTotal)} cannot be less than 1");
         }
 
-        if (this.EmbeddingDimensions is < 1)
+        if (EmbeddingDimensions is < 1)
         {
-            throw new ConfigurationException($"Azure OpenAI: {nameof(this.EmbeddingDimensions)} cannot be less than 1");
+            throw new ConfigurationException($"Azure OpenAI: {nameof(EmbeddingDimensions)} cannot be less than 1");
         }
     }
 }

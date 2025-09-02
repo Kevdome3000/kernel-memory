@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,6 +21,7 @@ public static partial class KernelMemoryBuilderExtensions
     }
 }
 
+
 /// <summary>
 /// .NET IServiceCollection dependency injection extensions.
 /// </summary>
@@ -30,11 +31,8 @@ public static partial class DependencyInjection
     {
         config.Validate();
 
-        static IQueue QueueFactory(IServiceProvider serviceProvider)
-        {
-            return serviceProvider.GetService<RabbitMQPipeline>()
-                   ?? throw new KernelMemoryException("Unable to instantiate " + typeof(RabbitMQPipeline));
-        }
+        static IQueue QueueFactory(IServiceProvider serviceProvider) => serviceProvider.GetService<RabbitMQPipeline>()
+            ?? throw new KernelMemoryException("Unable to instantiate " + typeof(RabbitMQPipeline));
 
         // The orchestrator uses multiple queue clients, each linked to a specific queue,
         // so it requires a factory rather than a single queue injected to the ctor.

@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net9.0</TargetFramework>
         <RollForward>LatestMajor</RollForward>
         <AssemblyName>Microsoft.KernelMemory.MemoryDb.Qdrant</AssemblyName>
         <RootNamespace>Microsoft.KernelMemory.MemoryDb.Qdrant</RootNamespace>
@@ -9,15 +9,15 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\..\service\Abstractions\Abstractions.csproj" />
+        <ProjectReference Include="..\..\..\service\Abstractions\Abstractions.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="System.Linq.Async" />
+        <PackageReference Include="System.Linq.Async"/>
     </ItemGroup>
 
     <ItemGroup>
-        <InternalsVisibleTo Include="Microsoft.Qdrant.UnitTests" />
+        <InternalsVisibleTo Include="Microsoft.Qdrant.UnitTests"/>
     </ItemGroup>
 
     <PropertyGroup>
@@ -30,7 +30,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <None Include="..\README.md" Link="README.md" Pack="true" PackagePath="." Visible="false" />
+        <None Include="..\README.md" Link="README.md" Pack="true" PackagePath="." Visible="false"/>
     </ItemGroup>
 
 </Project>

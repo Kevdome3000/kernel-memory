@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.KernelMemory.AI.Anthropic.Client;
 using Microsoft.KernelMemory.Context;
 using Microsoft.KernelMemory.Diagnostics;
+using Microsoft.KernelMemory.Models;
 
 namespace Microsoft.KernelMemory.AI.Anthropic;
 
@@ -30,6 +31,7 @@ public sealed class AnthropicTextGeneration : ITextGenerator, IDisposable
     private readonly string _modelName;
     private readonly string _defaultSystemPrompt;
 
+
     /// <summary>
     /// Create new instance of Anthropic client
     /// </summary>
@@ -45,56 +47,70 @@ public sealed class AnthropicTextGeneration : ITextGenerator, IDisposable
         IContextProvider? contextProvider = null,
         ILoggerFactory? loggerFactory = null)
     {
-        this._modelName = config.TextModelName;
-        this._defaultSystemPrompt = !string.IsNullOrWhiteSpace(config.DefaultSystemPrompt) ? config.DefaultSystemPrompt : DefaultSystemPrompt;
+        _modelName = config.TextModelName;
+        _defaultSystemPrompt = !string.IsNullOrWhiteSpace(config.DefaultSystemPrompt)
+            ? config.DefaultSystemPrompt
+            : DefaultSystemPrompt;
 
         // Using the smallest value for now - KM support MaxTokenIn and MaxTokenOut TODO
-        this.MaxTokenTotal = config.MaxTokenOut;
+        MaxTokenTotal = config.MaxTokenOut;
 
-        this._log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<AnthropicTextGeneration>();
-        this._contextProvider = contextProvider ?? new RequestContextProvider();
+        _log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<AnthropicTextGeneration>();
+        _contextProvider = contextProvider ?? new RequestContextProvider();
 
         if (httpClientFactory == null)
         {
-            this._httpClient = new HttpClient();
+            _httpClient = new HttpClient();
         }
         else
         {
-            this._httpClient = string.IsNullOrWhiteSpace(config.HttpClientName)
+            _httpClient = string.IsNullOrWhiteSpace(config.HttpClientName)
                 ? httpClientFactory.CreateClient()
                 : httpClientFactory.CreateClient(config.HttpClientName);
         }
 
-        var endpoint = string.IsNullOrWhiteSpace(config.Endpoint) ? DefaultEndpoint : config.Endpoint;
-        var endpointVersion = string.IsNullOrWhiteSpace(config.Endpoint) ? DefaultEndpointVersion : config.EndpointVersion;
-        this._client = new RawAnthropicClient(this._httpClient, endpoint, endpointVersion, config.ApiKey);
+        var endpoint = string.IsNullOrWhiteSpace(config.Endpoint)
+            ? DefaultEndpoint
+            : config.Endpoint;
+        var endpointVersion = string.IsNullOrWhiteSpace(config.Endpoint)
+            ? DefaultEndpointVersion
+            : config.EndpointVersion;
+        _client = new RawAnthropicClient(_httpClient,
+            endpoint,
+            endpointVersion,
+            config.ApiKey);
 
         textTokenizer ??= TokenizerFactory.GetTokenizerForEncoding(config.Tokenizer);
+
         if (textTokenizer == null)
         {
             textTokenizer = new CL100KTokenizer();
-            this._log.LogWarning(
+            _log.LogWarning(
                 "Tokenizer not specified, will use {0}. The token count might be incorrect, causing unexpected errors",
                 textTokenizer.GetType().FullName);
         }
 
-        this._textTokenizer = textTokenizer;
+        _textTokenizer = textTokenizer;
     }
+
 
     /// <inheritdoc />
     public int MaxTokenTotal { get; private set; }
 
+
     /// <inheritdoc />
     public int CountTokens(string text)
     {
-        return this._textTokenizer.CountTokens(text);
+        return _textTokenizer.CountTokens(text);
     }
+
 
     /// <inheritdoc/>
     public IReadOnlyList<string> GetTokens(string text)
     {
-        return this._textTokenizer.GetTokens(text);
+        return _textTokenizer.GetTokens(text);
     }
+
 
     /// <inheritdoc />
     public async IAsyncEnumerable<GeneratedTextContent> GenerateTextAsync(
@@ -102,17 +118,17 @@ public sealed class AnthropicTextGeneration : ITextGenerator, IDisposable
         TextGenerationOptions options,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        string modelName = this._contextProvider.GetContext().GetCustomTextGenerationModelNameOrDefault(this._modelName);
+        string modelName = _contextProvider.GetContext().GetCustomTextGenerationModelNameOrDefault(_modelName);
 
-        this._log.LogTrace("Sending text generation request, model '{0}'", modelName);
+        _log.LogTrace("Sending text generation request, model '{0}'", modelName);
 
         CallClaudeStreamingParams parameters = new(modelName, prompt)
         {
-            System = this._defaultSystemPrompt,
-            Temperature = options.Temperature,
+            System = _defaultSystemPrompt,
+            Temperature = options.Temperature
         };
 
-        IAsyncEnumerable<StreamingResponseMessage> streamedResponse = this._client.CallClaudeStreamingAsync(parameters, cancellationToken);
+        IAsyncEnumerable<StreamingResponseMessage> streamedResponse = _client.CallClaudeStreamingAsync(parameters, cancellationToken);
 
         await foreach (StreamingResponseMessage response in streamedResponse.ConfigureAwait(false))
         {
@@ -121,18 +137,17 @@ public sealed class AnthropicTextGeneration : ITextGenerator, IDisposable
             {
                 case ContentBlockDelta blockDelta:
                     yield return blockDelta.Delta.Text;
+
                     break;
 
-                default:
-                    //do nothing we simply want to use delta text.
-                    break;
             }
         }
     }
 
+
     /// <inheritdoc />
     public void Dispose()
     {
-        this._httpClient.Dispose();
+        _httpClient.Dispose();
     }
 }

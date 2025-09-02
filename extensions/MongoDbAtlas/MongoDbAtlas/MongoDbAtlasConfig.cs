@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Threading.Tasks;
@@ -34,6 +34,7 @@ public sealed class MongoDbAtlasConfig
     /// </summary>
     public Func<Task> AfterIndexCallbackAsync { get; private set; } = () => Task.CompletedTask;
 
+
     /// <summary>
     /// Allows to specify connection string
     /// </summary>
@@ -41,9 +42,10 @@ public sealed class MongoDbAtlasConfig
     /// <returns></returns>
     public MongoDbAtlasConfig WithConnectionString(string mongoConnection)
     {
-        this.ConnectionString = mongoConnection;
+        ConnectionString = mongoConnection;
         return this;
     }
+
 
     /// <summary>
     /// Allows to specify database name.
@@ -52,9 +54,10 @@ public sealed class MongoDbAtlasConfig
     /// <returns></returns>
     public MongoDbAtlasConfig WithDatabaseName(string databaseName)
     {
-        this.DatabaseName = databaseName;
+        DatabaseName = databaseName;
         return this;
     }
+
 
     /// <summary>
     /// If single collection for vector search is enabled, all the vectors will be stored in a single
@@ -64,9 +67,10 @@ public sealed class MongoDbAtlasConfig
     /// <returns></returns>
     public MongoDbAtlasConfig WithSingleCollectionForVectorSearch(bool useSingleCollectionForVectorSearch)
     {
-        this.UseSingleCollectionForVectorSearch = useSingleCollectionForVectorSearch;
+        UseSingleCollectionForVectorSearch = useSingleCollectionForVectorSearch;
         return this;
     }
+
 
     /// <summary>
     /// Allow passing a callback that will be called after data is indexed.
@@ -75,7 +79,7 @@ public sealed class MongoDbAtlasConfig
     /// <returns></returns>
     public MongoDbAtlasConfig WithAfterIndexCallback(Func<Task> afterIndexCallback)
     {
-        this.AfterIndexCallbackAsync = afterIndexCallback;
+        AfterIndexCallbackAsync = afterIndexCallback;
         return this;
     }
 }

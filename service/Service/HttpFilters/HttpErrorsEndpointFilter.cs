@@ -1,9 +1,9 @@
-// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft.All rights reserved.
 
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 
-namespace Microsoft.KernelMemory.Service;
+namespace Microsoft.KernelMemory.Service.HttpFilters;
 
 public sealed class HttpErrorsEndpointFilter : IEndpointFilter
 {

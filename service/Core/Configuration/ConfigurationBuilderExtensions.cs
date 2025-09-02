@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.IO;
@@ -17,6 +17,7 @@ public static partial class ConfigurationBuilderExtensions
     // .NET env var
     private const string DotNetEnvVar = "DOTNET_ENVIRONMENT";
 
+
     public static void AddKernelMemoryConfigurationSources(
         this IConfigurationBuilder builder,
         bool useAppSettingsFiles = true,
@@ -29,7 +30,7 @@ public static partial class ConfigurationBuilderExtensions
 
         // Detect the folder containing configuration files
         settingsDirectory ??= Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
-                              ?? Directory.GetCurrentDirectory();
+            ?? Directory.GetCurrentDirectory();
         builder.SetBasePath(settingsDirectory);
 
         // Add configuration files as sources
@@ -37,25 +38,27 @@ public static partial class ConfigurationBuilderExtensions
         {
             // Add appsettings.json, typically used for default settings, without credentials
             var main = Path.Join(settingsDirectory, "appsettings.json");
+
             if (!File.Exists(main))
             {
                 throw new ConfigurationException($"appsettings.json not found. Directory: {settingsDirectory}");
             }
 
-            builder.AddJsonFile(main, optional: false);
+            builder.AddJsonFile(main, false);
 
             // Add appsettings.Development.json, used for local overrides and credentials
             if (env.Equals("development", StringComparison.OrdinalIgnoreCase))
             {
                 var f1 = Path.Join(settingsDirectory, "appsettings.development.json");
                 var f2 = Path.Join(settingsDirectory, "appsettings.Development.json");
+
                 if (File.Exists(f1))
                 {
-                    builder.AddJsonFile(f1, optional: false);
+                    builder.AddJsonFile(f1, false);
                 }
                 else if (File.Exists(f2))
                 {
-                    builder.AddJsonFile(f2, optional: false);
+                    builder.AddJsonFile(f2, false);
                 }
             }
 
@@ -64,13 +67,14 @@ public static partial class ConfigurationBuilderExtensions
             {
                 var f1 = Path.Join(settingsDirectory, "appsettings.production.json");
                 var f2 = Path.Join(settingsDirectory, "appsettings.Production.json");
+
                 if (File.Exists(f1))
                 {
-                    builder.AddJsonFile(f1, optional: false);
+                    builder.AddJsonFile(f1, false);
                 }
                 else if (File.Exists(f2))
                 {
-                    builder.AddJsonFile(f2, optional: false);
+                    builder.AddJsonFile(f2, false);
                 }
             }
         }
@@ -87,7 +91,7 @@ public static partial class ConfigurationBuilderExtensions
             // see: https://learn.microsoft.com/aspnet/core/security/app-secrets?#secret-manager
             if (entryAssembly != null && env.Equals("development", StringComparison.OrdinalIgnoreCase))
             {
-                builder.AddUserSecrets(entryAssembly, optional: true);
+                builder.AddUserSecrets(entryAssembly, true);
             }
         }
 

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Diagnostics;
 using System.Text;
@@ -14,21 +14,23 @@ public sealed class OnnxTextGeneratorTest : BaseFunctionalTestCase
     private readonly OnnxTextGenerator _target;
     private readonly Stopwatch _timer;
 
+
     public OnnxTextGeneratorTest(
         IConfiguration cfg,
         ITestOutputHelper output) : base(cfg, output)
     {
-        this._timer = new Stopwatch();
+        _timer = new Stopwatch();
 
-        this.OnnxConfig.Validate();
-        this._target = new OnnxTextGenerator(this.OnnxConfig, loggerFactory: null);
+        OnnxConfig.Validate();
+        _target = new OnnxTextGenerator(OnnxConfig, loggerFactory: null);
 
-        var modelDirectory = Path.GetFullPath(this.OnnxConfig.TextModelDir);
+        var modelDirectory = Path.GetFullPath(OnnxConfig.TextModelDir);
         var modelFile = Directory.GetFiles(modelDirectory)
             .FirstOrDefault(file => string.Equals(Path.GetExtension(file), ".ONNX", StringComparison.OrdinalIgnoreCase));
 
         Console.WriteLine($"Using model {Path.GetFileNameWithoutExtension(modelFile)} from: {modelDirectory}");
     }
+
 
     [Fact]
     [Trait("Category", "Onnx")]
@@ -36,32 +38,34 @@ public sealed class OnnxTextGeneratorTest : BaseFunctionalTestCase
     {
         var utcDate = DateTime.UtcNow.Date.ToString("MM/dd/yyyy");
         var systemPrompt = $"Following the format \"MM/dd/yyyy\", the current date is {utcDate}.";
-        var question = $"What is the current date?";
+        var question = "What is the current date?";
         var prompt = $"<|system|>{systemPrompt}<|end|><|user|>{question}<|end|><|assistant|>";
 
         var options = new TextGenerationOptions();
 
         // Act
-        this._timer.Restart();
-        var tokens = this._target.GenerateTextAsync(prompt, options);
+        _timer.Restart();
+        var tokens = _target.GenerateTextAsync(prompt, options);
         var result = new StringBuilder();
+
         await foreach (var token in tokens)
         {
             result.Append(token);
         }
 
-        this._timer.Stop();
+        _timer.Stop();
         var answer = result.ToString();
 
         // Assert
         Console.WriteLine($"Model Output:\n=============================\n{answer}\n=============================");
-        Console.WriteLine($"Time: {this._timer.ElapsedMilliseconds / 1000} secs");
-        Assert.Contains(utcDate.ToString(), answer, StringComparison.OrdinalIgnoreCase);
+        Console.WriteLine($"Time: {_timer.ElapsedMilliseconds / 1000} secs");
+        Assert.Contains(utcDate, answer, StringComparison.OrdinalIgnoreCase);
     }
+
 
     protected override void Dispose(bool disposing)
     {
         base.Dispose(disposing);
-        this._target.Dispose();
+        _target.Dispose();
     }
 }

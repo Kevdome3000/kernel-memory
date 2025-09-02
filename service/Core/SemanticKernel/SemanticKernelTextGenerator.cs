@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.KernelMemory.AI;
 using Microsoft.KernelMemory.Diagnostics;
+using Microsoft.KernelMemory.Models;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.TextGeneration;
 
@@ -21,11 +22,20 @@ public sealed class SemanticKernelTextGenerator : ITextGenerator
     /// <inheritdoc />
     public int MaxTokenTotal { get; }
 
-    /// <inheritdoc />
-    public int CountTokens(string text) => this._tokenizer.CountTokens(text);
 
     /// <inheritdoc />
-    public IReadOnlyList<string> GetTokens(string text) => this._tokenizer.GetTokens(text);
+    public int CountTokens(string text)
+    {
+        return _tokenizer.CountTokens(text);
+    }
+
+
+    /// <inheritdoc />
+    public IReadOnlyList<string> GetTokens(string text)
+    {
+        return _tokenizer.GetTokens(text);
+    }
+
 
     public SemanticKernelTextGenerator(
         ITextGenerationService textGenerationService,
@@ -35,21 +45,22 @@ public sealed class SemanticKernelTextGenerator : ITextGenerator
     {
         ArgumentNullExceptionEx.ThrowIfNull(textGenerationService, nameof(textGenerationService), "Text generation service is null");
 
-        this._service = textGenerationService;
-        this.MaxTokenTotal = config.MaxTokenTotal;
+        _service = textGenerationService;
+        MaxTokenTotal = config.MaxTokenTotal;
 
-        this._log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<SemanticKernelTextGenerator>();
+        _log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<SemanticKernelTextGenerator>();
 
         if (textTokenizer == null)
         {
             textTokenizer = new O200KTokenizer();
-            this._log.LogWarning(
+            _log.LogWarning(
                 "Tokenizer not specified, will use {0}. The token count might be incorrect, causing unexpected errors",
                 textTokenizer.GetType().FullName);
         }
 
-        this._tokenizer = textTokenizer;
+        _tokenizer = textTokenizer;
     }
+
 
     /// <inheritdoc />
     public async IAsyncEnumerable<GeneratedTextContent> GenerateTextAsync(
@@ -57,10 +68,14 @@ public sealed class SemanticKernelTextGenerator : ITextGenerator
         TextGenerationOptions options,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        this._log.LogTrace("Generating text with SK text generator service");
+        _log.LogTrace("Generating text with SK text generator service");
 
-        var contents = this._service.GetStreamingTextContentsAsync(
-            prompt, ToPromptExecutionSettings(options), null, cancellationToken).ConfigureAwait(false);
+        var contents = _service.GetStreamingTextContentsAsync(
+                prompt,
+                ToPromptExecutionSettings(options),
+                null,
+                cancellationToken)
+            .ConfigureAwait(false);
 
         await foreach (StreamingTextContent? content in contents)
         {
@@ -70,6 +85,7 @@ public sealed class SemanticKernelTextGenerator : ITextGenerator
             }
         }
     }
+
 
     private static PromptExecutionSettings ToPromptExecutionSettings(TextGenerationOptions options)
     {

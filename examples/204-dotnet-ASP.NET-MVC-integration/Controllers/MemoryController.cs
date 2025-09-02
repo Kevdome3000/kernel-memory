@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.KernelMemory;
 using Microsoft.KernelMemory.DataFormats;
 
-namespace Controllers;
+namespace _204_dotnet_ASP.NET_MVC_integration.Controllers;
 
 [ApiController]
 [Route("[controller]")]
@@ -13,20 +13,22 @@ public class MemoryController : Controller
     private readonly IKernelMemory _memory;
     private readonly IOcrEngine _ocr;
 
+
     public MemoryController(
         IKernelMemory memory,
         IOcrEngine ocr)
     {
-        this._memory = memory;
-        this._ocr = ocr;
+        _memory = memory;
+        _ocr = ocr;
     }
+
 
     // GET http://localhost:5000/Memory
     [HttpGet]
     public async Task<string> GetAsync()
     {
         // Return data from MyOcrEngine
-        var ocrResult = await this._ocr.ExtractTextFromImageAsync(new MemoryStream());
+        var ocrResult = await _ocr.ExtractTextFromImageAsync(new MemoryStream());
         return ocrResult;
     }
 }

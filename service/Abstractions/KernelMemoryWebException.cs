@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 
@@ -11,10 +11,12 @@ public class KernelMemoryWebException : KernelMemoryException
     {
     }
 
+
     /// <inheritdoc />
     public KernelMemoryWebException(string? message) : base(message)
     {
     }
+
 
     /// <inheritdoc />
     public KernelMemoryWebException(string? message, Exception? innerException) : base(message, innerException)

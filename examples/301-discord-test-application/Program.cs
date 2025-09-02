@@ -1,11 +1,11 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
+using _301_discord_test_application.DiscordConnector;
 using Microsoft.KernelMemory;
 using Microsoft.KernelMemory.DocumentStorage.DevTools;
 using Microsoft.KernelMemory.MemoryStorage.DevTools;
-using Microsoft.KernelMemory.Sources.DiscordBot;
 
-namespace Microsoft.Discord.TestApplication;
+namespace _301_discord_test_application;
 
 /* Example: Listen for new messages in Discord, and save them in a table in Postgres.
  *
@@ -33,6 +33,7 @@ namespace Microsoft.Discord.TestApplication;
  *               => Postgres table
  */
 
+
 internal static class Program
 {
     public static void Main(string[] args)
@@ -41,8 +42,8 @@ internal static class Program
 
         appBuilder.Configuration
             .AddJsonFile("appsettings.json")
-            .AddJsonFile("appsettings.development.json", optional: true)
-            .AddJsonFile("appsettings.Development.json", optional: true)
+            .AddJsonFile("appsettings.development.json", true)
+            .AddJsonFile("appsettings.Development.json", true)
             .AddEnvironmentVariables()
             .AddCommandLine(args);
 
@@ -54,7 +55,7 @@ internal static class Program
         var discordCfg = appBuilder.Configuration.GetSection("Discord").Get<DiscordConnectorConfig>();
         ArgumentNullExceptionEx.ThrowIfNull(discordCfg, nameof(discordCfg), "Discord config is NULL");
         appBuilder.Services.AddSingleton<DiscordConnectorConfig>(discordCfg);
-        appBuilder.Services.AddHostedService<DiscordConnector>();
+        appBuilder.Services.AddHostedService<DiscordConnector.DiscordConnector>();
 
         // Postgres with Entity Framework
         // DiscordMessageHandler reads files received by Kernel Memory and store each message in a table in Postgres.
@@ -69,6 +70,7 @@ internal static class Program
         kmApp.Run();
         Console.WriteLine("\n... KM application stopped.");
     }
+
 
     private static WebApplication BuildSynchronousKernelMemoryApp(WebApplicationBuilder appBuilder, DiscordConnectorConfig discordConfig)
     {
@@ -93,6 +95,7 @@ internal static class Program
 
         return app;
     }
+
 
     private static WebApplication BuildAsynchronousKernelMemoryApp(WebApplicationBuilder appBuilder, DiscordConnectorConfig discordConfig)
     {

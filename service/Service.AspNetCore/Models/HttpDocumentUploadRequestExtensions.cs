@@ -1,6 +1,7 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.AspNetCore.Http;
+using Microsoft.KernelMemory.Models;
 
 namespace Microsoft.KernelMemory.Service.AspNetCore.Models;
 

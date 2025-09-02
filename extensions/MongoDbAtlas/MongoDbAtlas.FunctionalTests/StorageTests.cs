@@ -1,9 +1,10 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.KernelMemory.DocumentStorage;
 using Microsoft.KernelMemory.MongoDbAtlas;
+using Microsoft.KernelMemory.MongoDbAtlas.Internals;
 using Microsoft.KM.TestHelpers;
 
 namespace Microsoft.MongoDbAtlas.FunctionalTests;
@@ -11,18 +12,20 @@ namespace Microsoft.MongoDbAtlas.FunctionalTests;
 public class StorageTestsSingleCollection : StorageTests
 {
     public StorageTestsSingleCollection(IConfiguration cfg, ITestOutputHelper output)
-        : base(cfg, output, multiCollection: false)
+        : base(cfg, output, false)
     {
     }
 }
 
+
 public class StorageTestsMultipleCollections : StorageTests
 {
     public StorageTestsMultipleCollections(IConfiguration cfg, ITestOutputHelper output)
-        : base(cfg, output, multiCollection: true)
+        : base(cfg, output, true)
     {
     }
 }
+
 
 public abstract class StorageTests : BaseFunctionalTestCase
 {
@@ -30,36 +33,39 @@ public abstract class StorageTests : BaseFunctionalTestCase
     private readonly string IndexName = $"storagetestindex{_seed++}";
     private static int _seed = 0;
 
+
     protected StorageTests(IConfiguration cfg, ITestOutputHelper output, bool multiCollection) : base(cfg, output)
     {
         if (multiCollection)
         {
-            this.MongoDbAtlasConfig.DatabaseName += "StorageTestsMultiCollection";
-            this.MongoDbAtlasConfig.UseSingleCollectionForVectorSearch = false;
+            MongoDbAtlasConfig.DatabaseName += "StorageTestsMultiCollection";
+            MongoDbAtlasConfig.UseSingleCollectionForVectorSearch = false;
         }
         else
         {
-            this.MongoDbAtlasConfig.DatabaseName += "StorageTests";
-            this.MongoDbAtlasConfig.UseSingleCollectionForVectorSearch = true;
+            MongoDbAtlasConfig.DatabaseName += "StorageTests";
+            MongoDbAtlasConfig.UseSingleCollectionForVectorSearch = true;
         }
 
-        var ash = new MongoDbAtlasSearchHelper(this.MongoDbAtlasConfig.ConnectionString, this.MongoDbAtlasConfig.DatabaseName);
+        var ash = new MongoDbAtlasSearchHelper(MongoDbAtlasConfig.ConnectionString, MongoDbAtlasConfig.DatabaseName);
 
         // delete everything for every collection
         ash.DropAllDocumentsFromCollectionsAsync().Wait();
 
-        this._sut = new MongoDbAtlasStorage(this.MongoDbAtlasConfig);
-        this._sut.CreateIndexDirectoryAsync("testindex").Wait();
+        _sut = new MongoDbAtlasStorage(MongoDbAtlasConfig);
+        _sut.CreateIndexDirectoryAsync("testindex").Wait();
     }
+
 
     protected override void Dispose(bool disposing)
     {
         if (disposing)
         {
             base.Dispose(disposing);
-            this._sut.DeleteIndexDirectoryAsync(this.IndexName).Wait();
+            _sut.DeleteIndexDirectoryAsync(IndexName).Wait();
         }
     }
+
 
     [Fact]
     [Trait("Category", "MongoDbAtlas")]
@@ -69,15 +75,22 @@ public abstract class StorageTests : BaseFunctionalTestCase
         var fileContent1 = new MemoryStream(Encoding.UTF8.GetBytes("Hello World"));
         var fileContent2 = new MemoryStream(Encoding.UTF8.GetBytes("Hello World 2"));
         string id = $"_pipeline_status{_seed++}.txt";
-        await this._sut.WriteFileAsync(this.IndexName, id, "filename.txt", fileContent1);
-        await this._sut.WriteFileAsync(this.IndexName, id, "filename.txt", fileContent2);
+        await _sut.WriteFileAsync(IndexName,
+            id,
+            "filename.txt",
+            fileContent1);
+        await _sut.WriteFileAsync(IndexName,
+            id,
+            "filename.txt",
+            fileContent2);
 
         // Assert
-        var file = await this._sut.ReadFileAsync(this.IndexName, id, "filename.txt");
+        var file = await _sut.ReadFileAsync(IndexName, id, "filename.txt");
         var content = file.ToString();
 
         Assert.Equal("Hello World 2", content);
     }
+
 
     [Theory]
     [Trait("Category", "MongoDbAtlas")]
@@ -92,19 +105,26 @@ public abstract class StorageTests : BaseFunctionalTestCase
         string fileName1 = $"filename{_seed++}.{extension}";
         string fileName2 = $"filename{_seed++}.{extension}";
 
-        await this._sut.WriteFileAsync(this.IndexName, id, fileName1, fileContent1);
-        await this._sut.WriteFileAsync(this.IndexName, id, fileName2, fileContent2);
+        await _sut.WriteFileAsync(IndexName,
+            id,
+            fileName1,
+            fileContent1);
+        await _sut.WriteFileAsync(IndexName,
+            id,
+            fileName2,
+            fileContent2);
 
         // Assert
-        var file = await this._sut.ReadFileAsync(this.IndexName, id, fileName1);
+        var file = await _sut.ReadFileAsync(IndexName, id, fileName1);
         var content = file.ToString();
 
         Assert.Equal(content1, content);
 
-        file = await this._sut.ReadFileAsync(this.IndexName, id, fileName2);
+        file = await _sut.ReadFileAsync(IndexName, id, fileName2);
         content = file.ToString();
         Assert.Equal(content2, content);
     }
+
 
     [Fact]
     [Trait("Category", "MongoDbAtlas")]
@@ -115,15 +135,22 @@ public abstract class StorageTests : BaseFunctionalTestCase
         var fileContent2 = new MemoryStream(Encoding.UTF8.GetBytes("Hello World 2"));
         string id = $"_pipeline_status{_seed++}.txt";
         var fileName = $"filename{_seed++}.bin";
-        await this._sut.WriteFileAsync(this.IndexName, id, fileName, fileContent1);
-        await this._sut.WriteFileAsync(this.IndexName, id, fileName, fileContent2);
+        await _sut.WriteFileAsync(IndexName,
+            id,
+            fileName,
+            fileContent1);
+        await _sut.WriteFileAsync(IndexName,
+            id,
+            fileName,
+            fileContent2);
 
         // Assert
-        var file = await this._sut.ReadFileAsync(this.IndexName, id, fileName);
+        var file = await _sut.ReadFileAsync(IndexName, id, fileName);
         var content = file.ToString();
 
         Assert.Equal("Hello World 2", content);
     }
+
 
     [Fact]
     [Trait("Category", "MongoDbAtlas")]
@@ -135,19 +162,26 @@ public abstract class StorageTests : BaseFunctionalTestCase
         string id = $"_pipeline_status{_seed++}.txt";
         var fileName1 = $"filename{_seed++}.bin";
         var fileName2 = $"filename{_seed++}.bin";
-        await this._sut.WriteFileAsync(this.IndexName, id, fileName1, fileContent1);
-        await this._sut.WriteFileAsync(this.IndexName, id, fileName2, fileContent2);
+        await _sut.WriteFileAsync(IndexName,
+            id,
+            fileName1,
+            fileContent1);
+        await _sut.WriteFileAsync(IndexName,
+            id,
+            fileName2,
+            fileContent2);
 
         // Assert
-        var file = await this._sut.ReadFileAsync(this.IndexName, id, fileName1);
+        var file = await _sut.ReadFileAsync(IndexName, id, fileName1);
         var content = file.ToString();
 
         Assert.Equal("Hello World", content);
 
-        file = await this._sut.ReadFileAsync(this.IndexName, id, fileName2);
+        file = await _sut.ReadFileAsync(IndexName, id, fileName2);
         content = file.ToString();
         Assert.Equal("Hello World 2", content);
     }
+
 
     [Fact]
     [Trait("Category", "MongoDbAtlas")]
@@ -159,14 +193,26 @@ public abstract class StorageTests : BaseFunctionalTestCase
         string id = $"_pipeline_status{_seed++}.txt";
         var fileName1 = $"filename{_seed++}.txt";
         var fileName2 = $"filename{_seed++}.bin";
-        await this._sut.WriteFileAsync(this.IndexName, id, fileName1, fileContent1);
-        await this._sut.WriteFileAsync(this.IndexName, id, fileName2, fileContent2);
+        await _sut.WriteFileAsync(IndexName,
+            id,
+            fileName1,
+            fileContent1);
+        await _sut.WriteFileAsync(IndexName,
+            id,
+            fileName2,
+            fileContent2);
 
         // Act: clean the index
-        await this._sut.EmptyDocumentDirectoryAsync(this.IndexName, id);
+        await _sut.EmptyDocumentDirectoryAsync(IndexName, id);
 
         // Assert: check that the files are not there anymore
-        await Assert.ThrowsAsync<DocumentStorageFileNotFoundException>(async () => await this._sut.ReadFileAsync(this.IndexName, id, fileName1, false));
-        await Assert.ThrowsAsync<DocumentStorageFileNotFoundException>(async () => await this._sut.ReadFileAsync(this.IndexName, id, fileName2, false));
+        await Assert.ThrowsAsync<DocumentStorageFileNotFoundException>(async () => await _sut.ReadFileAsync(IndexName,
+            id,
+            fileName1,
+            false));
+        await Assert.ThrowsAsync<DocumentStorageFileNotFoundException>(async () => await _sut.ReadFileAsync(IndexName,
+            id,
+            fileName2,
+            false));
     }
 }

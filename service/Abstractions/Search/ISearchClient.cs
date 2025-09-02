@@ -1,9 +1,10 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.KernelMemory.Context;
+using Microsoft.KernelMemory.Models;
 
 namespace Microsoft.KernelMemory.Search;
 
@@ -32,6 +33,7 @@ public interface ISearchClient
         IContext? context = null,
         CancellationToken cancellationToken = default);
 
+
     /// <summary>
     /// Answer the given question, if possible, grounding the response with relevant memories matching the given criteria.
     /// </summary>
@@ -50,6 +52,7 @@ public interface ISearchClient
         IContext? context = null,
         CancellationToken cancellationToken = default);
 
+
     /// <summary>
     /// Answer the given question, if possible, grounding the response with relevant memories matching the given criteria.
     /// </summary>
@@ -67,6 +70,7 @@ public interface ISearchClient
         double minRelevance = 0,
         IContext? context = null,
         CancellationToken cancellationToken = default);
+
 
     /// <summary>
     /// List the available memory indexes (aka collections).

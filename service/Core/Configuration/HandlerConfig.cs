@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 namespace Microsoft.KernelMemory.Configuration;
 
@@ -14,15 +14,17 @@ public class HandlerConfig
     /// </summary>
     public string Class { get; set; }
 
+
     public HandlerConfig()
     {
-        this.Assembly = string.Empty;
-        this.Class = string.Empty;
+        Assembly = string.Empty;
+        Class = string.Empty;
     }
+
 
     public HandlerConfig(string assembly, string className)
     {
-        this.Assembly = assembly;
-        this.Class = className;
+        Assembly = assembly;
+        Class = className;
     }
 }

@@ -1,8 +1,8 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Collections.Generic;
 
-namespace Microsoft.KernelMemory.MongoDbAtlas;
+namespace Microsoft.KernelMemory.MongoDbAtlas.Internals;
 
 internal sealed class MongoDbAtlasMemoryRecord
 {
@@ -16,25 +16,29 @@ internal sealed class MongoDbAtlasMemoryRecord
 
     public List<Payload> Payloads { get; set; } = [];
 
+
     internal sealed class Payload
     {
         public Payload(string key, object value)
         {
-            this.Key = key;
-            this.Value = value;
+            Key = key;
+            Value = value;
         }
+
 
         public string Key { get; set; }
         public object Value { get; set; }
     }
 
+
     internal sealed class Tag
     {
         public Tag(string key, string?[] values)
         {
-            this.Key = key;
-            this.Values = values;
+            Key = key;
+            Values = values;
         }
+
 
         public string Key { get; set; }
         public string?[] Values { get; set; }

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft.All rights reserved.
 
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
@@ -15,7 +15,8 @@ public interface IContentModeration
     /// <param name="text">Input text</param>
     /// <param name="cancellationToken">Async task cancellation token</param>
     /// <returns>True if the input text is safe</returns>
-    public Task<bool> IsSafeAsync(string? text, CancellationToken cancellationToken);
+    Task<bool> IsSafeAsync(string? text, CancellationToken cancellationToken);
+
 
     /// <summary>
     /// Check if the input text is safe
@@ -24,5 +25,5 @@ public interface IContentModeration
     /// <param name="threshold">Safety threshold</param>
     /// <param name="cancellationToken">Async task cancellation token</param>
     /// <returns>True if the input text is safe</returns>
-    public Task<bool> IsSafeAsync(string? text, double threshold, CancellationToken cancellationToken);
+    Task<bool> IsSafeAsync(string? text, double threshold, CancellationToken cancellationToken);
 }

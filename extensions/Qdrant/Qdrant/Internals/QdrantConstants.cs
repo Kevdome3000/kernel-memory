@@ -1,6 +1,6 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
-namespace Microsoft.KernelMemory.MemoryDb.Qdrant;
+namespace Microsoft.KernelMemory.MemoryDb.Qdrant.Internals;
 
 internal static class QdrantConstants
 {

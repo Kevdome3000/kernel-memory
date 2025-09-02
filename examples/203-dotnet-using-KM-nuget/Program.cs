@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.KernelMemory;
 
@@ -24,7 +24,7 @@ var memory = new KernelMemoryBuilder()
     // })
     .Build<MemoryServerless>();
 
-await memory.ImportDocumentAsync("sample-KM-Readme.pdf", documentId: "doc001");
+await memory.ImportDocumentAsync("sample-KM-Readme.pdf", "doc001");
 
 var question = "What's Kernel Memory?";
 

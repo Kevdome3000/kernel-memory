@@ -1,12 +1,15 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.KernelMemory;
 using Microsoft.KernelMemory.DocumentStorage.DevTools;
 using Microsoft.KernelMemory.MemoryStorage.DevTools;
+using Microsoft.KernelMemory.Models;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
+
+namespace _302_dotnet_sk_km_chat;
 
 internal sealed class Program
 {
@@ -40,15 +43,16 @@ internal sealed class Program
         "https://raw.githubusercontent.com/microsoft/semantic-kernel/main/java/README.md",
         "https://learn.microsoft.com/en-us/semantic-kernel/overview/",
         "https://learn.microsoft.com/en-us/semantic-kernel/get-started/quick-start-guide",
-        "https://learn.microsoft.com/en-us/semantic-kernel/agents/",
+        "https://learn.microsoft.com/en-us/semantic-kernel/agents/"
     ];
+
 
     internal static async Task Main()
     {
         var openAIApiKey = Environment.GetEnvironmentVariable("OPENAI_APIKEY") ?? throw new ConfigurationException("OPENAI_APIKEY env var not found");
 
         Kernel kernel = Kernel.CreateBuilder()
-            .AddOpenAIChatCompletion(modelId: "gpt-4", apiKey: openAIApiKey)
+            .AddOpenAIChatCompletion("gpt-4", openAIApiKey)
             .Build();
 
         // Memory instance with persistent storage on disk
@@ -67,6 +71,7 @@ internal sealed class Program
         var chatService = kernel.GetRequiredService<IChatCompletionService>();
         await ChatLoop(chatService, memory);
     }
+
 
     private static async Task ChatLoop(IChatCompletionService chatService, IKernelMemory memory)
     {
@@ -93,8 +98,9 @@ internal sealed class Program
             // Get user message (retry if the user enters an empty string)
             Console.Write("You> ");
             var userMessage = Console.ReadLine()?.Trim();
+
             if (string.IsNullOrWhiteSpace(userMessage)) { continue; }
-            else { chatHistory.AddUserMessage(userMessage); }
+            chatHistory.AddUserMessage(userMessage);
 
             // Recall relevant information from memory
             var longTermMemory = await GetLongTermMemory(memory, userMessage);
@@ -106,6 +112,7 @@ internal sealed class Program
             // Generate the next chat message, stream the response
             Console.Write("\nCopilot> ");
             reply.Clear();
+
             await foreach (StreamingChatMessageContent stream in chatService.GetStreamingChatMessageContentsAsync(chatHistory))
             {
                 Console.Write(stream.Content);
@@ -116,6 +123,7 @@ internal sealed class Program
             Console.WriteLine("\n");
         }
     }
+
 
     private static async Task<string> GetLongTermMemory(IKernelMemory memory, string query, bool asChunks = true)
     {
@@ -131,19 +139,23 @@ internal sealed class Program
         return answer.Result.Trim();
     }
 
+
     private static async Task MemorizeDocuments(IKernelMemory memory, List<string> pages)
     {
-        await memory.ImportTextAsync("We can talk about Semantic Kernel and Kernel Memory, you can ask any questions, I will try to reply using information from public documentation in Github", documentId: "help");
+        await memory.ImportTextAsync("We can talk about Semantic Kernel and Kernel Memory, you can ask any questions, I will try to reply using information from public documentation in Github", "help");
+
         foreach (var url in pages)
         {
             var id = GetUrlId(url);
+
             // Check if the page is already in memory, to avoid importing twice
             if (!await memory.IsDocumentReadyAsync(id))
             {
-                await memory.ImportWebPageAsync(url, documentId: id);
+                await memory.ImportWebPageAsync(url, id);
             }
         }
     }
+
 
     private static string GetUrlId(string url)
     {
@@ -153,83 +165,83 @@ internal sealed class Program
 
 /* Example output:
 
-   # Saving documentation into kernel memory...
-   # Starting chat...
-   Copilot> Hello, how can I help?
+# Saving documentation into kernel memory...
+# Starting chat...
+Copilot> Hello, how can I help?
 
-   You> what can I ask?
+You> what can I ask?
 
-   Copilot> You can ask queries related to Semantic Kernel and Kernel Memory based on Github public documentation.
-            Examples of questions could be about importing web page content, targeting specific documents with questions,
-            how to use Kernel Memory from the command line, or about KM's security filters.
+Copilot> You can ask queries related to Semantic Kernel and Kernel Memory based on Github public documentation.
+        Examples of questions could be about importing web page content, targeting specific documents with questions,
+        how to use Kernel Memory from the command line, or about KM's security filters.
 
-   You> ok tell me more
+You> ok tell me more
 
-   Copilot> Kernel Memory (KM) is a Long Term Memory solution for your applications, designed to function similarly to
-            human memory, storing and retrieving information. It works by uploading data in a packaged Document form.
-            Whether it's a web page URL, files, or strings, these are stored as Documents with unique IDs to avoid duplications.
-            KM leverages Large Language Models (LLM), such as GPT-4 and Ada-2 from AI providers, to extract meaning from documents
-            and generate sentences when asking questions.
+Copilot> Kernel Memory (KM) is a Long Term Memory solution for your applications, designed to function similarly to
+        human memory, storing and retrieving information. It works by uploading data in a packaged Document form.
+        Whether it's a web page URL, files, or strings, these are stored as Documents with unique IDs to avoid duplications.
+        KM leverages Large Language Models (LLM), such as GPT-4 and Ada-2 from AI providers, to extract meaning from documents
+        and generate sentences when asking questions.
 
-            Semantic Kernel (SK) constitutes the core components that orchestrate your code with AI. It consists of Plugins,
-            which are used to manipulate the real world, and Prompts that help generate correct responses. Planners,
-            another key component, are Prompts that help generate plans to complete tasks.
+        Semantic Kernel (SK) constitutes the core components that orchestrate your code with AI. It consists of Plugins,
+        which are used to manipulate the real world, and Prompts that help generate correct responses. Planners,
+        another key component, are Prompts that help generate plans to complete tasks.
 
-            You can interact with KM using command line tools, make specific queries to documents, and ensure
-            secure operations using KM's Security Filters.
+        You can interact with KM using command line tools, make specific queries to documents, and ensure
+        secure operations using KM's Security Filters.
 
-   You> could you provide some examples?
+You> could you provide some examples?
 
-   Copilot> Sure, here are some examples of interacting with Kernel Memory via command line:
+Copilot> Sure, here are some examples of interacting with Kernel Memory via command line:
 
-            1. To upload a document:
-            ```bash
-            cd tools
-            ./upload-file.sh -f README.md -i doc01 -s http://127.0.0.1:9001
-            ```
-            Or using Curl:
-            ```bash
-            curl -F 'file1=@"README.md"' -F 'documentId="doc01"' http://127.0.0.1:9001/upload
-            ```
+        1. To upload a document:
+        ```bash
+        cd tools
+        ./upload-file.sh -f README.md -i doc01 -s http://127.0.0.1:9001
+        ```
+        Or using Curl:
+        ```bash
+        curl -F 'file1=@"README.md"' -F 'documentId="doc01"' http://127.0.0.1:9001/upload
+        ```
 
-            2. To ask a question:
-            ```bash
-            cd tools
-            ./ask.sh -q "Can I use KM from command line?" -s http://127.0.0.1:9001
-            ```
-            Or using Curl:
-            ```bash
-            curl -d'{"question":"Can I use KM from command line?"}' -H 'Content-Type: application/json' http://127.0.0.1:9001/ask
-            ```
+        2. To ask a question:
+        ```bash
+        cd tools
+        ./ask.sh -q "Can I use KM from command line?" -s http://127.0.0.1:9001
+        ```
+        Or using Curl:
+        ```bash
+        curl -d'{"question":"Can I use KM from command line?"}' -H 'Content-Type: application/json' http://127.0.0.1:9001/ask
+        ```
 
-            These examples demonstrate how to upload a document to KM and how to ask a question using KM's API.
-            Remember to replace `README.md`, `doc01` and `Can I use KM from command line?` with your file name, document id, and your question.
+        These examples demonstrate how to upload a document to KM and how to ask a question using KM's API.
+        Remember to replace `README.md`, `doc01` and `Can I use KM from command line?` with your file name, document id, and your question.
 
 
-   You> and sk?
+You> and sk?
 
-   Copilot> When working with Semantic Kernel (SK), one of the core concepts is "prompts". These are used to
-            generate responses from AI models. Here's an example of how you might create a prompt function:
+Copilot> When working with Semantic Kernel (SK), one of the core concepts is "prompts". These are used to
+        generate responses from AI models. Here's an example of how you might create a prompt function:
 
-            ```python
-            from semantic_kernel import Kernel
+        ```python
+        from semantic_kernel import Kernel
 
-            # Define your prompt function
-            def greeting_prompt(name):
-              return f"Hello, {name}. How can I assist you today?"
+        # Define your prompt function
+        def greeting_prompt(name):
+          return f"Hello, {name}. How can I assist you today?"
 
-            # Initialize the kernel
-            kernel = Kernel.get_instance()
+        # Initialize the kernel
+        kernel = Kernel.get_instance()
 
-            # Register your prompt function
-            kernel.register_prompt_fn(greeting_prompt)
-            ```
+        # Register your prompt function
+        kernel.register_prompt_fn(greeting_prompt)
+        ```
 
-            In this Python example, a function `greeting_prompt` is defined which takes one argument `name`. This
-            function is then registered in the SK system using the `register_prompt_fn` method. Now, when sending
-            inputs to the model, it will generate responses as if it was saying "Hello, [name]. How can I assist you today?".
-            This helps guide the message generated by AI in a specific direction.
+        In this Python example, a function `greeting_prompt` is defined which takes one argument `name`. This
+        function is then registered in the SK system using the `register_prompt_fn` method. Now, when sending
+        inputs to the model, it will generate responses as if it was saying "Hello, [name]. How can I assist you today?".
+        This helps guide the message generated by AI in a specific direction.
 
-            Remember, this is a basic example. SK's powerful features let you run complex prompts, use different
-            AI services, manage plug-ins for real-world interaction, and more.
+        Remember, this is a basic example. SK's powerful features let you run complex prompts, use different
+        AI services, manage plug-ins for real-world interaction, and more.
 */

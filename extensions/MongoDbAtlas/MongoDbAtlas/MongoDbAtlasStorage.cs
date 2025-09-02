@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Diagnostics.CodeAnalysis;
@@ -6,6 +6,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.KernelMemory.DocumentStorage;
+using Microsoft.KernelMemory.Models;
 using Microsoft.KernelMemory.Pipeline;
 using MongoDB.Bson;
 using MongoDB.Driver;
@@ -18,64 +19,78 @@ public sealed class MongoDbAtlasStorage : MongoDbAtlasBaseStorage, IDocumentStor
 {
     private readonly IMimeTypeDetection _mimeTypeDetection;
 
+
     public MongoDbAtlasStorage(
         MongoDbAtlasConfig config,
         IMimeTypeDetection? mimeTypeDetection = null) : base(config)
     {
-        this._mimeTypeDetection = mimeTypeDetection ?? new MimeTypesDetection();
+        _mimeTypeDetection = mimeTypeDetection ?? new MimeTypesDetection();
     }
+
 
     public Task CreateIndexDirectoryAsync(string index, CancellationToken cancellationToken = default)
     {
         return Task.CompletedTask;
     }
 
+
     /// <inheritdoc />
     public async Task DeleteIndexDirectoryAsync(string index, CancellationToken cancellationToken = default)
     {
         // get the bucket related to this index ant then drop it.
-        var bucket = this.GetBucketForIndex(index);
+        var bucket = GetBucketForIndex(index);
         await bucket.DropAsync(cancellationToken).ConfigureAwait(false);
 
-        await this.Database.DropCollectionAsync(index, cancellationToken).ConfigureAwait(false);
+        await Database.DropCollectionAsync(index, cancellationToken).ConfigureAwait(false);
     }
+
 
     /// <inheritdoc />
     public async Task EmptyDocumentDirectoryAsync(
-        string index, string documentId, CancellationToken cancellationToken = default)
+        string index,
+        string documentId,
+        CancellationToken cancellationToken = default)
     {
         // delete all document in GridFS that have index as metadata
-        var bucket = this.GetBucketForIndex(index);
+        var bucket = GetBucketForIndex(index);
         var filter = Builders<GridFSFileInfo<string>>.Filter.Eq("metadata.documentId", documentId);
 
         // load all id then delete all id
         var files = await bucket.FindAsync(filter, cancellationToken: cancellationToken).ConfigureAwait(false);
         var ids = await files.ToListAsync(cancellationToken).ConfigureAwait(false);
+
         foreach (var id in ids)
         {
             await bucket.DeleteAsync(id.Id, cancellationToken).ConfigureAwait(false);
         }
 
         // delete all document in mongodb that have index as metadata
-        var collection = this.GetCollection(index);
+        var collection = GetCollection(index);
         var filter2 = Builders<BsonDocument>.Filter.Eq("documentId", documentId);
         await collection.DeleteManyAsync(filter2, cancellationToken).ConfigureAwait(false);
     }
 
+
     /// <inheritdoc />
     public Task DeleteDocumentDirectoryAsync(string index, string documentId, CancellationToken cancellationToken = default)
     {
-        return this.EmptyDocumentDirectoryAsync(index, documentId, cancellationToken);
+        return EmptyDocumentDirectoryAsync(index, documentId, cancellationToken);
     }
+
 
     /// <inheritdoc />
     public async Task WriteFileAsync(
-        string index, string documentId, string fileName, Stream streamContent, CancellationToken cancellationToken = default)
+        string index,
+        string documentId,
+        string fileName,
+        Stream streamContent,
+        CancellationToken cancellationToken = default)
     {
         // txt files are extracted text, and are stored in mongodb in the collection
         // we need to come up with a unique id for the document
         var id = $"{documentId}/{fileName}";
         var extension = Path.GetExtension(fileName);
+
         if (extension == ".txt")
         {
             using var reader = new StreamReader(streamContent);
@@ -87,7 +102,11 @@ public sealed class MongoDbAtlasStorage : MongoDbAtlasBaseStorage, IDocumentStor
                 { "content", new BsonString(await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false)) },
                 { "contentType", MimeTypes.PlainText }
             };
-            await this.SaveDocumentAsync(index, id, doc, cancellationToken).ConfigureAwait(false);
+            await SaveDocumentAsync(index,
+                    id,
+                    doc,
+                    cancellationToken)
+                .ConfigureAwait(false);
         }
         else if (extension == ".text_embedding")
         {
@@ -102,11 +121,15 @@ public sealed class MongoDbAtlasStorage : MongoDbAtlasBaseStorage, IDocumentStor
             doc["fileName"] = fileName;
             doc["content"] = content;
             doc["contentType"] = MimeTypes.PlainText;
-            await this.SaveDocumentAsync(index, id, doc, cancellationToken).ConfigureAwait(false);
+            await SaveDocumentAsync(index,
+                    id,
+                    doc,
+                    cancellationToken)
+                .ConfigureAwait(false);
         }
         else
         {
-            GridFSBucket<string> bucket = this.GetBucketForIndex(index);
+            GridFSBucket<string> bucket = GetBucketForIndex(index);
             var options = new GridFSUploadOptions
             {
                 Metadata = new BsonDocument
@@ -114,21 +137,28 @@ public sealed class MongoDbAtlasStorage : MongoDbAtlasBaseStorage, IDocumentStor
                     { "index", index },
                     { "documentId", documentId },
                     { "fileName", fileName },
-                    { "contentType", this._mimeTypeDetection.GetFileType(fileName) }
+                    { "contentType", _mimeTypeDetection.GetFileType(fileName) }
                 }
             };
 
             // Since the pattern of usage is that you can upload a file for a document id and then update, we need to delete
             // any existing file with the same id check if the file exists and delete it
             IAsyncCursor<GridFSFileInfo<string>> existingFile = await GetFromBucketByIdAsync(id, bucket, cancellationToken).ConfigureAwait(false);
+
             if (await existingFile.AnyAsync(cancellationToken).ConfigureAwait(false))
             {
                 await bucket.DeleteAsync(id, cancellationToken).ConfigureAwait(false);
             }
 
-            await bucket.UploadFromStreamAsync(id, fileName, streamContent, options, cancellationToken).ConfigureAwait(false);
+            await bucket.UploadFromStreamAsync(id,
+                    fileName,
+                    streamContent,
+                    options,
+                    cancellationToken)
+                .ConfigureAwait(false);
         }
     }
+
 
     /// <inheritdoc />
     public Task CreateDocumentDirectoryAsync(string index, string documentId, CancellationToken cancellationToken = default)
@@ -137,9 +167,14 @@ public sealed class MongoDbAtlasStorage : MongoDbAtlasBaseStorage, IDocumentStor
         return Task.CompletedTask;
     }
 
+
     /// <inheritdoc />
     public async Task<StreamableFileContent> ReadFileAsync(
-        string index, string documentId, string fileName, bool logErrIfNotFound = true, CancellationToken cancellationToken = default)
+        string index,
+        string documentId,
+        string fileName,
+        bool logErrIfNotFound = true,
+        CancellationToken cancellationToken = default)
     {
         // IMPORTANT: documentId can be empty, e.g. when deleting an index
         ArgumentNullExceptionEx.ThrowIfNullOrEmpty(index, nameof(index), "Index name is empty");
@@ -152,12 +187,14 @@ public sealed class MongoDbAtlasStorage : MongoDbAtlasBaseStorage, IDocumentStor
         // TODO: fix code duplication and inconsistencies of file timestamp
         if (extension == ".txt")
         {
-            var collection = this.GetCollection(index);
+            var collection = GetCollection(index);
             var filterById = Builders<BsonDocument>.Filter.Eq("_id", id);
             var doc = await collection.Find(filterById).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+
             if (doc == null)
             {
                 var error = $"File {fileName} not found in index {index} and document {documentId}";
+
                 if (logErrIfNotFound)
                 {
                     Console.WriteLine(error);
@@ -176,11 +213,13 @@ public sealed class MongoDbAtlasStorage : MongoDbAtlasBaseStorage, IDocumentStor
                 AsyncStreamDelegate);
             return file;
         }
-        else if (extension == ".text_embedding")
+
+        if (extension == ".text_embedding")
         {
-            var collection = this.GetCollection(index);
+            var collection = GetCollection(index);
             var filterById = Builders<BsonDocument>.Filter.Eq("_id", id);
             var doc = await collection.Find(filterById).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+
             if (doc == null)
             {
                 if (logErrIfNotFound)
@@ -203,11 +242,12 @@ public sealed class MongoDbAtlasStorage : MongoDbAtlasBaseStorage, IDocumentStor
         }
         else
         {
-            var bucket = this.GetBucketForIndex(index);
+            var bucket = GetBucketForIndex(index);
             var filter = Builders<GridFSFileInfo<string>>.Filter.Eq(x => x.Id, id);
 
             var files = await bucket.FindAsync(filter, cancellationToken: cancellationToken).ConfigureAwait(false);
             var file = await files.FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+
             if (file == null)
             {
                 if (logErrIfNotFound)
@@ -230,23 +270,31 @@ public sealed class MongoDbAtlasStorage : MongoDbAtlasBaseStorage, IDocumentStor
         }
     }
 
-    private async Task SaveDocumentAsync(string index, string id, BsonDocument doc, CancellationToken cancellationToken)
+
+    private async Task SaveDocumentAsync(
+        string index,
+        string id,
+        BsonDocument doc,
+        CancellationToken cancellationToken)
     {
-        var collection = this.GetCollection(index);
+        var collection = GetCollection(index);
 
         //upsert the doc based on the id
         await collection.ReplaceOneAsync(
-            Builders<BsonDocument>.Filter.Eq("_id", id),
-            doc,
-            new ReplaceOptions { IsUpsert = true },
-            cancellationToken
-        ).ConfigureAwait(false);
+                Builders<BsonDocument>.Filter.Eq("_id", id),
+                doc,
+                new ReplaceOptions { IsUpsert = true },
+                cancellationToken
+            )
+            .ConfigureAwait(false);
     }
+
 
     private static async Task<IAsyncCursor<GridFSFileInfo<string>>> GetFromBucketByIdAsync(string id, GridFSBucket<string> bucket, CancellationToken cancellationToken)
     {
         return await bucket.FindAsync(GetBucketFilterById(id), cancellationToken: cancellationToken).ConfigureAwait(false);
     }
+
 
     private static FilterDefinition<GridFSFileInfo<string>> GetBucketFilterById(string id)
     {

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.KernelMemory.FileSystem.DevTools;
@@ -19,11 +19,13 @@ public static partial class KernelMemoryBuilderExtensions
         return builder;
     }
 
+
     public static IKernelMemoryBuilder WithSimpleVectorDb(this IKernelMemoryBuilder builder, string directory)
     {
         builder.Services.AddSimpleVectorDbAsMemoryDb(directory);
         return builder;
     }
+
 
     public static IKernelMemoryBuilder WithSimpleTextDb(this IKernelMemoryBuilder builder, SimpleTextDbConfig? config = null)
     {
@@ -31,12 +33,14 @@ public static partial class KernelMemoryBuilderExtensions
         return builder;
     }
 
+
     public static IKernelMemoryBuilder WithSimpleTextDb(this IKernelMemoryBuilder builder, string directory)
     {
         builder.Services.AddSimpleTextDbAsMemoryDb(directory);
         return builder;
     }
 }
+
 
 /// <summary>
 /// .NET IServiceCollection dependency injection extensions.
@@ -50,11 +54,13 @@ public static partial class DependencyInjection
             .AddSingleton<IMemoryDb, SimpleVectorDb>();
     }
 
+
     public static IServiceCollection AddSimpleVectorDbAsMemoryDb(this IServiceCollection services, string directory)
     {
         var config = new SimpleVectorDbConfig { StorageType = FileSystemTypes.Disk, Directory = directory };
         return services.AddSimpleVectorDbAsMemoryDb(config);
     }
+
 
     public static IServiceCollection AddSimpleTextDbAsMemoryDb(this IServiceCollection services, SimpleTextDbConfig? config = null)
     {
@@ -62,6 +68,7 @@ public static partial class DependencyInjection
             .AddSingleton<SimpleTextDbConfig>(config ?? new SimpleTextDbConfig())
             .AddSingleton<IMemoryDb, SimpleTextDb>();
     }
+
 
     public static IServiceCollection AddSimpleTextDbAsMemoryDb(this IServiceCollection services, string directory)
     {

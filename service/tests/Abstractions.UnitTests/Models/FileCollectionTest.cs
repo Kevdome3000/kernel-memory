@@ -1,6 +1,7 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.KernelMemory.Models;
+using Xunit;
 
 namespace Microsoft.KM.Abstractions.UnitTests.Models;
 
@@ -30,6 +31,7 @@ public class FileCollectionTest
         // Assert
         Assert.Equal(2, target.GetStreams().ToList().Count);
     }
+
 
 #if !OS_WINDOWS // does not allow 2 open streams to the same file
     [Fact]

@@ -1,8 +1,9 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.KernelMemory;
 using Microsoft.KernelMemory.DocumentStorage.DevTools;
 using Microsoft.KernelMemory.FileSystem.DevTools;
+using Microsoft.KernelMemory.Models;
 
 namespace Microsoft.Postgres.TestApplication;
 
@@ -15,12 +16,13 @@ internal static class Program
         await Test3();
     }
 
+
     private static async Task Test1()
     {
         var cfg = new ConfigurationBuilder()
             .AddJsonFile("appsettings.json")
-            .AddJsonFile("appsettings.development.json", optional: true)
-            .AddJsonFile("appsettings.Development.json", optional: true)
+            .AddJsonFile("appsettings.development.json", true)
+            .AddJsonFile("appsettings.Development.json", true)
             .Build();
 
         var postgresConfig = cfg.GetSection("KernelMemory:Services:Postgres").Get<PostgresConfig>();
@@ -89,6 +91,7 @@ internal static class Program
         Console.WriteLine("\n=== end ===");
     }
 
+
     private static async Task Test2()
     {
         var postgresConfig = new PostgresConfig();
@@ -97,8 +100,8 @@ internal static class Program
 
         new ConfigurationBuilder()
             .AddJsonFile("appsettings.json")
-            .AddJsonFile("appsettings.development.json", optional: true)
-            .AddJsonFile("appsettings.Development.json", optional: true)
+            .AddJsonFile("appsettings.development.json", true)
+            .AddJsonFile("appsettings.Development.json", true)
             .Build()
             .BindSection("KernelMemory:Services:Postgres", postgresConfig)
             .BindSection("KernelMemory:Services:AzureOpenAIEmbedding", azureOpenAIEmbeddingConfig)
@@ -115,12 +118,13 @@ internal static class Program
             })
             .Build();
 
-        await memory.ImportTextAsync("yellow is a color", documentId: "1");
-        await memory.ImportTextAsync("the Moon orbits around Earth", documentId: "2");
-        await memory.ImportTextAsync("red and yellow give a secret color I call Laurange", documentId: "3");
-        await memory.ImportTextAsync("water freezes at 0C (32F) under normal atmospheric pressure", documentId: "4");
+        await memory.ImportTextAsync("yellow is a color", "1");
+        await memory.ImportTextAsync("the Moon orbits around Earth", "2");
+        await memory.ImportTextAsync("red and yellow give a secret color I call Laurange", "3");
+        await memory.ImportTextAsync("water freezes at 0C (32F) under normal atmospheric pressure", "4");
 
         SearchResult result = await memory.SearchAsync("about colors");
+
         foreach (var x in result.Results)
         {
             Console.WriteLine(x.Partitions.First().Text);
@@ -131,11 +135,12 @@ internal static class Program
         var answer = await memory.AskAsync("what color did I invent?");
         Console.WriteLine(answer.Result);
 
-        await memory.DeleteDocumentAsync(documentId: "1");
-        await memory.DeleteDocumentAsync(documentId: "2");
-        await memory.DeleteDocumentAsync(documentId: "3");
-        await memory.DeleteDocumentAsync(documentId: "4");
+        await memory.DeleteDocumentAsync("1");
+        await memory.DeleteDocumentAsync("2");
+        await memory.DeleteDocumentAsync("3");
+        await memory.DeleteDocumentAsync("4");
     }
+
 
     private static async Task Test3()
     {
@@ -146,8 +151,8 @@ internal static class Program
         // Note: using appsettings.custom-sql.json
         new ConfigurationBuilder()
             .AddJsonFile("appsettings.json")
-            .AddJsonFile("appsettings.Development.json", optional: true)
-            .AddJsonFile("appsettings.development.json", optional: true)
+            .AddJsonFile("appsettings.Development.json", true)
+            .AddJsonFile("appsettings.development.json", true)
             .AddJsonFile("appsettings.custom-sql.json")
             .Build()
             .BindSection("KernelMemory:Services:Postgres", postgresConfig)
@@ -165,12 +170,12 @@ internal static class Program
             })
             .Build();
 
-        await memory.ImportTextAsync("green is a great color", documentId: "1");
+        await memory.ImportTextAsync("green is a great color", "1");
 
         var answer = await memory.AskAsync("what color should I choose, and why?");
         Console.WriteLine(answer.Result);
 
-        await memory.DeleteDocumentAsync(documentId: "1");
+        await memory.DeleteDocumentAsync("1");
 
         answer = await memory.AskAsync("what color should I choose, and why?");
         Console.WriteLine(answer.Result);

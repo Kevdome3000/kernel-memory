@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Net.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,6 +23,7 @@ public static partial class KernelMemoryBuilderExtensions
     // Models at https://platform.openai.com/docs/guides/embeddings/embedding-models
     private const string DefaultEmbeddingModel = "text-embedding-ada-002";
     private const int DefaultEmbeddingModelMaxToken = 8_191;
+
 
     /// <summary>
     /// Use default OpenAI models and settings for ingestion and retrieval.
@@ -63,14 +64,15 @@ public static partial class KernelMemoryBuilderExtensions
         if (!onlyForRetrieval)
         {
             builder.AddIngestionEmbeddingGenerator(new OpenAITextEmbeddingGenerator(
-                config: openAIConfig,
-                textTokenizer: textEmbeddingTokenizer,
-                loggerFactory: loggerFactory,
-                httpClient: httpClient));
+                openAIConfig,
+                textEmbeddingTokenizer,
+                loggerFactory,
+                httpClient));
         }
 
         return builder;
     }
+
 
     /// <summary>
     /// Use OpenAI models for ingestion and retrieval
@@ -91,10 +93,14 @@ public static partial class KernelMemoryBuilderExtensions
         HttpClient? httpClient = null)
     {
         config.Validate();
-        builder.WithOpenAITextEmbeddingGeneration(config, textEmbeddingTokenizer, onlyForRetrieval, httpClient);
+        builder.WithOpenAITextEmbeddingGeneration(config,
+            textEmbeddingTokenizer,
+            onlyForRetrieval,
+            httpClient);
         builder.WithOpenAITextGeneration(config, textGenerationTokenizer, httpClient);
         return builder;
     }
+
 
     /// <summary>
     /// Use OpenAI models for ingestion and retrieval
@@ -115,10 +121,14 @@ public static partial class KernelMemoryBuilderExtensions
         bool onlyForRetrieval = false)
     {
         config.Validate();
-        builder.WithOpenAITextEmbeddingGeneration(config, openAIClient, textEmbeddingTokenizer, onlyForRetrieval);
+        builder.WithOpenAITextEmbeddingGeneration(config,
+            openAIClient,
+            textEmbeddingTokenizer,
+            onlyForRetrieval);
         builder.WithOpenAITextGeneration(config, openAIClient, textGenerationTokenizer);
         return builder;
     }
+
 
     /// <summary>
     /// Use OpenAI to generate text embedding.
@@ -137,15 +147,20 @@ public static partial class KernelMemoryBuilderExtensions
         HttpClient? httpClient = null)
     {
         config.Validate();
-        builder.Services.AddOpenAITextEmbeddingGeneration(config, textTokenizer, httpClient: httpClient);
+        builder.Services.AddOpenAITextEmbeddingGeneration(config, textTokenizer, httpClient);
+
         if (!onlyForRetrieval)
         {
             builder.AddIngestionEmbeddingGenerator(
-                new OpenAITextEmbeddingGenerator(config, textTokenizer, loggerFactory: null, httpClient));
+                new OpenAITextEmbeddingGenerator(config,
+                    textTokenizer,
+                    null,
+                    httpClient));
         }
 
         return builder;
     }
+
 
     /// <summary>
     /// Use OpenAI to generate text embedding.
@@ -165,6 +180,7 @@ public static partial class KernelMemoryBuilderExtensions
     {
         config.Validate();
         builder.Services.AddOpenAITextEmbeddingGeneration(config, openAIClient, textTokenizer);
+
         if (!onlyForRetrieval)
         {
             builder.AddIngestionEmbeddingGenerator(
@@ -173,6 +189,7 @@ public static partial class KernelMemoryBuilderExtensions
 
         return builder;
     }
+
 
     /// <summary>
     /// Use OpenAI to generate text, e.g. answers and summaries.
@@ -192,6 +209,7 @@ public static partial class KernelMemoryBuilderExtensions
         builder.Services.AddOpenAITextGeneration(config, textTokenizer, httpClient);
         return builder;
     }
+
 
     /// <summary>
     /// Use OpenAI to generate text, e.g. answers and summaries.
@@ -213,6 +231,7 @@ public static partial class KernelMemoryBuilderExtensions
     }
 }
 
+
 /// <summary>
 /// .NET IServiceCollection dependency injection extensions.
 /// </summary>
@@ -226,13 +245,13 @@ public static partial class DependencyInjection
     {
         config.Validate();
         return services
-            .AddSingleton<ITextEmbeddingGenerator>(
-                serviceProvider => new OpenAITextEmbeddingGenerator(
-                    config: config,
-                    textTokenizer: textTokenizer,
-                    loggerFactory: serviceProvider.GetService<ILoggerFactory>(),
-                    httpClient));
+            .AddSingleton<ITextEmbeddingGenerator>(serviceProvider => new OpenAITextEmbeddingGenerator(
+                config,
+                textTokenizer,
+                serviceProvider.GetService<ILoggerFactory>(),
+                httpClient));
     }
+
 
     public static IServiceCollection AddOpenAITextEmbeddingGeneration(
         this IServiceCollection services,
@@ -242,13 +261,13 @@ public static partial class DependencyInjection
     {
         config.Validate();
         return services
-            .AddSingleton<ITextEmbeddingGenerator>(
-                serviceProvider => new OpenAITextEmbeddingGenerator(
-                    config: config,
-                    openAIClient: openAIClient,
-                    textTokenizer: textTokenizer,
-                    loggerFactory: serviceProvider.GetService<ILoggerFactory>()));
+            .AddSingleton<ITextEmbeddingGenerator>(serviceProvider => new OpenAITextEmbeddingGenerator(
+                config,
+                openAIClient,
+                textTokenizer,
+                serviceProvider.GetService<ILoggerFactory>()));
     }
+
 
     public static IServiceCollection AddOpenAITextGeneration(
         this IServiceCollection services,
@@ -259,11 +278,12 @@ public static partial class DependencyInjection
         config.Validate();
         return services
             .AddSingleton<ITextGenerator, OpenAITextGenerator>(serviceProvider => new OpenAITextGenerator(
-                config: config,
-                textTokenizer: textTokenizer,
-                loggerFactory: serviceProvider.GetService<ILoggerFactory>(),
+                config,
+                textTokenizer,
+                serviceProvider.GetService<ILoggerFactory>(),
                 httpClient));
     }
+
 
     public static IServiceCollection AddOpenAITextGeneration(
         this IServiceCollection services,
@@ -274,9 +294,9 @@ public static partial class DependencyInjection
         config.Validate();
         return services
             .AddSingleton<ITextGenerator, OpenAITextGenerator>(serviceProvider => new OpenAITextGenerator(
-                config: config,
-                openAIClient: openAIClient,
-                textTokenizer: textTokenizer,
-                loggerFactory: serviceProvider.GetService<ILoggerFactory>()));
+                config,
+                openAIClient,
+                textTokenizer,
+                serviceProvider.GetService<ILoggerFactory>()));
     }
 }

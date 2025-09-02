@@ -1,9 +1,9 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace Microsoft.KernelMemory.MemoryDb.Qdrant.Client.Http;
+namespace Microsoft.KernelMemory.MemoryDb.Qdrant.Internals.Http;
 
 internal sealed class SearchVectorsResponse<T> : QdrantResponse where T : DefaultQdrantPayload, new()
 {
@@ -15,6 +15,7 @@ internal sealed class SearchVectorsResponse<T> : QdrantResponse where T : Defaul
         [JsonPropertyName("score")]
         public double? Score { get; set; }
     }
+
 
     [JsonPropertyName("result")]
     public IEnumerable<ScoredPoint> Results { get; set; } = [];

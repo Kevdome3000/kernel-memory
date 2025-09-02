@@ -1,8 +1,8 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Text.Json.Serialization;
 
-namespace Microsoft.KernelMemory.MemoryDb.Qdrant.Client;
+namespace Microsoft.KernelMemory.MemoryDb.Qdrant.Internals;
 
 /// <summary>
 /// The vector distance type used by Qdrant.
@@ -38,5 +38,5 @@ internal enum QdrantDistanceType
     /// <summary>
     /// Generalization of Euclidean and Manhattan.
     /// </summary>
-    Minkowski,
+    Minkowski
 }

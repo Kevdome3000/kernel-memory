@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.KernelMemory.DocumentStorage;
@@ -19,12 +19,14 @@ public static partial class KernelMemoryBuilderExtensions
         return builder;
     }
 
+
     public static IKernelMemoryBuilder WithSimpleFileStorage(this IKernelMemoryBuilder builder, string directory)
     {
         builder.Services.AddSimpleFileStorageAsDocumentStorage(directory);
         return builder;
     }
 }
+
 
 /// <summary>
 /// .NET IServiceCollection dependency injection extensions.
@@ -37,6 +39,7 @@ public static partial class DependencyInjection
             .AddSingleton<SimpleFileStorageConfig>(config)
             .AddSingleton<IDocumentStorage, SimpleFileStorage>();
     }
+
 
     public static IServiceCollection AddSimpleFileStorageAsDocumentStorage(this IServiceCollection services, string directory)
     {

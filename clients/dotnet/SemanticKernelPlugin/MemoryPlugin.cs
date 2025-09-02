@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -8,10 +8,11 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.KernelMemory.Models;
 using Microsoft.KernelMemory.SemanticKernelPlugin.Internals;
 using Microsoft.SemanticKernel;
 
-namespace Microsoft.KernelMemory;
+namespace Microsoft.KernelMemory.SemanticKernelPlugin;
 
 /// <summary>
 /// Kernel Memory Plugin

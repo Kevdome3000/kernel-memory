@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 
@@ -12,8 +12,10 @@ public class PostgresException : KernelMemoryException
     /// <inheritdoc />
     public PostgresException() { }
 
+
     /// <inheritdoc />
     public PostgresException(string message) : base(message) { }
+
 
     /// <inheritdoc />
     public PostgresException(string message, Exception? innerException) : base(message, innerException) { }

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Collections.Generic;
 using Microsoft.KernelMemory.InteractiveSetup.UI;
@@ -34,13 +34,13 @@ internal static class LlamaSharp
             textModel = new Dictionary<string, object>
             {
                 { "ModelPath", "" },
-                { "MaxTokenTotal", 4096 },
+                { "MaxTokenTotal", 4096 }
             };
 
             embeddingModel = new Dictionary<string, object>
             {
                 { "ModelPath", "" },
-                { "MaxTokenTotal", 4096 },
+                { "MaxTokenTotal", 4096 }
             };
 
             config = new Dictionary<string, object>
@@ -59,7 +59,7 @@ internal static class LlamaSharp
                     "TextModel", new Dictionary<string, object>
                     {
                         { "ModelPath", SetupUI.AskOpenQuestion("Path to text model .gguf file", textModel.TryGet("ModelPath")) },
-                        { "MaxTokenTotal", SetupUI.AskOpenQuestion("Max tokens supported by the text model", textModel.TryGet("MaxTokenTotal")) },
+                        { "MaxTokenTotal", SetupUI.AskOpenQuestion("Max tokens supported by the text model", textModel.TryGet("MaxTokenTotal")) }
                     }
                 }
             });
@@ -73,7 +73,7 @@ internal static class LlamaSharp
                     "EmbeddingModel", new Dictionary<string, object>
                     {
                         { "ModelPath", SetupUI.AskOpenQuestion("Path to embedding model .gguf file", embeddingModel.TryGet("ModelPath")) },
-                        { "MaxTokenTotal", SetupUI.AskOpenQuestion("Max tokens supported by the embedding model", embeddingModel.TryGet("MaxTokenTotal")) },
+                        { "MaxTokenTotal", SetupUI.AskOpenQuestion("Max tokens supported by the embedding model", embeddingModel.TryGet("MaxTokenTotal")) }
                     }
                 }
             });

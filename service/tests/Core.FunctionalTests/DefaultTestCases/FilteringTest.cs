@@ -1,12 +1,14 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.KernelMemory;
+using Microsoft.KernelMemory.Models;
 
 namespace Microsoft.KM.Core.FunctionalTests.DefaultTestCases;
 
 public static class FilteringTest
 {
     private const string NotFound = "INFO NOT FOUND";
+
 
     public static async Task ItSupportsASingleFilter(IKernelMemory memory, Action<string> log)
     {
@@ -21,10 +23,10 @@ public static class FilteringTest
                 .AddTag("type", "news")
                 .AddTag("user", "admin")
                 .AddTag("user", "owner"),
-            index: indexName,
-            steps: Constants.PipelineWithoutSummary);
+            indexName,
+            Constants.PipelineWithoutSummary);
 
-        while (!await memory.IsDocumentReadyAsync(documentId: Id, index: indexName))
+        while (!await memory.IsDocumentReadyAsync(Id, indexName))
         {
             log("Waiting for memory ingestion to complete...");
             await Task.Delay(TimeSpan.FromSeconds(2));
@@ -61,11 +63,12 @@ public static class FilteringTest
         Assert.Contains(Found, answer.Result, StringComparison.OrdinalIgnoreCase);
 
         log("Deleting memories extracted from the document");
-        await memory.DeleteDocumentAsync(Id, index: indexName);
+        await memory.DeleteDocumentAsync(Id, indexName);
 
         log("Deleting index");
         await memory.DeleteIndexAsync(indexName);
     }
+
 
     public static async Task ItSupportsMultipleFilters(IKernelMemory memory, Action<string> log)
     {
@@ -82,66 +85,77 @@ public static class FilteringTest
                 .AddTag("type", "news")
                 .AddTag("user", "admin")
                 .AddTag("user", "owner"),
-            index: indexName,
-            steps: Constants.PipelineWithoutSummary);
+            indexName,
+            Constants.PipelineWithoutSummary);
 
-        while (!await memory.IsDocumentReadyAsync(documentId: Id, index: indexName))
+        while (!await memory.IsDocumentReadyAsync(Id, indexName))
         {
             log("Waiting for memory ingestion to complete...");
             await Task.Delay(TimeSpan.FromSeconds(2));
         }
 
         // Multiple filters: unknown users cannot see the memory
-        var answer = await memory.AskAsync("What is Orion?", filters:
-        [
-            MemoryFilters.ByTag("user", "someone1"),
-            MemoryFilters.ByTag("user", "someone2"),
-        ], index: indexName);
+        var answer = await memory.AskAsync("What is Orion?",
+            filters:
+            [
+                MemoryFilters.ByTag("user", "someone1"),
+                MemoryFilters.ByTag("user", "someone2")
+            ],
+            index: indexName);
         log(answer.Result);
         Assert.Contains(NotFound, answer.Result, StringComparison.OrdinalIgnoreCase);
 
         // Multiple filters: unknown users cannot see the memory even if the type is correct (testing AND logic)
-        answer = await memory.AskAsync("What is Orion?", filters:
-        [
-            MemoryFilters.ByTag("user", "someone1").ByTag("type", "news"),
-            MemoryFilters.ByTag("user", "someone2").ByTag("type", "news"),
-        ], index: indexName);
+        answer = await memory.AskAsync("What is Orion?",
+            filters:
+            [
+                MemoryFilters.ByTag("user", "someone1").ByTag("type", "news"),
+                MemoryFilters.ByTag("user", "someone2").ByTag("type", "news")
+            ],
+            index: indexName);
         log(answer.Result);
         Assert.Contains(NotFound, answer.Result, StringComparison.OrdinalIgnoreCase);
 
         // Multiple filters: AND + OR logic works
-        answer = await memory.AskAsync("What is Orion?", filters:
-        [
-            MemoryFilters.ByTag("user", "someone1").ByTag("type", "news"),
-            MemoryFilters.ByTag("user", "admin").ByTag("type", "fact"),
-        ], index: indexName);
+        answer = await memory.AskAsync("What is Orion?",
+            filters:
+            [
+                MemoryFilters.ByTag("user", "someone1").ByTag("type", "news"),
+                MemoryFilters.ByTag("user", "admin").ByTag("type", "fact")
+            ],
+            index: indexName);
         log(answer.Result);
         Assert.Contains(NotFound, answer.Result, StringComparison.OrdinalIgnoreCase);
 
         // Multiple filters: OR logic works
-        answer = await memory.AskAsync("What is Orion?", filters:
-        [
-            MemoryFilters.ByTag("user", "someone1"),
-            MemoryFilters.ByTag("user", "admin"),
-        ], index: indexName);
+        answer = await memory.AskAsync("What is Orion?",
+            filters:
+            [
+                MemoryFilters.ByTag("user", "someone1"),
+                MemoryFilters.ByTag("user", "admin")
+            ],
+            index: indexName);
         log(answer.Result);
         Assert.Contains(Found, answer.Result, StringComparison.OrdinalIgnoreCase);
 
         // Multiple filters: OR logic works
-        answer = await memory.AskAsync("What is Orion?", filters:
-        [
-            MemoryFilters.ByTag("user", "someone1").ByTag("type", "news"),
-            MemoryFilters.ByTag("user", "admin").ByTag("type", "news"),
-        ], index: indexName);
+        answer = await memory.AskAsync("What is Orion?",
+            filters:
+            [
+                MemoryFilters.ByTag("user", "someone1").ByTag("type", "news"),
+                MemoryFilters.ByTag("user", "admin").ByTag("type", "news")
+            ],
+            index: indexName);
         log(answer.Result);
         Assert.Contains(Found, answer.Result, StringComparison.OrdinalIgnoreCase);
 
         log("Deleting memories extracted from the document");
-        await memory.DeleteDocumentAsync(Id, index: indexName);
+        await memory.DeleteDocumentAsync(Id, indexName);
 
         log("Deleting index");
         await memory.DeleteIndexAsync(indexName);
     }
+
 
     public static async Task ItIgnoresEmptyFilters(IKernelMemory memory, Action<string> log, bool withRetries = false)
     {
@@ -157,10 +171,10 @@ public static class FilteringTest
                 .AddTag("type", "news")
                 .AddTag("user", "admin")
                 .AddTag("user", "owner"),
-            index: indexName,
-            steps: Constants.PipelineWithoutSummary);
+            indexName,
+            Constants.PipelineWithoutSummary);
 
-        while (!await memory.IsDocumentReadyAsync(documentId: Id, index: indexName))
+        while (!await memory.IsDocumentReadyAsync(Id, indexName))
         {
             log("Waiting for memory ingestion to complete...");
             await Task.Delay(TimeSpan.FromSeconds(2));
@@ -201,7 +215,7 @@ public static class FilteringTest
 
         // Clean up
         log("Deleting memories extracted from the document");
-        await memory.DeleteDocumentAsync(Id, index: indexName);
+        await memory.DeleteDocumentAsync(Id, indexName);
 
         log("Deleting index");
         await memory.DeleteIndexAsync(indexName);

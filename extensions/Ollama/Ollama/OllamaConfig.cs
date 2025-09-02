@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 namespace Microsoft.KernelMemory.AI.Ollama;
 
@@ -12,10 +12,10 @@ public class OllamaConfig
     /// <summary>
     /// Settings for the model used for text generation. Chat models can be used too.
     /// </summary>
-    public OllamaModelConfig TextModel { get; set; } = new OllamaModelConfig();
+    public OllamaModelConfig TextModel { get; set; } = new();
 
     /// <summary>
     /// Settings for the model used for text embedding generation.
     /// </summary>
-    public OllamaModelConfig EmbeddingModel { get; set; } = new OllamaModelConfig();
+    public OllamaModelConfig EmbeddingModel { get; set; } = new();
 }

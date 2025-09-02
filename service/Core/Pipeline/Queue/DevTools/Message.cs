@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Text.Json.Serialization;
@@ -28,28 +28,33 @@ internal class Message
     [JsonPropertyName("error")]
     public string LastError { get; set; } = string.Empty;
 
+
     public bool IsLocked()
     {
-        return this.LockedUntil > DateTimeOffset.UtcNow;
+        return LockedUntil > DateTimeOffset.UtcNow;
     }
+
 
     public bool IsTimeToRun()
     {
-        return this.Schedule <= DateTimeOffset.UtcNow;
+        return Schedule <= DateTimeOffset.UtcNow;
     }
+
 
     public void RunIn(TimeSpan delay)
     {
-        this.Schedule = DateTimeOffset.UtcNow + delay;
+        Schedule = DateTimeOffset.UtcNow + delay;
     }
+
 
     public void Lock(int seconds)
     {
-        this.LockedUntil = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(Math.Max(0, seconds));
+        LockedUntil = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(Math.Max(0, seconds));
     }
+
 
     public void Unlock()
     {
-        this.LockedUntil = DateTimeOffset.MinValue;
+        LockedUntil = DateTimeOffset.MinValue;
     }
 }

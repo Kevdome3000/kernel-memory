@@ -1,7 +1,8 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.KernelMemory;
 using Microsoft.KernelMemory.Context;
+using Microsoft.KernelMemory.Models;
 
 // Use this boolean to decide whether to use OpenAI or Azure OpenAI models
 const bool UseAzure = true;
@@ -14,8 +15,8 @@ var openAIConfig = new OpenAIConfig();
 WebApplicationBuilder appBuilder = WebApplication.CreateBuilder();
 appBuilder.Configuration
     .AddJsonFile("appsettings.json")
-    .AddJsonFile("appsettings.development.json", optional: true)
-    .AddJsonFile("appsettings.Development.json", optional: true)
+    .AddJsonFile("appsettings.development.json", true)
+    .AddJsonFile("appsettings.Development.json", true)
     .AddEnvironmentVariables()
     .Build()
     .BindSection("KernelMemory:Services:OpenAI", openAIConfig)

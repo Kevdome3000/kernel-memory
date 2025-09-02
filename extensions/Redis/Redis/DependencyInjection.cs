@@ -1,8 +1,8 @@
-// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.KernelMemory.MemoryStorage;
 using Microsoft.KernelMemory.MemoryDb.Redis;
+using Microsoft.KernelMemory.MemoryStorage;
 using StackExchange.Redis;
 
 #pragma warning disable IDE0130 // reduce number of "using" statements
@@ -27,6 +27,7 @@ public static partial class KernelMemoryBuilderExtensions
         return builder;
     }
 
+
     /// <summary>
     /// Adds RedisMemory as a service.
     /// </summary>
@@ -40,6 +41,7 @@ public static partial class KernelMemoryBuilderExtensions
         return builder;
     }
 }
+
 
 /// <summary>
 /// .NET IServiceCollection dependency injection extensions.

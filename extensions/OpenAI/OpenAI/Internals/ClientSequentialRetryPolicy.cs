@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.ClientModel.Primitives;
@@ -25,40 +25,49 @@ internal sealed class ClientSequentialRetryPolicy : ClientRetryPolicy
 
     private readonly ILogger<ClientSequentialRetryPolicy> _log;
 
+
     public ClientSequentialRetryPolicy(
         int maxRetries = 3,
         ILoggerFactory? loggerFactory = null) : base(maxRetries)
     {
-        this._log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<ClientSequentialRetryPolicy>();
+        _log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<ClientSequentialRetryPolicy>();
     }
+
 
     protected override TimeSpan GetNextDelay(PipelineMessage message, int tryCount)
     {
         // Check if the remote service specified how long to wait before retrying
-        if (this.TryGetDelayFromResponse(message.Response, out TimeSpan delay))
+        if (TryGetDelayFromResponse(message.Response, out TimeSpan delay))
         {
-            this._log.LogWarning("Delay extracted from HTTP response: {0} msecs", delay.TotalMilliseconds);
+            _log.LogWarning("Delay extracted from HTTP response: {0} msecs", delay.TotalMilliseconds);
             return delay;
         }
 
         // Use predefined delay, increasing on each attempt up to a max value
         int index = Math.Max(0, tryCount - 1);
-        return index >= s_retryDelaySequence.Length ? s_maxDelay : s_retryDelaySequence[index];
+        return index >= s_retryDelaySequence.Length
+            ? s_maxDelay
+            : s_retryDelaySequence[index];
     }
+
 
     private bool TryGetDelayFromResponse(PipelineResponse? response, out TimeSpan delay)
     {
         delay = TimeSpan.Zero;
 
-        if (response == null || (response.Status != 429 && response.Status != 503)) { return false; }
+        if (response == null || response.Status != 429 && response.Status != 503) { return false; }
 
-        delay = this.TryGetTimeSpanFromHeader(response, "retry-after-ms")
-                ?? this.TryGetTimeSpanFromHeader(response, "x-ms-retry-after-ms")
-                ?? this.TryGetTimeSpanFromHeader(response, "Retry-After", msecsMultiplier: 1000, allowDateTimeOffset: true)
-                ?? TimeSpan.Zero;
+        delay = TryGetTimeSpanFromHeader(response, "retry-after-ms")
+            ?? TryGetTimeSpanFromHeader(response, "x-ms-retry-after-ms")
+            ?? TryGetTimeSpanFromHeader(response,
+                "Retry-After",
+                1000,
+                true)
+            ?? TimeSpan.Zero;
 
         return delay > TimeSpan.Zero;
     }
+
 
     private TimeSpan? TryGetTimeSpanFromHeader(
         PipelineResponse response,
@@ -67,16 +76,18 @@ internal sealed class ClientSequentialRetryPolicy : ClientRetryPolicy
         bool allowDateTimeOffset = false)
     {
         if (double.TryParse(
-                response.Headers.TryGetValue(headerName, out string? strValue) ? strValue : null,
-                out double doubleValue))
+            response.Headers.TryGetValue(headerName, out string? strValue)
+                ? strValue
+                : null,
+            out double doubleValue))
         {
-            this._log.LogWarning("Header {0} found, value {1}", headerName, doubleValue);
+            _log.LogWarning("Header {0} found, value {1}", headerName, doubleValue);
             return TimeSpan.FromMilliseconds(msecsMultiplier * doubleValue);
         }
 
         if (allowDateTimeOffset && DateTimeOffset.TryParse(headerName, out DateTimeOffset delayUntil))
         {
-            this._log.LogWarning("Header {0} found, value {1}", headerName, delayUntil);
+            _log.LogWarning("Header {0} found, value {1}", headerName, delayUntil);
             return delayUntil - DateTimeOffset.UtcNow;
         }
 

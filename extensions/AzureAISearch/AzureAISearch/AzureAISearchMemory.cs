@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Concurrent;
@@ -18,7 +18,9 @@ using Microsoft.Extensions.Logging;
 using Microsoft.KernelMemory.AI;
 using Microsoft.KernelMemory.Diagnostics;
 using Microsoft.KernelMemory.DocumentStorage;
+using Microsoft.KernelMemory.MemoryDb.AzureAISearch.Internals;
 using Microsoft.KernelMemory.MemoryStorage;
+using Microsoft.KernelMemory.Models;
 using AISearchOptions = Azure.Search.Documents.SearchOptions;
 
 namespace Microsoft.KernelMemory.MemoryDb.AzureAISearch;
@@ -37,6 +39,7 @@ public class AzureAISearchMemory : IMemoryDb, IMemoryDbUpsertBatch
     private readonly bool _useHybridSearch;
     private readonly bool _useStickySessions;
 
+
     /// <summary>
     /// Create a new instance
     /// </summary>
@@ -48,27 +51,28 @@ public class AzureAISearchMemory : IMemoryDb, IMemoryDbUpsertBatch
         ITextEmbeddingGenerator embeddingGenerator,
         ILoggerFactory? loggerFactory = null)
     {
-        this._embeddingGenerator = embeddingGenerator;
-        this._log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<AzureAISearchMemory>();
-        this._useHybridSearch = config.UseHybridSearch;
-        this._useStickySessions = config.UseStickySessions;
+        _embeddingGenerator = embeddingGenerator;
+        _log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<AzureAISearchMemory>();
+        _useHybridSearch = config.UseHybridSearch;
+        _useStickySessions = config.UseStickySessions;
 
         if (string.IsNullOrEmpty(config.Endpoint))
         {
-            this._log.LogCritical("Azure AI Search Endpoint is empty");
+            _log.LogCritical("Azure AI Search Endpoint is empty");
             throw new ConfigurationException($"Azure AI Search: {nameof(config.Endpoint)} is empty");
         }
 
-        if (this._embeddingGenerator == null)
+        if (_embeddingGenerator == null)
         {
-            throw new ConfigurationException($"Azure AI Search: {nameof(this._embeddingGenerator)} is not configured");
+            throw new ConfigurationException($"Azure AI Search: {nameof(_embeddingGenerator)} is not configured");
         }
 
         var clientOptions = GetClientOptions(config);
+
         switch (config.Auth)
         {
             case AzureAISearchConfig.AuthTypes.AzureIdentity:
-                this._adminClient = new SearchIndexClient(
+                _adminClient = new SearchIndexClient(
                     new Uri(config.Endpoint),
                     new DefaultAzureCredential(),
                     clientOptions);
@@ -77,18 +81,18 @@ public class AzureAISearchMemory : IMemoryDb, IMemoryDbUpsertBatch
             case AzureAISearchConfig.AuthTypes.APIKey:
                 if (string.IsNullOrEmpty(config.APIKey))
                 {
-                    this._log.LogCritical("Azure AI Search API key is empty");
+                    _log.LogCritical("Azure AI Search API key is empty");
                     throw new ConfigurationException($"Azure AI Search: {nameof(config.APIKey)} is empty");
                 }
 
-                this._adminClient = new SearchIndexClient(
+                _adminClient = new SearchIndexClient(
                     new Uri(config.Endpoint),
                     new AzureKeyCredential(config.APIKey),
                     clientOptions);
                 break;
 
             case AzureAISearchConfig.AuthTypes.ManualTokenCredential:
-                this._adminClient = new SearchIndexClient(
+                _adminClient = new SearchIndexClient(
                     new Uri(config.Endpoint),
                     config.GetTokenCredential(),
                     clientOptions);
@@ -96,24 +100,27 @@ public class AzureAISearchMemory : IMemoryDb, IMemoryDbUpsertBatch
 
             default:
             case AzureAISearchConfig.AuthTypes.Unknown:
-                this._log.LogCritical("Azure AI Search authentication type '{0}' undefined or not supported", config.Auth);
+                _log.LogCritical("Azure AI Search authentication type '{0}' undefined or not supported", config.Auth);
                 throw new DocumentStorageException($"Azure AI Search authentication type '{config.Auth}' undefined or not supported");
         }
     }
+
 
     /// <inheritdoc />
     public Task CreateIndexAsync(string index, int vectorSize, CancellationToken cancellationToken = default)
     {
         // Vectors cannot be less than 2 - TODO: use different index schema
         vectorSize = Math.Max(2, vectorSize);
-        return this.CreateIndexAsync(index, AzureAISearchMemoryRecord.GetSchema(vectorSize), cancellationToken);
+        return CreateIndexAsync(index, AzureAISearchMemoryRecord.GetSchema(vectorSize), cancellationToken);
     }
+
 
     /// <inheritdoc />
     public async Task<IEnumerable<string>> GetIndexesAsync(CancellationToken cancellationToken = default)
     {
-        var indexesAsync = this._adminClient.GetIndexesAsync(cancellationToken).ConfigureAwait(false);
+        var indexesAsync = _adminClient.GetIndexesAsync(cancellationToken).ConfigureAwait(false);
         var result = new List<string>();
+
         await foreach (SearchIndex? index in indexesAsync.ConfigureAwait(false))
         {
             result.Add(index.Name);
@@ -122,20 +129,23 @@ public class AzureAISearchMemory : IMemoryDb, IMemoryDbUpsertBatch
         return result;
     }
 
+
     /// <inheritdoc />
     public Task DeleteIndexAsync(string index, CancellationToken cancellationToken = default)
     {
-        index = this.NormalizeIndexName(index);
-        return this._adminClient.DeleteIndexAsync(index, cancellationToken);
+        index = NormalizeIndexName(index);
+        return _adminClient.DeleteIndexAsync(index, cancellationToken);
     }
+
 
     /// <inheritdoc />
     public async Task<string> UpsertAsync(string index, MemoryRecord record, CancellationToken cancellationToken = default)
     {
-        var result = this.UpsertBatchAsync(index, [record], cancellationToken);
+        var result = UpsertBatchAsync(index, [record], cancellationToken);
         var id = await result.SingleAsync(cancellationToken).ConfigureAwait(false);
         return id;
     }
+
 
     /// <inheritdoc />
     public async IAsyncEnumerable<string> UpsertBatchAsync(
@@ -143,15 +153,16 @@ public class AzureAISearchMemory : IMemoryDb, IMemoryDbUpsertBatch
         IEnumerable<MemoryRecord> records,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        var client = this.GetSearchClient(index);
+        var client = GetSearchClient(index);
         var localRecords = records.Select(AzureAISearchMemoryRecord.FromMemoryRecord);
 
         try
         {
             await client.IndexDocumentsAsync(
-                IndexDocumentsBatch.Upload(localRecords),
-                new IndexDocumentsOptions { ThrowOnAnyError = true },
-                cancellationToken: cancellationToken).ConfigureAwait(false);
+                    IndexDocumentsBatch.Upload(localRecords),
+                    new IndexDocumentsOptions { ThrowOnAnyError = true },
+                    cancellationToken)
+                .ConfigureAwait(false);
         }
         catch (RequestFailedException e) when (IsIndexNotFoundException(e))
         {
@@ -164,6 +175,7 @@ public class AzureAISearchMemory : IMemoryDb, IMemoryDbUpsertBatch
         }
     }
 
+
     /// <inheritdoc />
     public async IAsyncEnumerable<(MemoryRecord, double)> GetSimilarListAsync(
         string index,
@@ -174,9 +186,9 @@ public class AzureAISearchMemory : IMemoryDb, IMemoryDbUpsertBatch
         bool withEmbeddings = false,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        var client = this.GetSearchClient(index);
+        var client = GetSearchClient(index);
 
-        Embedding textEmbedding = await this._embeddingGenerator.GenerateEmbeddingAsync(text, cancellationToken).ConfigureAwait(false);
+        Embedding textEmbedding = await _embeddingGenerator.GenerateEmbeddingAsync(text, cancellationToken).ConfigureAwait(false);
         VectorizedQuery vectorQuery = new(textEmbedding.Data)
         {
             Fields = { AzureAISearchMemoryRecord.VectorField },
@@ -188,46 +200,57 @@ public class AzureAISearchMemory : IMemoryDb, IMemoryDbUpsertBatch
 
         AISearchOptions options = new()
         {
-            VectorSearch = new()
+            VectorSearch = new VectorSearchOptions
             {
                 Queries = { vectorQuery },
                 // Default, applies the vector query AFTER the search filter
                 FilterMode = VectorFilterMode.PreFilter
             }
         };
-        options = this.PrepareSearchOptions(options, withEmbeddings, filters, limit);
+        options = PrepareSearchOptions(options,
+            withEmbeddings,
+            filters,
+            limit);
 
         if (limit > 0)
         {
             vectorQuery.KNearestNeighborsCount = limit;
-            this._log.LogDebug("KNearestNeighborsCount: {0}", limit);
+            _log.LogDebug("KNearestNeighborsCount: {0}", limit);
         }
 
         Response<SearchResults<AzureAISearchMemoryRecord>>? searchResult = null;
+
         try
         {
-            var keyword = this._useHybridSearch ? text : null;
+            var keyword = _useHybridSearch
+                ? text
+                : null;
             searchResult = await client
-                .SearchAsync<AzureAISearchMemoryRecord>(keyword, options, cancellationToken: cancellationToken)
+                .SearchAsync<AzureAISearchMemoryRecord>(keyword, options, cancellationToken)
                 .ConfigureAwait(false);
         }
         catch (RequestFailedException e) when (e.Status == 404)
         {
-            this._log.LogWarning("Not found: {0}", e.Message);
+            _log.LogWarning("Not found: {0}", e.Message);
             // Index not found, no data to return
         }
 
         if (searchResult == null) { yield break; }
 
-        var minDistance = this._useHybridSearch ? minRelevance : CosineSimilarityToScore(minRelevance);
+        var minDistance = _useHybridSearch
+            ? minRelevance
+            : CosineSimilarityToScore(minRelevance);
         var count = 0;
+
         await foreach (SearchResult<AzureAISearchMemoryRecord>? doc in searchResult.Value.GetResultsAsync().ConfigureAwait(false))
         {
             if (doc == null || doc.Score < minDistance) { continue; }
 
             MemoryRecord memoryRecord = doc.Document.ToMemoryRecord(withEmbeddings);
 
-            var documentScore = this._useHybridSearch ? doc.Score ?? 0 : ScoreToCosineSimilarity(doc.Score ?? 0);
+            var documentScore = _useHybridSearch
+                ? doc.Score ?? 0
+                : ScoreToCosineSimilarity(doc.Score ?? 0);
             yield return (memoryRecord, documentScore);
 
             // Stop after returning the amount requested, even if storage is returning more records
@@ -238,6 +261,7 @@ public class AzureAISearchMemory : IMemoryDb, IMemoryDbUpsertBatch
         }
     }
 
+
     /// <inheritdoc />
     public async IAsyncEnumerable<MemoryRecord> GetListAsync(
         string index,
@@ -246,26 +270,31 @@ public class AzureAISearchMemory : IMemoryDb, IMemoryDbUpsertBatch
         bool withEmbeddings = false,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        var client = this.GetSearchClient(index);
+        var client = GetSearchClient(index);
 
-        AISearchOptions options = this.PrepareSearchOptions(null, withEmbeddings, filters, limit);
+        AISearchOptions options = PrepareSearchOptions(null,
+            withEmbeddings,
+            filters,
+            limit);
 
         Response<SearchResults<AzureAISearchMemoryRecord>>? searchResult = null;
+
         try
         {
             searchResult = await client
-                .SearchAsync<AzureAISearchMemoryRecord>(null, options, cancellationToken: cancellationToken)
+                .SearchAsync<AzureAISearchMemoryRecord>(null, options, cancellationToken)
                 .ConfigureAwait(false);
         }
         catch (RequestFailedException e) when (e.Status == 404)
         {
-            this._log.LogWarning("Not found: {0}", e.Message);
+            _log.LogWarning("Not found: {0}", e.Message);
             // Index not found, no data to return
         }
 
         if (searchResult == null) { yield break; }
 
         var count = 0;
+
         await foreach (SearchResult<AzureAISearchMemoryRecord>? doc in searchResult.Value.GetResultsAsync().ConfigureAwait(false))
         {
             yield return doc.Document.ToMemoryRecord(withEmbeddings);
@@ -278,27 +307,29 @@ public class AzureAISearchMemory : IMemoryDb, IMemoryDbUpsertBatch
         }
     }
 
+
     /// <inheritdoc />
     public async Task DeleteAsync(string index, MemoryRecord record, CancellationToken cancellationToken = default)
     {
         string id = AzureAISearchMemoryRecord.FromMemoryRecord(record).Id;
-        var client = this.GetSearchClient(index);
+        var client = GetSearchClient(index);
 
         try
         {
-            this._log.LogDebug("Deleting record {0} from index {1}", id, index);
+            _log.LogDebug("Deleting record {0} from index {1}", id, index);
             Response<IndexDocumentsResult>? result = await client.DeleteDocumentsAsync(
                     AzureAISearchMemoryRecord.IdField,
                     [id],
                     cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
-            this._log.LogTrace("Delete response status: {0}, content: {1}", result.GetRawResponse().Status, result.GetRawResponse().Content.ToString());
+            _log.LogTrace("Delete response status: {0}, content: {1}", result.GetRawResponse().Status, result.GetRawResponse().Content.ToString());
         }
         catch (RequestFailedException e) when (e.Status == 404)
         {
-            this._log.LogTrace("Index {0} record {1} not found, nothing to delete", index, id);
+            _log.LogTrace("Index {0} record {1} not found, nothing to delete", index, id);
         }
     }
+
 
     #region private
 
@@ -319,30 +350,33 @@ public class AzureAISearchMemory : IMemoryDb, IMemoryDbUpsertBatch
     //     }
     // }
 
+
     private async Task CreateIndexAsync(string index, MemoryDbSchema schema, CancellationToken cancellationToken = default)
     {
-        if (await this.DoesIndexExistAsync(index, cancellationToken).ConfigureAwait(false))
+        if (await DoesIndexExistAsync(index, cancellationToken).ConfigureAwait(false))
         {
             return;
         }
 
-        var indexSchema = this.PrepareIndexSchema(index, schema);
+        var indexSchema = PrepareIndexSchema(index, schema);
 
         try
         {
-            await this._adminClient.CreateIndexAsync(indexSchema, cancellationToken).ConfigureAwait(false);
+            await _adminClient.CreateIndexAsync(indexSchema, cancellationToken).ConfigureAwait(false);
         }
         catch (RequestFailedException e) when (e.Status == 409)
         {
-            this._log.LogWarning("Index already exists, nothing to do: {0}", e.Message);
+            _log.LogWarning("Index already exists, nothing to do: {0}", e.Message);
         }
     }
 
+
     private async Task<bool> DoesIndexExistAsync(string index, CancellationToken cancellationToken = default)
     {
-        string normalizeIndexName = this.NormalizeIndexName(index);
+        string normalizeIndexName = NormalizeIndexName(index);
 
-        var indexesAsync = this._adminClient.GetIndexesAsync(cancellationToken).ConfigureAwait(false);
+        var indexesAsync = _adminClient.GetIndexesAsync(cancellationToken).ConfigureAwait(false);
+
         await foreach (SearchIndex? searchIndex in indexesAsync.ConfigureAwait(false))
         {
             if (searchIndex != null && string.Equals(searchIndex.Name, normalizeIndexName, StringComparison.OrdinalIgnoreCase)) { return true; }
@@ -350,6 +384,7 @@ public class AzureAISearchMemory : IMemoryDb, IMemoryDbUpsertBatch
 
         return false;
     }
+
 
     /// <summary>
     /// Index names cannot contain special chars. We use this rule to replace a few common ones
@@ -365,6 +400,7 @@ public class AzureAISearchMemory : IMemoryDb, IMemoryDbUpsertBatch
 
     private readonly SearchIndexClient _adminClient;
 
+
     /// <summary>
     /// Get a search client for the index specified.
     /// Note: the index might not exist, but we avoid checking everytime and the extra latency.
@@ -373,31 +409,33 @@ public class AzureAISearchMemory : IMemoryDb, IMemoryDbUpsertBatch
     /// <returns>Search client ready to read/write</returns>
     private SearchClient GetSearchClient(string index)
     {
-        var normalIndexName = this.NormalizeIndexName(index);
+        var normalIndexName = NormalizeIndexName(index);
 
-        if (index != normalIndexName) { this._log.LogTrace("Preparing search client, index name '{0}' normalized to '{1}'", index, normalIndexName); }
-        else { this._log.LogTrace("Preparing search client, index name '{0}'", normalIndexName); }
+        if (index != normalIndexName) { _log.LogTrace("Preparing search client, index name '{0}' normalized to '{1}'", index, normalIndexName); }
+        else { _log.LogTrace("Preparing search client, index name '{0}'", normalIndexName); }
 
         // Search an available client from the local cache
-        if (!this._clientsByIndex.TryGetValue(normalIndexName, out SearchClient? client))
+        if (!_clientsByIndex.TryGetValue(normalIndexName, out SearchClient? client))
         {
-            client = this._adminClient.GetSearchClient(normalIndexName);
-            this._clientsByIndex[normalIndexName] = client;
+            client = _adminClient.GetSearchClient(normalIndexName);
+            _clientsByIndex[normalIndexName] = client;
         }
 
         return client;
     }
 
+
     private static bool IsIndexNotFoundException(RequestFailedException e)
     {
         return e.Status == 404
-               && e.Message.Contains("index", StringComparison.OrdinalIgnoreCase)
-               && e.Message.Contains("not found", StringComparison.OrdinalIgnoreCase);
+            && e.Message.Contains("index", StringComparison.OrdinalIgnoreCase)
+            && e.Message.Contains("not found", StringComparison.OrdinalIgnoreCase);
     }
+
 
     private static void ValidateSchema(MemoryDbSchema schema)
     {
-        schema.Validate(vectorSizeRequired: true);
+        schema.Validate(true);
 
         foreach (var f in schema.Fields.Where(x => x.Type == MemoryDbField.FieldType.Vector))
         {
@@ -407,6 +445,7 @@ public class AzureAISearchMemory : IMemoryDb, IMemoryDbUpsertBatch
             }
         }
     }
+
 
     /// <summary>
     /// Options used by the Azure AI Search client, e.g. User Agent and Auth audience
@@ -418,7 +457,7 @@ public class AzureAISearchMemory : IMemoryDb, IMemoryDbUpsertBatch
             Diagnostics =
             {
                 IsTelemetryEnabled = Telemetry.IsTelemetryEnabled,
-                ApplicationId = Telemetry.HttpUserAgent,
+                ApplicationId = Telemetry.HttpUserAgent
             }
         };
 
@@ -431,6 +470,7 @@ public class AzureAISearchMemory : IMemoryDb, IMemoryDbUpsertBatch
 
         return options;
     }
+
 
     /// <summary>
     /// Normalize index name to match Azure AI Search rules.
@@ -461,11 +501,12 @@ public class AzureAISearchMemory : IMemoryDb, IMemoryDbUpsertBatch
         return index;
     }
 
+
     private SearchIndex PrepareIndexSchema(string index, MemoryDbSchema schema)
     {
         ValidateSchema(schema);
 
-        index = this.NormalizeIndexName(index);
+        index = NormalizeIndexName(index);
 
         const string VectorSearchProfileName = "KMDefaultProfile";
         const string VectorSearchConfigName = "KMDefaultAlgorithm";
@@ -497,6 +538,7 @@ public class AzureAISearchMemory : IMemoryDb, IMemoryDbUpsertBatch
          * - filterable: Filterable fields of type Edm.String or Collection(Edm.String) don't undergo word-breaking.
          * - facetable: Used for counting. Fields of type Edm.String that are filterable, "sortable", or "facetable" can be at most 32kb. */
         VectorSearchField? vectorField = null;
+
         foreach (var field in schema.Fields)
         {
             switch (field.Type)
@@ -515,6 +557,7 @@ public class AzureAISearchMemory : IMemoryDb, IMemoryDbUpsertBatch
                     break;
                 case MemoryDbField.FieldType.Text:
                     var useBugWorkAround = true;
+
                     if (useBugWorkAround)
                     {
                         /* August 2023:
@@ -541,7 +584,7 @@ public class AzureAISearchMemory : IMemoryDb, IMemoryDbUpsertBatch
                             IsFilterable = field.IsKey || field.IsFilterable, // Filterable keys are recommended for batch operations
                             IsFacetable = false,
                             IsSortable = false,
-                            IsSearchable = true,
+                            IsSearchable = true
                         });
                     }
                     else
@@ -551,7 +594,7 @@ public class AzureAISearchMemory : IMemoryDb, IMemoryDbUpsertBatch
                             IsKey = field.IsKey,
                             IsFilterable = field.IsKey || field.IsFilterable, // Filterable keys are recommended for batch operations
                             IsFacetable = false,
-                            IsSortable = false,
+                            IsSortable = false
                         });
                     }
 
@@ -563,7 +606,7 @@ public class AzureAISearchMemory : IMemoryDb, IMemoryDbUpsertBatch
                         IsKey = field.IsKey,
                         IsFilterable = field.IsKey || field.IsFilterable, // Filterable keys are recommended for batch operations
                         IsFacetable = false,
-                        IsSortable = false,
+                        IsSortable = false
                     });
                     break;
 
@@ -573,7 +616,7 @@ public class AzureAISearchMemory : IMemoryDb, IMemoryDbUpsertBatch
                         IsKey = field.IsKey,
                         IsFilterable = field.IsKey || field.IsFilterable, // Filterable keys are recommended for batch operations
                         IsFacetable = false,
-                        IsSortable = false,
+                        IsSortable = false
                     });
                     break;
 
@@ -583,7 +626,7 @@ public class AzureAISearchMemory : IMemoryDb, IMemoryDbUpsertBatch
                         IsKey = false,
                         IsFilterable = field.IsFilterable,
                         IsFacetable = false,
-                        IsSortable = false,
+                        IsSortable = false
                     });
                     break;
 
@@ -593,7 +636,7 @@ public class AzureAISearchMemory : IMemoryDb, IMemoryDbUpsertBatch
                         IsKey = false,
                         IsFilterable = field.IsFilterable,
                         IsFacetable = false,
-                        IsSortable = false,
+                        IsSortable = false
                     });
                     break;
             }
@@ -605,6 +648,7 @@ public class AzureAISearchMemory : IMemoryDb, IMemoryDbUpsertBatch
 
         return indexSchema;
     }
+
 
     private AISearchOptions PrepareSearchOptions(
         AISearchOptions? options,
@@ -631,7 +675,7 @@ public class AzureAISearchMemory : IMemoryDb, IMemoryDbUpsertBatch
         if (filters is { Count: > 0 })
         {
             options.Filter = AzureAISearchFiltering.BuildSearchFilter(filters);
-            this._log.LogDebug("Filtering vectors, condition: {0}", options.Filter);
+            _log.LogDebug("Filtering vectors, condition: {0}", options.Filter);
         }
 
         // See: https://learn.microsoft.com/azure/search/search-query-understand-collection-filters
@@ -647,11 +691,11 @@ public class AzureAISearchMemory : IMemoryDb, IMemoryDbUpsertBatch
         if (limit > 0)
         {
             options.Size = limit;
-            this._log.LogDebug("Max results: {0}", limit);
+            _log.LogDebug("Max results: {0}", limit);
         }
 
         // Decide whether to use a sticky session for the current request
-        if (this._useStickySessions)
+        if (_useStickySessions)
         {
             options.SessionId = Guid.NewGuid().ToString("N");
         }
@@ -659,10 +703,12 @@ public class AzureAISearchMemory : IMemoryDb, IMemoryDbUpsertBatch
         return options;
     }
 
+
     private static double ScoreToCosineSimilarity(double score)
     {
-        return 2 - (1 / score);
+        return 2 - 1 / score;
     }
+
 
     private static double CosineSimilarityToScore(double similarity)
     {
@@ -670,4 +716,6 @@ public class AzureAISearchMemory : IMemoryDb, IMemoryDbUpsertBatch
     }
 
     #endregion
+
+
 }

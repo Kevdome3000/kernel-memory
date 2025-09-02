@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -9,11 +9,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.KernelMemory.Diagnostics;
+using Microsoft.KernelMemory.Models;
 using Microsoft.KernelMemory.Pipeline;
 
 namespace Microsoft.KernelMemory.FileSystem.DevTools;
 
 #pragma warning disable CA1031 // need to catch all exceptions
+
 
 /// <summary>
 /// Simple file system abstraction that saves data to text files.
@@ -27,16 +29,18 @@ internal sealed class DiskFileSystem : IFileSystem
     private readonly IMimeTypeDetection _mimeTypeDetection;
     private readonly string _dataPath;
 
+
     public DiskFileSystem(
         string directory,
         IMimeTypeDetection? mimeTypeDetection = null,
         ILoggerFactory? loggerFactory = null)
     {
-        this._dataPath = directory;
-        this._mimeTypeDetection = mimeTypeDetection ?? new MimeTypesDetection();
-        this._log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<DiskFileSystem>();
-        this.CreateDirectory(this._dataPath);
+        _dataPath = directory;
+        _mimeTypeDetection = mimeTypeDetection ?? new MimeTypesDetection();
+        _log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<DiskFileSystem>();
+        CreateDirectory(_dataPath);
     }
+
 
     #region Volume API
 
@@ -44,27 +48,30 @@ internal sealed class DiskFileSystem : IFileSystem
     public Task CreateVolumeAsync(string volume, CancellationToken cancellationToken = default)
     {
         volume = ValidateVolumeName(volume);
-        var path = Path.Join(this._dataPath, volume);
+        var path = Path.Join(_dataPath, volume);
 #pragma warning disable CA1849 // there is no async option in .NET 6
-        this.CreateDirectory(path);
+        CreateDirectory(path);
 #pragma warning restore CA1849
         return Task.CompletedTask;
     }
+
 
     /// <inheritdoc />
     public Task<bool> VolumeExistsAsync(string volume, CancellationToken cancellationToken = default)
     {
         volume = ValidateVolumeName(volume);
-        var path = Path.Join(this._dataPath, volume);
+        var path = Path.Join(_dataPath, volume);
         return Task.FromResult(Directory.Exists(path));
     }
+
 
     /// <inheritdoc />
     public async Task DeleteVolumeAsync(string volume, CancellationToken cancellationToken = default)
     {
         volume = ValidateVolumeName(volume);
-        var path = Path.Join(this._dataPath, volume);
-        this._log.LogWarning("Deleting directory: {0}", path);
+        var path = Path.Join(_dataPath, volume);
+        _log.LogWarning("Deleting directory: {0}", path);
+
         for (int attempt = 1; attempt <= 5; attempt++)
         {
             if (!Directory.Exists(path))
@@ -84,13 +91,15 @@ internal sealed class DiskFileSystem : IFileSystem
         }
     }
 
+
     /// <inheritdoc />
     public Task<IEnumerable<string>> ListVolumesAsync(CancellationToken cancellationToken = default)
     {
         var result = new List<string>();
-        if (Directory.Exists(this._dataPath))
+
+        if (Directory.Exists(_dataPath))
         {
-            var list = Directory.GetDirectories(this._dataPath);
+            var list = Directory.GetDirectories(_dataPath);
             result.AddRange(list.Select(Path.GetFileName)!);
         }
 
@@ -99,6 +108,7 @@ internal sealed class DiskFileSystem : IFileSystem
 
     #endregion
 
+
     #region Directory API
 
     /// <inheritdoc />
@@ -106,17 +116,19 @@ internal sealed class DiskFileSystem : IFileSystem
     {
         volume = ValidateVolumeName(volume);
         relPath = ValidatePath(relPath);
-        var path = Path.Join(this._dataPath, volume, relPath);
-        this.CreateDirectory(path);
+        var path = Path.Join(_dataPath, volume, relPath);
+        CreateDirectory(path);
         return Task.CompletedTask;
     }
+
 
     /// <inheritdoc />
     public Task DeleteDirectoryAsync(string volume, string relPath, CancellationToken cancellationToken = default)
     {
         volume = ValidateVolumeName(volume);
         relPath = ValidatePath(relPath);
-        var path = Path.Join(this._dataPath, volume, relPath);
+        var path = Path.Join(_dataPath, volume, relPath);
+
         if (Directory.Exists(path))
         {
             Directory.Delete(path, true);
@@ -127,45 +139,63 @@ internal sealed class DiskFileSystem : IFileSystem
 
     #endregion
 
+
     #region File API
 
     /// <inheritdoc />
-    public async Task WriteFileAsync(string volume, string relPath, string fileName, Stream streamContent, CancellationToken cancellationToken = default)
+    public async Task WriteFileAsync(
+        string volume,
+        string relPath,
+        string fileName,
+        Stream streamContent,
+        CancellationToken cancellationToken = default)
     {
         volume = ValidateVolumeName(volume);
-        var path = Path.Join(this._dataPath, volume);
+        var path = Path.Join(_dataPath, volume);
 #pragma warning disable CA1849 // there is no async option in .NET 6
-        this.CreateDirectory(path);
+        CreateDirectory(path);
 #pragma warning restore CA1849
         relPath = ValidatePath(relPath);
         fileName = ValidateFileName(fileName);
         path = Path.Join(path, relPath, fileName);
-        this._log.LogTrace("Writing file to {0}", path);
+        _log.LogTrace("Writing file to {0}", path);
         BinaryData data = await BinaryData.FromStreamAsync(streamContent, cancellationToken).ConfigureAwait(false);
         await File.WriteAllBytesAsync(path, data.ToArray(), cancellationToken).ConfigureAwait(false);
     }
 
+
     /// <inheritdoc />
-    public async Task WriteFileAsync(string volume, string relPath, string fileName, string data, CancellationToken cancellationToken = default)
+    public async Task WriteFileAsync(
+        string volume,
+        string relPath,
+        string fileName,
+        string data,
+        CancellationToken cancellationToken = default)
     {
         volume = ValidateVolumeName(volume);
-        var path = Path.Join(this._dataPath, volume);
+        var path = Path.Join(_dataPath, volume);
 #pragma warning disable CA1849 // there is no async option in .NET 6
-        this.CreateDirectory(path);
+        CreateDirectory(path);
 #pragma warning restore CA1849
         relPath = ValidatePath(relPath);
         fileName = ValidateFileName(fileName);
         path = Path.Join(path, relPath, fileName);
-        this._log.LogTrace("Writing file to {0}", path);
+        _log.LogTrace("Writing file to {0}", path);
         await File.WriteAllBytesAsync(path, new BinaryData(data).ToArray(), cancellationToken).ConfigureAwait(false);
     }
 
+
     /// <inheritdoc />
-    public async Task<BinaryData> ReadFileAsBinaryAsync(string volume, string relPath, string fileName, CancellationToken cancellationToken = default)
+    public async Task<BinaryData> ReadFileAsBinaryAsync(
+        string volume,
+        string relPath,
+        string fileName,
+        CancellationToken cancellationToken = default)
     {
         volume = ValidateVolumeName(volume);
         relPath = ValidatePath(relPath);
-        var path = Path.Join(this._dataPath, volume, relPath);
+        var path = Path.Join(_dataPath, volume, relPath);
+
         if (!Directory.Exists(path))
         {
             throw new DirectoryNotFoundException($"Directory not found: {path}");
@@ -173,24 +203,31 @@ internal sealed class DiskFileSystem : IFileSystem
 
         fileName = ValidateFileName(fileName);
         path = Path.Join(path, fileName);
+
         if (!File.Exists(path))
         {
-            this._log.LogError("File not found: {0}", path);
+            _log.LogError("File not found: {0}", path);
             throw new FileNotFoundException($"File not found: {path}");
         }
 
-        this._log.LogTrace("File exists, reading {0}", path);
+        _log.LogTrace("File exists, reading {0}", path);
         byte[] content = await File.ReadAllBytesAsync(path, cancellationToken).ConfigureAwait(false);
-        this._log.LogTrace("File {0} size: {1} bytes", path, content.Length);
+        _log.LogTrace("File {0} size: {1} bytes", path, content.Length);
         return new BinaryData(content);
     }
 
+
     /// <inheritdoc />
-    public Task<StreamableFileContent> ReadFileInfoAsync(string volume, string relPath, string fileName, CancellationToken cancellationToken = default)
+    public Task<StreamableFileContent> ReadFileInfoAsync(
+        string volume,
+        string relPath,
+        string fileName,
+        CancellationToken cancellationToken = default)
     {
         volume = ValidateVolumeName(volume);
         relPath = ValidatePath(relPath);
-        var path = Path.Join(this._dataPath, volume, relPath);
+        var path = Path.Join(_dataPath, volume, relPath);
+
         if (!Directory.Exists(path))
         {
             throw new DirectoryNotFoundException($"Directory not found: {path}");
@@ -198,35 +235,51 @@ internal sealed class DiskFileSystem : IFileSystem
 
         fileName = ValidateFileName(fileName);
         path = Path.Join(path, fileName);
+
         if (!File.Exists(path))
         {
-            this._log.LogError("File not found: {0}", path);
+            _log.LogError("File not found: {0}", path);
             throw new FileNotFoundException($"File not found: {path}");
         }
 
-        this._log.LogTrace("File exists, reading {0}", path);
+        _log.LogTrace("File exists, reading {0}", path);
         FileInfo info = new(path);
-        var fileType = this._mimeTypeDetection.GetFileType(fileName);
+        var fileType = _mimeTypeDetection.GetFileType(fileName);
         Task<Stream> AsyncStreamDelegate() => Task.FromResult<Stream>(info.OpenRead());
-        StreamableFileContent result = new(fileName, info.Length, fileType, info.LastWriteTimeUtc, AsyncStreamDelegate);
+        StreamableFileContent result = new(fileName,
+            info.Length,
+            fileType,
+            info.LastWriteTimeUtc,
+            AsyncStreamDelegate);
 
-        this._log.LogTrace("File {0} size: {1} bytes", path, info.Length);
+        _log.LogTrace("File {0} size: {1} bytes", path, info.Length);
         return Task.FromResult<StreamableFileContent>(result);
     }
 
+
     /// <inheritdoc />
-    public async Task<string> ReadFileAsTextAsync(string volume, string relPath, string fileName, CancellationToken cancellationToken = default)
+    public async Task<string> ReadFileAsTextAsync(
+        string volume,
+        string relPath,
+        string fileName,
+        CancellationToken cancellationToken = default)
     {
-        return (await this.ReadFileAsBinaryAsync(volume: volume, relPath: relPath, fileName: fileName, cancellationToken).ConfigureAwait(false))
+        return (await ReadFileAsBinaryAsync(volume,
+                    relPath,
+                    fileName,
+                    cancellationToken)
+                .ConfigureAwait(false))
             .ToString();
     }
+
 
     /// <inheritdoc />
     public Task<IEnumerable<string>> GetAllFileNamesAsync(string volume, string relPath, CancellationToken cancellationToken = default)
     {
         volume = ValidateVolumeName(volume);
         relPath = ValidatePath(relPath);
-        var path = Path.Join(this._dataPath, volume, relPath);
+        var path = Path.Join(_dataPath, volume, relPath);
+
         if (!Directory.Exists(path))
         {
             throw new DirectoryNotFoundException($"Directory not found: {path}");
@@ -234,9 +287,11 @@ internal sealed class DiskFileSystem : IFileSystem
 
         var result = new List<string>();
         string[] fileEntries = Directory.GetFiles(path);
+
         foreach (string rawName in fileEntries)
         {
             var fileName = rawName;
+
             if (fileName.StartsWith(path, StringComparison.OrdinalIgnoreCase))
             {
                 fileName = rawName.Substring(path.Length).Trim('/').Trim('\\');
@@ -250,33 +305,52 @@ internal sealed class DiskFileSystem : IFileSystem
         return Task.FromResult((IEnumerable<string>)result);
     }
 
+
     /// <inheritdoc />
-    public Task<bool> FileExistsAsync(string volume, string relPath, string fileName, CancellationToken cancellationToken = default)
+    public Task<bool> FileExistsAsync(
+        string volume,
+        string relPath,
+        string fileName,
+        CancellationToken cancellationToken = default)
     {
         volume = ValidateVolumeName(volume);
         relPath = ValidatePath(relPath);
-        var path = Path.Join(this._dataPath, volume, relPath, fileName);
+        var path = Path.Join(_dataPath,
+            volume,
+            relPath,
+            fileName);
         return Task.FromResult(File.Exists(path));
     }
 
+
     /// <inheritdoc />
-    public Task DeleteFileAsync(string volume, string relPath, string fileName, CancellationToken cancellationToken = default)
+    public Task DeleteFileAsync(
+        string volume,
+        string relPath,
+        string fileName,
+        CancellationToken cancellationToken = default)
     {
         volume = ValidateVolumeName(volume);
         relPath = ValidatePath(relPath);
-        var path = Path.Join(this._dataPath, volume, relPath, fileName);
-        this._log.LogDebug("Deleting {0}", path);
+        var path = Path.Join(_dataPath,
+            volume,
+            relPath,
+            fileName);
+        _log.LogDebug("Deleting {0}", path);
+
         if (File.Exists(path)) { File.Delete(path); }
 
         return Task.CompletedTask;
     }
+
 
     /// <inheritdoc />
     public async Task<IDictionary<string, string>> ReadAllFilesAsTextAsync(string volume, string relPath, CancellationToken cancellationToken = default)
     {
         volume = ValidateVolumeName(volume);
         relPath = ValidatePath(relPath);
-        var path = Path.Join(this._dataPath, volume, relPath);
+        var path = Path.Join(_dataPath, volume, relPath);
+
         if (!Directory.Exists(path))
         {
             throw new DirectoryNotFoundException($"Directory not found: {path}");
@@ -284,6 +358,7 @@ internal sealed class DiskFileSystem : IFileSystem
 
         var result = new Dictionary<string, string>();
         string[] fileEntries = Directory.GetFiles(path);
+
         foreach (string fileName in fileEntries)
         {
             result[fileName] = new BinaryData(await File.ReadAllBytesAsync(fileName, cancellationToken).ConfigureAwait(false)).ToString();
@@ -293,6 +368,7 @@ internal sealed class DiskFileSystem : IFileSystem
     }
 
     #endregion
+
 
     #region private
 
@@ -311,6 +387,7 @@ internal sealed class DiskFileSystem : IFileSystem
         return volume;
     }
 
+
     private static string ValidatePath(string path)
     {
         // Check invalid chars one at a time for better error messages
@@ -326,6 +403,7 @@ internal sealed class DiskFileSystem : IFileSystem
 
         return path;
     }
+
 
     private static string ValidateFileName(string fileName)
     {
@@ -348,6 +426,7 @@ internal sealed class DiskFileSystem : IFileSystem
         return fileName;
     }
 
+
     private void CreateDirectory(string path)
     {
         if (string.IsNullOrEmpty(path) || Directory.Exists(path))
@@ -355,11 +434,12 @@ internal sealed class DiskFileSystem : IFileSystem
             return;
         }
 
-        this._log.LogDebug("Creating directory {0}", path);
+        _log.LogDebug("Creating directory {0}", path);
         Directory.CreateDirectory(path);
     }
 
     #endregion
+
 
 #pragma warning restore CA1031
 }

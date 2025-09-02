@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.IO;
@@ -19,6 +19,7 @@ public interface IContentDecoder
     /// <returns>Whether the MIME type is supported</returns>
     bool SupportsMimeType(string mimeType);
 
+
     /// <summary>
     /// Extract content from the given file.
     /// </summary>
@@ -27,6 +28,7 @@ public interface IContentDecoder
     /// <returns>Content extracted from the file</returns>
     Task<FileContent> DecodeAsync(string filename, CancellationToken cancellationToken = default);
 
+
     /// <summary>
     /// Extract content from the given file.
     /// </summary>
@@ -34,6 +36,7 @@ public interface IContentDecoder
     /// <param name="cancellationToken">Async task cancellation token</param>
     /// <returns>Content extracted from the file</returns>
     Task<FileContent> DecodeAsync(BinaryData data, CancellationToken cancellationToken = default);
+
 
     /// <summary>
     /// Extract content from the given file.

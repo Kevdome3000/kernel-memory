@@ -1,7 +1,7 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Text.Json;
-using Microsoft.KernelMemory.MemoryDb.Qdrant.Client.Http;
+using Microsoft.KernelMemory.MemoryDb.Qdrant.Internals.Http;
 using Microsoft.KM.TestHelpers;
 
 namespace Microsoft.Qdrant.UnitTests;
@@ -11,6 +11,7 @@ public class ScrollVectorsRequestTest : BaseUnitTestCase
     public ScrollVectorsRequestTest(ITestOutputHelper output) : base(output)
     {
     }
+
 
     [Fact]
     [Trait("Category", "UnitTest")]
@@ -104,6 +105,7 @@ public class ScrollVectorsRequestTest : BaseUnitTestCase
         var expected = JsonSerializer.Serialize(JsonSerializer.Deserialize<object>(Expected));
         Assert.Equal(expected, actual);
     }
+
 
     [Fact]
     [Trait("Category", "UnitTest")]

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -18,6 +18,7 @@ public static class ArgumentNullExceptionEx
         throw new ArgumentNullException(paramName, message);
     }
 
+
     public static void ThrowIfNullOrWhiteSpace([NotNull] string? argument, string? paramName = null, string message = "")
     {
         if (!string.IsNullOrWhiteSpace(argument)) { return; }
@@ -25,12 +26,14 @@ public static class ArgumentNullExceptionEx
         throw new ArgumentNullException(paramName, message);
     }
 
+
     public static void ThrowIfNullOrEmpty([NotNull] string? argument, string? paramName = null, string message = "")
     {
         if (!string.IsNullOrEmpty(argument)) { return; }
 
         throw new ArgumentNullException(paramName, message);
     }
+
 
     public static void ThrowIfEmpty<T>([NotNull] IList<T>? argument, string? paramName = null, string message = "")
     {

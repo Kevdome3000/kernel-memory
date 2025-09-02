@@ -1,9 +1,10 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 #pragma warning disable IDE0130 // reduce number of "using" statements
 // ReSharper disable once CheckNamespace - reduce number of "using" statements
 namespace Microsoft.Extensions.Configuration;
 #pragma warning restore IDE0130
+
 
 /// <summary>
 /// Microsoft.Extensions.Configuration.IConfiguration extension methods.

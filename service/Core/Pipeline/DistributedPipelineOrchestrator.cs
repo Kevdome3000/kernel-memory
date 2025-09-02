@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -32,6 +32,7 @@ public sealed class DistributedPipelineOrchestrator : BaseOrchestrator
 
     private readonly Dictionary<string, IQueue> _queues = new(StringComparer.InvariantCultureIgnoreCase);
 
+
     /// <summary>
     /// Create a new instance of the asynchronous orchestrator
     /// </summary>
@@ -52,23 +53,25 @@ public sealed class DistributedPipelineOrchestrator : BaseOrchestrator
         IMimeTypeDetection? mimeTypeDetection = null,
         KernelMemoryConfig? config = null,
         ILoggerFactory? loggerFactory = null)
-        : base(documentStorage, embeddingGenerators, memoryDbs, textGenerator, mimeTypeDetection, config, loggerFactory?.CreateLogger<DistributedPipelineOrchestrator>())
+        : base(documentStorage,
+            embeddingGenerators,
+            memoryDbs,
+            textGenerator,
+            mimeTypeDetection,
+            config,
+            loggerFactory?.CreateLogger<DistributedPipelineOrchestrator>())
     {
-        this._queueClientFactory = queueClientFactory;
+        _queueClientFactory = queueClientFactory;
     }
+
 
     /// <summary>
     /// List of handlers available.
     /// Note: the list is populated asynchronously so it might be empty when
     /// the hosting app hasn't started or just started.
     /// </summary>
-    public override List<string> HandlerNames
-    {
-        get
-        {
-            return this._queues.Keys.OrderBy(x => x).ToList();
-        }
-    }
+    public override List<string> HandlerNames => _queues.Keys.OrderBy(x => x).ToList();
+
 
     ///<inheritdoc />
     public override async Task AddHandlerAsync(
@@ -78,91 +81,115 @@ public sealed class DistributedPipelineOrchestrator : BaseOrchestrator
         ArgumentNullExceptionEx.ThrowIfNull(handler, nameof(handler), "The handler is NULL");
         ArgumentNullExceptionEx.ThrowIfNullOrWhiteSpace(handler.StepName, nameof(handler.StepName), "The step name is empty");
 
-        if (this._queues.ContainsKey(handler.StepName))
+        if (_queues.ContainsKey(handler.StepName))
         {
             throw new ArgumentException($"There is already a handler for step '{handler.StepName}'");
         }
 
         // Create a new queue client and start listening for messages
-        this._queues[handler.StepName] = this._queueClientFactory.Build();
-        this._queues[handler.StepName].OnDequeue(async msg =>
-        {
-            this.Log.LogTrace("Step `{0}`: processing message received from queue", handler.StepName);
+        _queues[handler.StepName] = _queueClientFactory.Build();
+        _queues[handler.StepName]
+            .OnDequeue(async msg =>
+            {
+                Log.LogTrace("Step `{0}`: processing message received from queue", handler.StepName);
 
-            var pipelinePointer = JsonSerializer.Deserialize<DataPipelinePointer>(msg);
-            if (pipelinePointer == null)
-            {
-                this.Log.LogError("Pipeline pointer deserialization failed, queue `{0}`. Message discarded.", handler.StepName);
-                return ReturnType.FatalError;
-            }
+                var pipelinePointer = JsonSerializer.Deserialize<DataPipelinePointer>(msg);
 
-            DataPipeline? pipeline;
-            try
-            {
-                pipeline = await this.ReadPipelineStatusAsync(pipelinePointer.Index, pipelinePointer.DocumentId, cancellationToken).ConfigureAwait(false);
-            }
-            catch (PipelineNotFoundException)
-            {
-                // If the pipeline status file is missing but we know the job is to delete the index, we have sufficient information to proceed.
-                // Note: index deletion is supposed to be the only step in the execution, and other steps might be skipped if happening after the deletion.
-                // Note: deleting an index also cancel concurrent pipelines running on the same index.
-                bool deletingIndex = handler.StepName == Constants.PipelineStepsDeleteIndex && pipelinePointer.Steps.Contains(Constants.PipelineStepsDeleteIndex);
-                if (deletingIndex)
+                if (pipelinePointer == null)
                 {
-                    this.Log.LogError("Pipeline `{0}/{1}` not found, forcing `{2}` to run", pipelinePointer.Index, pipelinePointer.DocumentId, handler.StepName);
-                    pipeline = new DataPipeline
-                    {
-                        Index = pipelinePointer.Index,
-                        DocumentId = pipelinePointer.DocumentId,
-                        ExecutionId = pipelinePointer.ExecutionId,
-                        Steps = pipelinePointer.Steps
-                    };
-                    return await this.RunPipelineStepAsync(pipeline, handler, this.CancellationTokenSource.Token).ConfigureAwait(false);
+                    Log.LogError("Pipeline pointer deserialization failed, queue `{0}`. Message discarded.", handler.StepName);
+                    return ReturnType.FatalError;
                 }
 
-                this.Log.LogError("Pipeline `{0}/{1}` not found, cancelling step `{2}`", pipelinePointer.Index, pipelinePointer.DocumentId, handler.StepName);
-                return ReturnType.FatalError;
-            }
-            catch (InvalidPipelineDataException)
-            {
-                this.Log.LogError("Pipeline `{0}/{1}` state load failed, invalid state, queue `{2}`", pipelinePointer.Index, pipelinePointer.DocumentId, handler.StepName);
-                return ReturnType.TransientError;
-            }
+                DataPipeline? pipeline;
 
-            if (pipeline == null)
-            {
-                this.Log.LogError("Pipeline `{0}/{1}` state load failed, the state is null, queue `{2}`", pipelinePointer.Index, pipelinePointer.DocumentId, handler.StepName);
-                return ReturnType.TransientError;
-            }
+                try
+                {
+                    pipeline = await ReadPipelineStatusAsync(pipelinePointer.Index, pipelinePointer.DocumentId, cancellationToken).ConfigureAwait(false);
+                }
+                catch (PipelineNotFoundException)
+                {
+                    // If the pipeline status file is missing but we know the job is to delete the index, we have sufficient information to proceed.
+                    // Note: index deletion is supposed to be the only step in the execution, and other steps might be skipped if happening after the deletion.
+                    // Note: deleting an index also cancel concurrent pipelines running on the same index.
+                    bool deletingIndex = handler.StepName == Constants.PipelineStepsDeleteIndex && pipelinePointer.Steps.Contains(Constants.PipelineStepsDeleteIndex);
 
-            if (pipelinePointer.ExecutionId != pipeline.ExecutionId)
-            {
-                this.Log.LogWarning(
-                    "Document `{0}/{1}` has been updated without waiting for the previous pipeline execution `{2}` to complete (current execution: `{3}`). " +
-                    "Step `{4}` and any consecutive steps from the previous execution have been cancelled.",
-                    pipelinePointer.Index, pipelinePointer.DocumentId, pipelinePointer.ExecutionId, pipeline.ExecutionId, handler.StepName);
-                return ReturnType.Success;
-            }
+                    if (deletingIndex)
+                    {
+                        Log.LogError("Pipeline `{0}/{1}` not found, forcing `{2}` to run",
+                            pipelinePointer.Index,
+                            pipelinePointer.DocumentId,
+                            handler.StepName);
+                        pipeline = new DataPipeline
+                        {
+                            Index = pipelinePointer.Index,
+                            DocumentId = pipelinePointer.DocumentId,
+                            ExecutionId = pipelinePointer.ExecutionId,
+                            Steps = pipelinePointer.Steps
+                        };
+                        return await RunPipelineStepAsync(pipeline, handler, CancellationTokenSource.Token).ConfigureAwait(false);
+                    }
 
-            var currentStepName = pipeline.RemainingSteps.First();
-            // IMPORTANT:
-            // * This can occur in case an exception interrupted the previous attempt, e.g. the pipeline state was saved
-            //   but the system couldn't enqueue a message to proceed with the following step.
-            // * This can occur if the index is deleted while an import is running
-            if (currentStepName != handler.StepName)
-            {
-                this.Log.LogWarning(
-                    "Pipeline `{0}/{1}` state on disk is ahead. pipeline.RemainingSteps.First (aka next step) is `{2}`, while handler.StepName (aka the previous step) `{3}` is still in the queue. Rolling back one step",
-                    pipelinePointer.Index, pipelinePointer.DocumentId, currentStepName, handler.StepName);
-                pipeline.RollbackToPreviousStep();
-                await this.UpdatePipelineStatusAsync(pipeline, cancellationToken).ConfigureAwait(false);
-            }
+                    Log.LogError("Pipeline `{0}/{1}` not found, cancelling step `{2}`",
+                        pipelinePointer.Index,
+                        pipelinePointer.DocumentId,
+                        handler.StepName);
+                    return ReturnType.FatalError;
+                }
+                catch (InvalidPipelineDataException)
+                {
+                    Log.LogError("Pipeline `{0}/{1}` state load failed, invalid state, queue `{2}`",
+                        pipelinePointer.Index,
+                        pipelinePointer.DocumentId,
+                        handler.StepName);
+                    return ReturnType.TransientError;
+                }
 
-            return await this.RunPipelineStepAsync(pipeline, handler, this.CancellationTokenSource.Token).ConfigureAwait(false);
-        });
+                if (pipeline == null)
+                {
+                    Log.LogError("Pipeline `{0}/{1}` state load failed, the state is null, queue `{2}`",
+                        pipelinePointer.Index,
+                        pipelinePointer.DocumentId,
+                        handler.StepName);
+                    return ReturnType.TransientError;
+                }
 
-        await this._queues[handler.StepName].ConnectToQueueAsync(handler.StepName, QueueOptions.PubSub, cancellationToken: cancellationToken).ConfigureAwait(false);
+                if (pipelinePointer.ExecutionId != pipeline.ExecutionId)
+                {
+                    Log.LogWarning(
+                        "Document `{0}/{1}` has been updated without waiting for the previous pipeline execution `{2}` to complete (current execution: `{3}`). " + "Step `{4}` and any consecutive steps from the previous execution have been cancelled.",
+                        pipelinePointer.Index,
+                        pipelinePointer.DocumentId,
+                        pipelinePointer.ExecutionId,
+                        pipeline.ExecutionId,
+                        handler.StepName);
+                    return ReturnType.Success;
+                }
+
+                var currentStepName = pipeline.RemainingSteps.First();
+
+                // IMPORTANT:
+                // * This can occur in case an exception interrupted the previous attempt, e.g. the pipeline state was saved
+                //   but the system couldn't enqueue a message to proceed with the following step.
+                // * This can occur if the index is deleted while an import is running
+                if (currentStepName != handler.StepName)
+                {
+                    Log.LogWarning(
+                        "Pipeline `{0}/{1}` state on disk is ahead. pipeline.RemainingSteps.First (aka next step) is `{2}`, while handler.StepName (aka the previous step) `{3}` is still in the queue. Rolling back one step",
+                        pipelinePointer.Index,
+                        pipelinePointer.DocumentId,
+                        currentStepName,
+                        handler.StepName);
+                    pipeline.RollbackToPreviousStep();
+                    await UpdatePipelineStatusAsync(pipeline, cancellationToken).ConfigureAwait(false);
+                }
+
+                return await RunPipelineStepAsync(pipeline, handler, CancellationTokenSource.Token).ConfigureAwait(false);
+            });
+
+        await _queues[handler.StepName].ConnectToQueueAsync(handler.StepName, QueueOptions.PubSub, cancellationToken).ConfigureAwait(false);
     }
+
 
     ///<inheritdoc />
     public override async Task TryAddHandlerAsync(IPipelineStepHandler handler, CancellationToken cancellationToken = default)
@@ -170,11 +197,11 @@ public sealed class DistributedPipelineOrchestrator : BaseOrchestrator
         ArgumentNullExceptionEx.ThrowIfNull(handler, nameof(handler), "The handler is NULL");
         ArgumentNullExceptionEx.ThrowIfNullOrWhiteSpace(handler.StepName, nameof(handler.StepName), "The step name is empty");
 
-        if (this._queues.ContainsKey(handler.StepName)) { return; }
+        if (_queues.ContainsKey(handler.StepName)) { return; }
 
         try
         {
-            await this.AddHandlerAsync(handler, cancellationToken).ConfigureAwait(false);
+            await AddHandlerAsync(handler, cancellationToken).ConfigureAwait(false);
         }
         catch (ArgumentException)
         {
@@ -183,21 +210,23 @@ public sealed class DistributedPipelineOrchestrator : BaseOrchestrator
         }
     }
 
+
     ///<inheritdoc />
     public override async Task RunPipelineAsync(DataPipeline pipeline, CancellationToken cancellationToken = default)
     {
         // Files must be uploaded before starting any other task
-        await this.UploadFilesAsync(pipeline, cancellationToken).ConfigureAwait(false);
+        await UploadFilesAsync(pipeline, cancellationToken).ConfigureAwait(false);
 
         // In case the pipeline has no steps
         if (pipeline.Complete)
         {
-            this.Log.LogInformation("Pipeline '{0}/{1}' complete", pipeline.Index, pipeline.DocumentId);
+            Log.LogInformation("Pipeline '{0}/{1}' complete", pipeline.Index, pipeline.DocumentId);
             return;
         }
 
-        await this.MoveForwardAsync(pipeline, cancellationToken).ConfigureAwait(false);
+        await MoveForwardAsync(pipeline, cancellationToken).ConfigureAwait(false);
     }
+
 
     #region private
 
@@ -209,7 +238,7 @@ public sealed class DistributedPipelineOrchestrator : BaseOrchestrator
         // In case the pipeline has no steps
         if (pipeline.Complete)
         {
-            this.Log.LogInformation("Pipeline '{0}/{1}' complete", pipeline.Index, pipeline.DocumentId);
+            Log.LogInformation("Pipeline '{0}/{1}' complete", pipeline.Index, pipeline.DocumentId);
             return ReturnType.Success;
         }
 
@@ -217,23 +246,24 @@ public sealed class DistributedPipelineOrchestrator : BaseOrchestrator
 
         // Execute the business logic - exceptions are automatically handled by IQueue
         (ReturnType returnType, DataPipeline updatedPipeline) = await handler.InvokeAsync(pipeline, cancellationToken).ConfigureAwait(false);
+
         switch (returnType)
         {
             case ReturnType.Success:
                 pipeline = updatedPipeline;
                 pipeline.LastUpdate = DateTimeOffset.UtcNow;
 
-                this.Log.LogInformation("Handler {0} processed pipeline {1} successfully", currentStepName, pipeline.DocumentId);
+                Log.LogInformation("Handler {0} processed pipeline {1} successfully", currentStepName, pipeline.DocumentId);
                 pipeline.MoveToNextStep();
-                await this.MoveForwardAsync(pipeline, cancellationToken).ConfigureAwait(false);
+                await MoveForwardAsync(pipeline, cancellationToken).ConfigureAwait(false);
                 break;
 
             case ReturnType.TransientError:
-                this.Log.LogError("Handler {0} failed to process pipeline {1}", currentStepName, pipeline.DocumentId);
+                Log.LogError("Handler {0} failed to process pipeline {1}", currentStepName, pipeline.DocumentId);
                 break;
 
             case ReturnType.FatalError:
-                this.Log.LogError("Handler {0} failed to process pipeline {1} due to an unrecoverable error", currentStepName, pipeline.DocumentId);
+                Log.LogError("Handler {0} failed to process pipeline {1} due to an unrecoverable error", currentStepName, pipeline.DocumentId);
                 break;
 
             default:
@@ -243,31 +273,35 @@ public sealed class DistributedPipelineOrchestrator : BaseOrchestrator
         return returnType;
     }
 
+
     private async Task MoveForwardAsync(DataPipeline pipeline, CancellationToken cancellationToken = default)
     {
         if (pipeline.Complete)
         {
-            this.Log.LogInformation("Pipeline '{0}/{1}' complete", pipeline.Index, pipeline.DocumentId);
+            Log.LogInformation("Pipeline '{0}/{1}' complete", pipeline.Index, pipeline.DocumentId);
 
             // Save the pipeline status. If this fails the system should retry the current step.
-            await this.UpdatePipelineStatusAsync(pipeline, cancellationToken).ConfigureAwait(false);
+            await UpdatePipelineStatusAsync(pipeline, cancellationToken).ConfigureAwait(false);
 
-            await this.CleanUpAfterCompletionAsync(pipeline, cancellationToken).ConfigureAwait(false);
+            await CleanUpAfterCompletionAsync(pipeline, cancellationToken).ConfigureAwait(false);
         }
         else
         {
             string nextStepName = pipeline.RemainingSteps.First();
-            this.Log.LogInformation("Enqueueing pipeline '{0}/{1}' step '{2}'", pipeline.Index, pipeline.DocumentId, nextStepName);
+            Log.LogInformation("Enqueueing pipeline '{0}/{1}' step '{2}'",
+                pipeline.Index,
+                pipeline.DocumentId,
+                nextStepName);
 
             // Execute as much logic as possible before writing the new pipeline state to disk,
             // to reduce the chance of the persisted state to be out of sync.
-            using IQueue queue = this._queueClientFactory.Build();
+            using IQueue queue = _queueClientFactory.Build();
             await queue.ConnectToQueueAsync(nextStepName, QueueOptions.PublishOnly, cancellationToken).ConfigureAwait(false);
 
             // Save the pipeline status to disk.
             // IMPORTANT: If this fails with an exception the system will retry the "next" step stored on disk,
             // which is the current step just completed.
-            await this.UpdatePipelineStatusAsync(pipeline, cancellationToken).ConfigureAwait(false);
+            await UpdatePipelineStatusAsync(pipeline, cancellationToken).ConfigureAwait(false);
 
             // Enqueue a pointer to the pipeline (the entire pipeline doc can be too big to fit)
             // IMPORTANT: If this fails with an exception the state on disk will be ahead, and the system will retry the step before.
@@ -276,4 +310,6 @@ public sealed class DistributedPipelineOrchestrator : BaseOrchestrator
     }
 
     #endregion
+
+
 }

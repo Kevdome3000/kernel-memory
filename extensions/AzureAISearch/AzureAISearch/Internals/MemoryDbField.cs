@@ -1,6 +1,6 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
-namespace Microsoft.KernelMemory.MemoryDb.AzureAISearch;
+namespace Microsoft.KernelMemory.MemoryDb.AzureAISearch.Internals;
 
 internal sealed class MemoryDbField
 {
@@ -13,16 +13,18 @@ internal sealed class MemoryDbField
         Integer = 3,
         Decimal = 4,
         Bool = 5,
-        ListOfStrings = 6,
+        ListOfStrings = 6
     }
 #pragma warning restore CA1720
+
 
     public enum VectorMetricType
     {
         Cosine = 0,
         Euclidean = 1,
-        DotProduct = 2,
+        DotProduct = 2
     }
+
 
     public FieldType Type { get; set; } = FieldType.Unknown;
     public string Name { get; set; } = string.Empty;

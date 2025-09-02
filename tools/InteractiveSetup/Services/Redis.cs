@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -34,8 +34,8 @@ internal static class Redis
                 Title = $"{additionalMessage}[Redis] Do you want to add a tag (or another tag) to filter memory records?",
                 Options =
                 [
-                    new("Yes", false, () => { answer = "Yes"; }),
-                    new("No", true, () => { answer = "No"; })
+                    new Answer("Yes", false, () => { answer = "Yes"; }),
+                    new Answer("No", true, () => { answer = "No"; })
                 ]
             });
 
@@ -45,9 +45,11 @@ internal static class Redis
         Dictionary<string, string> tagFields = [];
 
         string additionalMessage = string.Empty;
+
         while (AskMoreTags(additionalMessage))
         {
             var tagName = SetupUI.AskOpenQuestion("Enter the name of the tag you'd like to filter on, e.g. username", string.Empty);
+
             if (string.IsNullOrEmpty(tagName))
             {
                 additionalMessage = "Unusable tag name entered. ";
@@ -55,6 +57,7 @@ internal static class Redis
             }
 
             var separatorChar = SetupUI.AskOptionalOpenQuestion("How do you want to separate tag values (default is ',')?", ",");
+
             if (separatorChar.Length > 1)
             {
                 additionalMessage = "Unusable separator Char entered. ";
@@ -68,7 +71,7 @@ internal static class Redis
         AppSettings.Change(x => x.Services[ServiceName] = new Dictionary<string, object>
         {
             { "Tags", tagFields },
-            { "ConnectionString", connectionString },
+            { "ConnectionString", connectionString }
         });
     }
 }

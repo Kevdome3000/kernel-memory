@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 #pragma warning disable IDE0130 // reduce number of "using" statements
 // ReSharper disable once CheckNamespace - reduce number of "using" statements
@@ -13,15 +13,19 @@ public class InvalidIndexNameException : ElasticsearchException
     public InvalidIndexNameException(string indexName, IEnumerable<string> errors, Exception? innerException = default)
         : base($"The given index name '{indexName}' is invalid. {string.Join(", ", errors)}", innerException)
     {
-        this.IndexName = indexName;
-        this.Errors = errors;
+        IndexName = indexName;
+        Errors = errors;
     }
+
 
     /// <inheritdoc/>
     public InvalidIndexNameException(
         (string IndexName, IEnumerable<string> Errors) conversionResult,
         Exception? innerException = default)
-        => (this.IndexName, this.Errors) = conversionResult;
+    {
+        (IndexName, Errors) = conversionResult;
+    }
+
 
     /// <summary>
     /// The index name that failed validation.

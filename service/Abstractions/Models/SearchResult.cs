@@ -1,10 +1,10 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Microsoft.KernelMemory;
+namespace Microsoft.KernelMemory.Models;
 
 public class SearchResult
 {
@@ -26,7 +26,7 @@ public class SearchResult
     [JsonPropertyOrder(2)]
     public bool NoResult
     {
-        get => this.Results == null || this.Results.Count == 0;
+        get => Results == null || Results.Count == 0;
         private set { }
     }
 
@@ -40,6 +40,7 @@ public class SearchResult
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<Citation> Results { get; set; } = [];
 
+
     /// <summary>
     /// Serialize using .NET JSON serializer, e.g. to avoid ambiguity
     /// with other serializers and other options
@@ -48,12 +49,16 @@ public class SearchResult
     /// <returns>JSON serialization</returns>
     public string ToJson(bool indented = false)
     {
-        return JsonSerializer.Serialize(this, indented ? s_indentedJsonOptions : s_notIndentedJsonOptions);
+        return JsonSerializer.Serialize(this,
+            indented
+                ? s_indentedJsonOptions
+                : s_notIndentedJsonOptions);
     }
+
 
     public MemoryAnswer FromJson(string json)
     {
         return JsonSerializer.Deserialize<MemoryAnswer>(json, s_caseInsensitiveJsonOptions)
-               ?? new MemoryAnswer();
+            ?? new MemoryAnswer();
     }
 }

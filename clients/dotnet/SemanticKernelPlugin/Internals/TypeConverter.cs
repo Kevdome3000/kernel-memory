@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
 using System.Text.Json;
+using Microsoft.KernelMemory.Models;
 
 namespace Microsoft.KernelMemory.SemanticKernelPlugin.Internals;
 

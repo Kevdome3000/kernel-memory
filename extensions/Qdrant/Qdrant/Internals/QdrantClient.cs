@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -11,10 +11,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.KernelMemory.Diagnostics;
-using Microsoft.KernelMemory.MemoryDb.Qdrant.Client.Http;
+using Microsoft.KernelMemory.MemoryDb.Qdrant.Internals.Http;
 using Microsoft.KernelMemory.MemoryStorage;
 
-namespace Microsoft.KernelMemory.MemoryDb.Qdrant.Client;
+namespace Microsoft.KernelMemory.MemoryDb.Qdrant.Internals;
 
 /// <summary>
 /// An implementation of a client for the Qdrant Vector Database. This class is used to
@@ -23,6 +23,7 @@ namespace Microsoft.KernelMemory.MemoryDb.Qdrant.Client;
 internal sealed class QdrantClient<T> where T : DefaultQdrantPayload, new()
 {
     private readonly string? _apiKey;
+
 
     /// <summary>
     /// Represents a singleton implementation of <see cref="HttpClientHandler"/> that is not disposable.
@@ -34,13 +35,15 @@ internal sealed class QdrantClient<T> where T : DefaultQdrantPayload, new()
         /// </summary>
         internal static NonDisposableHttpClientHandler Instance { get; } = new();
 
+
         /// <summary>
         /// Private constructor to prevent direct instantiation of the class.
         /// </summary>
         private NonDisposableHttpClientHandler()
         {
-            this.CheckCertificateRevocationList = true;
+            CheckCertificateRevocationList = true;
         }
+
 
 #pragma warning disable CA2215 // nothing to dispose
         /// <summary>
@@ -57,6 +60,7 @@ internal sealed class QdrantClient<T> where T : DefaultQdrantPayload, new()
 #pragma warning restore CA2215
     }
 
+
     /// <summary>
     /// Initializes a new instance of this class.
     /// </summary>
@@ -70,11 +74,12 @@ internal sealed class QdrantClient<T> where T : DefaultQdrantPayload, new()
         HttpClient? httpClient = null,
         ILoggerFactory? loggerFactory = null)
     {
-        this._log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<QdrantClient<T>>();
-        this._apiKey = apiKey;
-        this._httpClient = httpClient ?? new HttpClient(NonDisposableHttpClientHandler.Instance, disposeHandler: false);
-        this._httpClient.BaseAddress = SanitizeEndpoint(endpoint);
+        _log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<QdrantClient<T>>();
+        _apiKey = apiKey;
+        _httpClient = httpClient ?? new HttpClient(NonDisposableHttpClientHandler.Instance, false);
+        _httpClient.BaseAddress = SanitizeEndpoint(endpoint);
     }
+
 
     /// <summary>
     /// Create a new collection
@@ -87,23 +92,24 @@ internal sealed class QdrantClient<T> where T : DefaultQdrantPayload, new()
         int vectorSize,
         CancellationToken cancellationToken = default)
     {
-        this._log.LogTrace("Creating collection {0}", collectionName);
+        _log.LogTrace("Creating collection {0}", collectionName);
 
         using HttpRequestMessage request = CreateCollectionRequest
             .Create(collectionName, vectorSize, QdrantDistanceType.Cosine)
             .Build();
 
-        var (response, content) = await this.ExecuteHttpRequestAsync(request, cancellationToken).ConfigureAwait(false);
+        var (response, content) = await ExecuteHttpRequestAsync(request, cancellationToken).ConfigureAwait(false);
 
         // Creation is idempotent, ignore error (and for now ignore vector size)
         if (response.StatusCode is HttpStatusCode.BadRequest or HttpStatusCode.Conflict && content.Contains("already exists", StringComparison.OrdinalIgnoreCase))
         {
-            this._log.LogDebug("Collection {0} already exists", collectionName);
+            _log.LogDebug("Collection {0} already exists", collectionName);
             return;
         }
 
-        this.ValidateResponse(response, content, nameof(this.CreateCollectionAsync));
+        ValidateResponse(response, content, nameof(CreateCollectionAsync));
     }
+
 
     public async IAsyncEnumerable<string> GetCollectionsAsync([EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
@@ -113,16 +119,19 @@ internal sealed class QdrantClient<T> where T : DefaultQdrantPayload, new()
 
         try
         {
-            (_, responseContent) = await this.ExecuteHttpRequestAsync(request, cancellationToken).ConfigureAwait(false);
+            (_, responseContent) = await ExecuteHttpRequestAsync(request, cancellationToken).ConfigureAwait(false);
         }
         catch (JsonException e)
         {
-            this._log.LogError(e, "Collection listing failed: {Message}", e.Message);
+            _log.LogError(e, "Collection listing failed: {Message}", e.Message);
             throw;
         }
         catch (HttpRequestException e)
         {
-            this._log.LogError(e, "Collection listing failed: {Message}, {Response}", e.StatusCode, e.Message);
+            _log.LogError(e,
+                "Collection listing failed: {Message}, {Response}",
+                e.StatusCode,
+                e.Message);
             throw;
         }
 
@@ -134,6 +143,7 @@ internal sealed class QdrantClient<T> where T : DefaultQdrantPayload, new()
         }
     }
 
+
     /// <summary>
     /// Delete a collection.
     /// </summary>
@@ -143,20 +153,21 @@ internal sealed class QdrantClient<T> where T : DefaultQdrantPayload, new()
         string collectionName,
         CancellationToken cancellationToken = default)
     {
-        this._log.LogTrace("Deleting collection {0}", collectionName);
+        _log.LogTrace("Deleting collection {0}", collectionName);
 
         using HttpRequestMessage request = DeleteCollectionRequest.Create(collectionName).Build();
-        var (response, content) = await this.ExecuteHttpRequestAsync(request, cancellationToken).ConfigureAwait(false);
+        var (response, content) = await ExecuteHttpRequestAsync(request, cancellationToken).ConfigureAwait(false);
 
         // Deletion is idempotent, ignore error
         if (response.StatusCode == HttpStatusCode.NotFound)
         {
-            this._log.LogDebug("HTTP 404: {0}", content);
+            _log.LogDebug("HTTP 404: {0}", content);
             return;
         }
 
-        this.ValidateResponse(response, content, nameof(this.DeleteCollectionAsync));
+        ValidateResponse(response, content, nameof(DeleteCollectionAsync));
     }
+
 
     /// <summary>
     /// Write a set of vectors. Existing vectors ar updated.
@@ -169,14 +180,14 @@ internal sealed class QdrantClient<T> where T : DefaultQdrantPayload, new()
         IEnumerable<QdrantPoint<T>> vectors,
         CancellationToken cancellationToken = default)
     {
-        this._log.LogTrace("Upserting vectors into {0}", collectionName);
+        _log.LogTrace("Upserting vectors into {0}", collectionName);
 
         using var request = UpsertVectorRequest<T>.Create(collectionName)
             .UpsertRange(vectors)
             .Build();
 
-        var (response, content) = await this.ExecuteHttpRequestAsync(request, cancellationToken).ConfigureAwait(false);
-        this.ValidateResponse(response, content, nameof(this.UpsertVectorsAsync));
+        var (response, content) = await ExecuteHttpRequestAsync(request, cancellationToken).ConfigureAwait(false);
+        ValidateResponse(response, content, nameof(UpsertVectorsAsync));
 
         UpsertVectorResponse? qdrantResponse = JsonSerializer.Deserialize<UpsertVectorResponse>(content);
         ArgumentNullExceptionEx.ThrowIfNull(qdrantResponse, nameof(qdrantResponse), "Qdrant response is NULL");
@@ -184,9 +195,10 @@ internal sealed class QdrantClient<T> where T : DefaultQdrantPayload, new()
 
         if (qdrantResponse.Status != "ok")
         {
-            this._log.LogWarning("Vector upserts failed");
+            _log.LogWarning("Vector upserts failed");
         }
     }
+
 
     /// <summary>
     /// Fetch a vector by payload ID (string).
@@ -210,30 +222,32 @@ internal sealed class QdrantClient<T> where T : DefaultQdrantPayload, new()
             .IncludeVectorData(withVector)
             .Build();
 
-        var (response, content) = await this.ExecuteHttpRequestAsync(request, cancellationToken).ConfigureAwait(false);
+        var (response, content) = await ExecuteHttpRequestAsync(request, cancellationToken).ConfigureAwait(false);
+
         if (response.StatusCode == HttpStatusCode.NotFound)
         {
-            this._log.LogDebug("HTTP 404: {0}", content);
+            _log.LogDebug("HTTP 404: {0}", content);
             return null;
         }
 
-        this.ValidateResponse(response, content, nameof(this.GetVectorByPayloadIdAsync));
+        ValidateResponse(response, content, nameof(GetVectorByPayloadIdAsync));
 
         var data = JsonSerializer.Deserialize<ScrollVectorsResponse<T>>(content);
+
         if (data == null)
         {
-            this._log.LogError("Unable to deserialize Search response");
+            _log.LogError("Unable to deserialize Search response");
             throw new QdrantException("Unable to deserialize Search response");
         }
 
         if (!data.Results.Points.Any())
         {
-            this._log.LogDebug("Vector not found");
+            _log.LogDebug("Vector not found");
             return null;
         }
 
         QdrantPoint<T> vector = data.Results.Points.First();
-        this._log.LogDebug("Vector found: {0}", vector.Id);
+        _log.LogDebug("Vector found: {0}", vector.Id);
 
         return new QdrantPoint<T>
         {
@@ -243,6 +257,7 @@ internal sealed class QdrantClient<T> where T : DefaultQdrantPayload, new()
         };
     }
 
+
     /// <summary>
     /// Delete a list of vectors
     /// </summary>
@@ -251,21 +266,23 @@ internal sealed class QdrantClient<T> where T : DefaultQdrantPayload, new()
     /// <param name="cancellationToken">Async task cancellation token</param>
     public async Task DeleteVectorsAsync(string collectionName, IList<Guid> vectorIds, CancellationToken cancellationToken)
     {
-        this._log.LogTrace("Deleting vectors");
+        _log.LogTrace("Deleting vectors");
         using var request = DeleteVectorsRequest.DeleteFrom(collectionName)
             .DeleteRange(vectorIds)
             .Build();
 
-        var (response, content) = await this.ExecuteHttpRequestAsync(request, cancellationToken).ConfigureAwait(false);
+        var (response, content) = await ExecuteHttpRequestAsync(request, cancellationToken).ConfigureAwait(false);
+
         // Deletion is idempotent, ignore error
         if (response.StatusCode == HttpStatusCode.NotFound)
         {
-            this._log.LogDebug("HTTP 404: {0}", content);
+            _log.LogDebug("HTTP 404: {0}", content);
             return;
         }
 
-        this.ValidateResponse(response, content, nameof(this.DeleteVectorsAsync));
+        ValidateResponse(response, content, nameof(DeleteVectorsAsync));
     }
+
 
     /// <summary>
     /// Fetch a list of vectors
@@ -285,7 +302,7 @@ internal sealed class QdrantClient<T> where T : DefaultQdrantPayload, new()
         bool withVectors = false,
         CancellationToken cancellationToken = default)
     {
-        this._log.LogTrace("Fetch list of {0} vectors starting from {1}", limit, offset);
+        _log.LogTrace("Fetch list of {0} vectors starting from {1}", limit, offset);
 
         using HttpRequestMessage request = ScrollVectorsRequest
             .Create(collectionName)
@@ -296,30 +313,33 @@ internal sealed class QdrantClient<T> where T : DefaultQdrantPayload, new()
             .Take(limit)
             .Build();
 
-        var (response, content) = await this.ExecuteHttpRequestAsync(request, cancellationToken).ConfigureAwait(false);
+        var (response, content) = await ExecuteHttpRequestAsync(request, cancellationToken).ConfigureAwait(false);
+
         if (response.StatusCode == HttpStatusCode.NotFound)
         {
-            this._log.LogDebug("HTTP 404: {0}", content);
+            _log.LogDebug("HTTP 404: {0}", content);
             return [];
         }
 
-        this.ValidateResponse(response, content, nameof(this.GetListAsync));
+        ValidateResponse(response, content, nameof(GetListAsync));
 
         var data = JsonSerializer.Deserialize<ScrollVectorsResponse<T>>(content);
+
         if (data == null)
         {
-            this._log.LogError("Unable to deserialize Scroll response");
+            _log.LogError("Unable to deserialize Scroll response");
             throw new QdrantException("Unable to deserialize Scroll response");
         }
 
         if (!data.Results.Points.Any())
         {
-            this._log.LogDebug("No vectors found");
+            _log.LogDebug("No vectors found");
             return [];
         }
 
         return data.Results.Points.ToList();
     }
+
 
     /// <summary>
     /// Find similar vectors
@@ -342,9 +362,9 @@ internal sealed class QdrantClient<T> where T : DefaultQdrantPayload, new()
         IEnumerable<IEnumerable<string>?>? requiredTags = null,
         CancellationToken cancellationToken = default)
     {
-        this._log.LogTrace("Searching top {0} nearest vectors", limit);
+        _log.LogTrace("Searching top {0} nearest vectors", limit);
 
-        ArgumentNullExceptionEx.ThrowIfNull(target, nameof(target), $"The target vector cannot be null");
+        ArgumentNullExceptionEx.ThrowIfNull(target, nameof(target), "The target vector cannot be null");
 
         using HttpRequestMessage request = SearchVectorsRequest
             .Create(collectionName)
@@ -357,25 +377,27 @@ internal sealed class QdrantClient<T> where T : DefaultQdrantPayload, new()
             .Build();
 
         var result = new List<(QdrantPoint<T>, double)>();
-        var (response, content) = await this.ExecuteHttpRequestAsync(request, cancellationToken).ConfigureAwait(false);
+        var (response, content) = await ExecuteHttpRequestAsync(request, cancellationToken).ConfigureAwait(false);
+
         if (response.StatusCode == HttpStatusCode.NotFound)
         {
-            this._log.LogDebug("HTTP 404: {0}", content);
+            _log.LogDebug("HTTP 404: {0}", content);
             return result;
         }
 
-        this.ValidateResponse(response, content, nameof(this.GetSimilarListAsync));
+        ValidateResponse(response, content, nameof(GetSimilarListAsync));
 
         var data = JsonSerializer.Deserialize<SearchVectorsResponse<T>>(content);
+
         if (data == null)
         {
-            this._log.LogError("Unable to deserialize Search response");
+            _log.LogError("Unable to deserialize Search response");
             throw new QdrantException("Unable to deserialize Search response");
         }
 
         if (!data.Results.Any())
         {
-            this._log.LogDebug("No vectors found");
+            _log.LogDebug("No vectors found");
             return result;
         }
 
@@ -392,10 +414,12 @@ internal sealed class QdrantClient<T> where T : DefaultQdrantPayload, new()
         return result;
     }
 
+
     #region private ================================================================================
 
     private readonly ILogger<QdrantClient<T>> _log;
     private readonly HttpClient _httpClient;
+
 
     private void ValidateResponse(HttpResponseMessage response, string content, string methodName)
     {
@@ -405,53 +429,61 @@ internal sealed class QdrantClient<T> where T : DefaultQdrantPayload, new()
         }
         catch (HttpRequestException e)
         {
-            this._log.LogError(e, "{0} failed: {0}, {1}", methodName, e.Message, content);
+            _log.LogError(e,
+                "{0} failed: {0}, {1}",
+                methodName,
+                e.Message,
+                content);
             throw;
         }
     }
+
 
     private async Task<(HttpResponseMessage response, string responseContent)> ExecuteHttpRequestAsync(
         HttpRequestMessage request,
         CancellationToken cancellationToken = default)
     {
-        if (!string.IsNullOrEmpty(this._apiKey))
+        if (!string.IsNullOrEmpty(_apiKey))
         {
-            request.Headers.Add("api-key", this._apiKey);
+            request.Headers.Add("api-key", _apiKey);
         }
 
-        HttpResponseMessage response = await this._httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        HttpResponseMessage response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
         string responseContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 
         if (response.IsSuccessStatusCode)
         {
-            this._log.LogTrace("Qdrant responded successfully");
+            _log.LogTrace("Qdrant responded successfully");
         }
         else
         {
             if (response.StatusCode == HttpStatusCode.NotFound && responseContent.Contains("Not found: Collection", StringComparison.OrdinalIgnoreCase))
             {
-                this._log.LogWarning("Qdrant collection not found: {0}, {1}", response.StatusCode, responseContent);
+                _log.LogWarning("Qdrant collection not found: {0}, {1}", response.StatusCode, responseContent);
                 throw new IndexNotFoundException(responseContent);
             }
 
             if (!responseContent.Contains("already exists", StringComparison.OrdinalIgnoreCase))
             {
-                this._log.LogWarning("Qdrant responded with error: {0}, {1}", response.StatusCode, responseContent);
+                _log.LogWarning("Qdrant responded with error: {0}, {1}", response.StatusCode, responseContent);
             }
         }
 
         return (response, responseContent);
     }
 
+
     private static Uri SanitizeEndpoint(string endpoint, int? port = null)
     {
         ValidateUrl(nameof(endpoint), endpoint);
 
         UriBuilder builder = new(endpoint);
+
         if (port.HasValue) { builder.Port = port.Value; }
 
         return builder.Uri;
     }
+
 
     private static void ValidateUrl(string name, string url)
     {
@@ -461,6 +493,7 @@ internal sealed class QdrantClient<T> where T : DefaultQdrantPayload, new()
         }
 
         bool result = Uri.TryCreate(url, UriKind.Absolute, out Uri? uri);
+
         if (!result || string.IsNullOrEmpty(uri?.Host))
         {
             throw new ArgumentException($"The {name} `{url}` is not valid", name);
@@ -468,4 +501,6 @@ internal sealed class QdrantClient<T> where T : DefaultQdrantPayload, new()
     }
 
     #endregion
+
+
 }

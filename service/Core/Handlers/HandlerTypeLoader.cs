@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -28,7 +28,7 @@ internal static class HandlerTypeLoader
         {
             config.Assembly,
             Path.Join(Environment.CurrentDirectory, config.Assembly),
-            Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), config.Assembly),
+            Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), config.Assembly)
         };
 
         foreach (var p in assemblyFilePaths)

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -41,6 +41,7 @@ public class ServiceConfig
     /// </summary>
     public long? MaxUploadSizeMb { get; set; } = null;
 }
+
 
 public static partial class ServiceConfigExtensions
 {

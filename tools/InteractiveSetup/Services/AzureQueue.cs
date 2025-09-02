@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Collections.Generic;
 using Microsoft.KernelMemory.InteractiveSetup.UI;
@@ -20,7 +20,7 @@ internal static class AzureQueue
             {
                 { "Auth", "ConnectionString" },
                 { "ConnectionString", "" },
-                { "Account", "" },
+                { "Account", "" }
             };
             AppSettings.AddService(ServiceName, config);
         }
@@ -30,16 +30,20 @@ internal static class AzureQueue
             Title = $"[{ServiceName}] Which type of authentication do you want to use?",
             Options =
             [
-                new("Azure Identity (Entra)", config["Auth"].ToString() == "AzureIdentity", () => AppSettings.Change(x =>
-                {
-                    x.Services[ServiceName]["Auth"] = "AzureIdentity";
-                    x.Services[ServiceName].Remove("ConnectionString");
-                })),
-                new("Connection String", config["Auth"].ToString() != "AzureIdentity", () => AppSettings.Change(x =>
-                {
-                    x.Services[ServiceName]["Auth"] = "ConnectionString";
-                    x.Services[ServiceName]["ConnectionString"] = SetupUI.AskPassword("Azure Queue <connection string>", config["ConnectionString"].ToString());
-                }))
+                new Answer("Azure Identity (Entra)",
+                    config["Auth"].ToString() == "AzureIdentity",
+                    () => AppSettings.Change(x =>
+                    {
+                        x.Services[ServiceName]["Auth"] = "AzureIdentity";
+                        x.Services[ServiceName].Remove("ConnectionString");
+                    })),
+                new Answer("Connection String",
+                    config["Auth"].ToString() != "AzureIdentity",
+                    () => AppSettings.Change(x =>
+                    {
+                        x.Services[ServiceName]["Auth"] = "ConnectionString";
+                        x.Services[ServiceName]["ConnectionString"] = SetupUI.AskPassword("Azure Queue <connection string>", config["ConnectionString"].ToString());
+                    }))
             ]
         });
 

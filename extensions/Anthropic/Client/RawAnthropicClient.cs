@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Collections.Generic;
 using System.IO;
@@ -22,17 +22,24 @@ internal sealed class RawAnthropicClient
     private readonly string _endpoint;
     private readonly string _endpointVersion;
 
-    internal RawAnthropicClient(HttpClient httpClient, string endpoint, string endpointVersion, string apiKey)
+
+    internal RawAnthropicClient(
+        HttpClient httpClient,
+        string endpoint,
+        string endpointVersion,
+        string apiKey)
     {
-        this._httpClient = httpClient;
-        this._httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(Telemetry.HttpUserAgent);
-        this._endpoint = endpoint.TrimEnd('/');
-        this._endpointVersion = endpointVersion;
-        this._apiKey = apiKey;
+        _httpClient = httpClient;
+        _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(Telemetry.HttpUserAgent);
+        _endpoint = endpoint.TrimEnd('/');
+        _endpointVersion = endpointVersion;
+        _apiKey = apiKey;
     }
 
+
     internal async IAsyncEnumerable<StreamingResponseMessage> CallClaudeStreamingAsync(
-        CallClaudeStreamingParams parameters, [EnumeratorCancellation] CancellationToken cancellationToken)
+        CallClaudeStreamingParams parameters,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         var requestPayload = new MessageRequest
         {
@@ -54,23 +61,25 @@ internal sealed class RawAnthropicClient
         string jsonPayload = JsonSerializer.Serialize(requestPayload);
         var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
         content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-        content.Headers.Add(ApiKeyHeader, this._apiKey);
-        content.Headers.Add(EndpointVersionHeader, this._endpointVersion);
+        content.Headers.Add(ApiKeyHeader, _apiKey);
+        content.Headers.Add(EndpointVersionHeader, _endpointVersion);
 
-        using var request = new HttpRequestMessage(HttpMethod.Post, $"{this._endpoint}/v1/messages");
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"{_endpoint}/v1/messages");
         request.Content = content;
 
-        var response = await this._httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
+
         if (!response.IsSuccessStatusCode)
         {
             var responseError = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
             throw new KernelMemoryException($"Failed to send request: {response.StatusCode} - {responseError}",
-                isTransient: response.StatusCode.IsTransientError());
+                response.StatusCode.IsTransientError());
         }
 
         var responseStream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
 
         using StreamReader reader = new(responseStream);
+
         while (!reader.EndOfStream)
         {
             string? line = await reader.ReadLineAsync(cancellationToken).ConfigureAwait(false);
@@ -95,6 +104,7 @@ internal sealed class RawAnthropicClient
             {
                 string data = line.Substring("data: ".Length).Trim();
                 ContentBlockDelta? messageDelta = JsonSerializer.Deserialize<ContentBlockDelta>(data);
+
                 if (messageDelta == null)
                 {
                     // TODO: log error, throw exception?

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using Azure.AI.OpenAI;
@@ -22,6 +22,7 @@ internal static class SkClientBuilder
         return new AzureOpenAIChatCompletionService(deploymentName, client, loggerFactory: loggerFactory);
     }
 
+
     internal static AzureOpenAITextEmbeddingGenerationService BuildEmbeddingClient(
         string deploymentName,
         AzureOpenAIClient client,
@@ -38,6 +39,9 @@ internal static class SkClientBuilder
             throw new ArgumentOutOfRangeException(nameof(dimensions), "Dimensions value cannot be less than 1");
         }
 
-        return new AzureOpenAITextEmbeddingGenerationService(deploymentName, client, loggerFactory: loggerFactory, dimensions: dimensions);
+        return new AzureOpenAITextEmbeddingGenerationService(deploymentName,
+            client,
+            loggerFactory: loggerFactory,
+            dimensions: dimensions);
     }
 }

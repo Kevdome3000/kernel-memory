@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Collections.Generic;
 using System.Linq;
@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.KernelMemory.Evaluation;
 using Microsoft.KernelMemory.Evaluation.TestSet;
+using Microsoft.KernelMemory.Models;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 
@@ -17,31 +18,39 @@ internal sealed class ContextRecallEvaluator : EvaluationEngine
 {
     private readonly Kernel _kernel;
 
-    private KernelFunction EvaluateContextRecall => this._kernel.CreateFunctionFromPrompt(this.GetSKPrompt("Evaluation", "ContextRecall"), new OpenAIPromptExecutionSettings
-    {
-        Temperature = 1e-8f,
-        Seed = 0,
-        ResponseFormat = "json_object"
-    }, functionName: nameof(this.EvaluateContextRecall));
+    private KernelFunction EvaluateContextRecall => _kernel.CreateFunctionFromPrompt(GetSKPrompt("Evaluation", "ContextRecall"),
+        new OpenAIPromptExecutionSettings
+        {
+            Temperature = 1e-8f,
+            Seed = 0,
+            ResponseFormat = "json_object"
+        },
+        nameof(EvaluateContextRecall));
+
 
     public ContextRecallEvaluator(Kernel kernel)
     {
-        this._kernel = kernel.Clone();
+        _kernel = kernel.Clone();
     }
+
 
     internal async Task<float> Evaluate(TestSetItem testSet, MemoryAnswer answer, Dictionary<string, object?> metadata)
     {
-        var classification = await this.Try(3, async (remainingTry) =>
-        {
-            var extraction = await this.EvaluateContextRecall.InvokeAsync(this._kernel, new KernelArguments
-            {
-                { "question", testSet.Question },
-                { "context", JsonSerializer.Serialize(answer.RelevantSources.SelectMany(c => c.Partitions.Select(x => x.Text))) },
-                { "ground_truth", testSet.GroundTruth }
-            }).ConfigureAwait(false);
+        var classification = await Try(3,
+                async remainingTry =>
+                {
+                    var extraction = await EvaluateContextRecall.InvokeAsync(_kernel,
+                            new KernelArguments
+                            {
+                                { "question", testSet.Question },
+                                { "context", JsonSerializer.Serialize(answer.RelevantSources.SelectMany(c => c.Partitions.Select(x => x.Text))) },
+                                { "ground_truth", testSet.GroundTruth }
+                            })
+                        .ConfigureAwait(false);
 
-            return JsonSerializer.Deserialize<GroundTruthClassifications>(extraction.GetValue<string>()!);
-        }).ConfigureAwait(false);
+                    return JsonSerializer.Deserialize<GroundTruthClassifications>(extraction.GetValue<string>()!);
+                })
+            .ConfigureAwait(false);
 
         if (classification is null)
         {
@@ -50,6 +59,6 @@ internal sealed class ContextRecallEvaluator : EvaluationEngine
 
         metadata.Add($"{nameof(ContextRecallEvaluator)}-Evaluation", classification);
 
-        return (float)classification.Evaluations.Count(c => c.Attributed > 0) / (float)classification.Evaluations.Count;
+        return classification.Evaluations.Count(c => c.Attributed > 0) / (float)classification.Evaluations.Count;
     }
 }

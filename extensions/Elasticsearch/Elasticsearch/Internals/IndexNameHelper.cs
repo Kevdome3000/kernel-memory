@@ -1,4 +1,6 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
+
+using System.Text;
 
 namespace Microsoft.KernelMemory.MemoryDb.Elasticsearch.Internals;
 
@@ -41,7 +43,7 @@ internal static class IndexNameHelper
         }
 
         // Check for length (max 255 bytes)
-        if (System.Text.Encoding.UTF8.GetByteCount(indexName) > 255)
+        if (Encoding.UTF8.GetByteCount(indexName) > 255)
         {
             errors.Add("An index name cannot be longer than 255 bytes.");
         }
@@ -61,6 +63,7 @@ internal static class IndexNameHelper
         result = (indexName, Array.Empty<string>());
         return true;
     }
+
 
     /// <summary>
     /// Converts the given index name to a valid Elasticsearch index name.

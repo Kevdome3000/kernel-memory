@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,6 +25,7 @@ public static partial class KernelMemoryBuilderExtensions
         return builder;
     }
 }
+
 
 /// <summary>
 /// .NET IServiceCollection dependency injection extensions.
@@ -53,6 +54,7 @@ public static partial class DependencyInjection
         return syncOrchestrator;
     }
 
+
     /// <summary>
     /// Register default handlers in the service collection used by the app hosting the asynchronous memory service
     /// </summary>
@@ -75,6 +77,7 @@ public static partial class DependencyInjection
         return services;
     }
 
+
     /// <summary>
     /// Register the handler as a hosted service, passing the step name to the handler ctor
     /// </summary>
@@ -82,16 +85,16 @@ public static partial class DependencyInjection
     /// <param name="stepName">Pipeline step name</param>
     /// <typeparam name="THandler">Handler class</typeparam>
     public static IServiceCollection AddHandlerAsHostedService<THandler>(
-        this IServiceCollection services, string stepName) where THandler : class, IPipelineStepHandler
+        this IServiceCollection services,
+        string stepName) where THandler : class, IPipelineStepHandler
     {
-        services.AddTransient<THandler>(
-            serviceProvider => ActivatorUtilities.CreateInstance<THandler>(serviceProvider, stepName));
+        services.AddTransient<THandler>(serviceProvider => ActivatorUtilities.CreateInstance<THandler>(serviceProvider, stepName));
 
-        services.AddHostedService<HandlerAsAHostedService<THandler>>(
-            serviceProvider => ActivatorUtilities.CreateInstance<HandlerAsAHostedService<THandler>>(serviceProvider, stepName));
+        services.AddHostedService<HandlerAsAHostedService<THandler>>(serviceProvider => ActivatorUtilities.CreateInstance<HandlerAsAHostedService<THandler>>(serviceProvider, stepName));
 
         return services;
     }
+
 
     /// <summary>
     /// Register the handler as a hosted service, passing the step name to the handler ctor
@@ -100,7 +103,9 @@ public static partial class DependencyInjection
     /// <param name="tHandler">Handler class</param>
     /// <param name="stepName">Pipeline step name</param>
     public static IServiceCollection AddHandlerAsHostedService(
-        this IServiceCollection services, Type tHandler, string stepName)
+        this IServiceCollection services,
+        Type tHandler,
+        string stepName)
     {
         if (!typeof(IPipelineStepHandler).IsAssignableFrom(tHandler))
         {
@@ -122,6 +127,7 @@ public static partial class DependencyInjection
         return services;
     }
 
+
     /// <summary>
     /// Register the handler as a hosted service, passing the step name to the handler ctor
     /// </summary>
@@ -129,7 +135,9 @@ public static partial class DependencyInjection
     /// <param name="config">Handler type configuration</param>
     /// <param name="stepName">Pipeline step name</param>
     public static IServiceCollection AddHandlerAsHostedService(
-        this IServiceCollection services, HandlerConfig config, string stepName)
+        this IServiceCollection services,
+        HandlerConfig config,
+        string stepName)
     {
         if (HandlerTypeLoader.TryGetHandlerType(config, out var handlerType))
         {
@@ -139,6 +147,7 @@ public static partial class DependencyInjection
         return services;
     }
 
+
     /// <summary>
     /// Register the handler as a hosted service, passing the step name to the handler ctor
     /// </summary>
@@ -147,7 +156,10 @@ public static partial class DependencyInjection
     /// <param name="typeFullName">Handler type, within the assembly</param>
     /// <param name="stepName">Pipeline step name</param>
     public static IServiceCollection AddHandlerAsHostedService(
-        this IServiceCollection services, string assemblyFile, string typeFullName, string stepName)
+        this IServiceCollection services,
+        string assemblyFile,
+        string typeFullName,
+        string stepName)
     {
         services.AddHandlerAsHostedService(new HandlerConfig(assemblyFile, typeFullName), stepName);
 

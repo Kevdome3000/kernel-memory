@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 
@@ -9,8 +9,10 @@ public class SimpleVectorDbException : KernelMemoryException
     /// <inheritdoc />
     public SimpleVectorDbException() { }
 
+
     /// <inheritdoc />
     public SimpleVectorDbException(string message) : base(message) { }
+
 
     /// <inheritdoc />
     public SimpleVectorDbException(string message, Exception? innerException) : base(message, innerException) { }

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections;
@@ -16,13 +16,15 @@ public static class ConfigEnvVars
     /// <param name="parents">Namespace within the appsettings.json file</param>
     /// <returns>Environment variables</returns>
     public static Dictionary<string, string> GenerateEnvVarsFromObject(
-        object? source, params string[] parents)
+        object? source,
+        params string[] parents)
     {
         if (source == null) { return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase); }
 
         var prefix = GetPrefix(parents);
         return GenerateEnvVars(source, prefix);
     }
+
 
     /// <summary>
     /// Generate env vars to override settings in appsettings.json,
@@ -33,7 +35,8 @@ public static class ConfigEnvVars
     /// <param name="parents">Namespace within the appsettings.json file</param>
     /// <returns>Environment variables</returns>
     public static Dictionary<string, string> GenerateEnvVarsFromObjectNoDefaults(
-        object? source, params string[] parents)
+        object? source,
+        params string[] parents)
     {
         if (source == null) { return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase); }
 
@@ -41,6 +44,7 @@ public static class ConfigEnvVars
         var prefix = GetPrefix(parents);
 
         var defaults = GenerateEnvVars(CreateInstanceOfSameType(source), prefix);
+
         foreach (var pair in defaults)
         {
             if (variables.TryGetValue(pair.Key, out string? value) && value == pair.Value)
@@ -52,10 +56,14 @@ public static class ConfigEnvVars
         return variables;
     }
 
+
     private static string GetPrefix(params string[] parents)
     {
-        return parents.Length > 0 ? string.Join("__", parents) + "__" : string.Empty;
+        return parents.Length > 0
+            ? string.Join("__", parents) + "__"
+            : string.Empty;
     }
+
 
     private static Dictionary<string, string> GenerateEnvVars(object source, string prefix)
     {
@@ -81,6 +89,7 @@ public static class ConfigEnvVars
             else if (value is IEnumerable enumerable and not string)
             {
                 int index = 0;
+
                 foreach (var item in enumerable)
                 {
                     var arrayKey = $"{fullKey}__{index}";
@@ -96,6 +105,7 @@ public static class ConfigEnvVars
 
         return result;
     }
+
 
     private static object CreateInstanceOfSameType(object source)
     {

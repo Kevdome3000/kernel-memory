@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net9.0</TargetFramework>
         <RollForward>LatestMajor</RollForward>
         <AssemblyName>Microsoft.KernelMemory.MemoryDb.Redis</AssemblyName>
         <RootNamespace>Microsoft.KernelMemory.MemoryDb.Redis</RootNamespace>
@@ -11,12 +11,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\..\service\Abstractions\Abstractions.csproj" />
+        <ProjectReference Include="..\..\..\service\Abstractions\Abstractions.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="System.Linq.Async" />
-        <PackageReference Include="NRedisStack" /><!-- missing strong name (CS8002) -->
+        <PackageReference Include="System.Linq.Async"/>
+        <PackageReference Include="NRedisStack"/><!-- missing strong name (CS8002) -->
     </ItemGroup>
 
     <PropertyGroup>
@@ -29,7 +29,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <None Include="..\README.md" Link="README.md" Pack="true" PackagePath="." Visible="false" />
+        <None Include="..\README.md" Link="README.md" Pack="true" PackagePath="." Visible="false"/>
     </ItemGroup>
 
 </Project>

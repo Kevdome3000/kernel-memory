@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.KernelMemory.AI;
@@ -21,6 +21,7 @@ public static partial class KernelMemoryBuilderExtensions
         return builder;
     }
 
+
     /// <summary>
     /// Inject a fake embedding generator that will throw an exception if used
     /// </summary>
@@ -31,6 +32,7 @@ public static partial class KernelMemoryBuilderExtensions
         return builder;
     }
 }
+
 
 /// <summary>
 /// .NET IServiceCollection dependency injection extensions.
@@ -45,6 +47,7 @@ public static partial class DependencyInjection
     {
         return services.AddSingleton<ITextEmbeddingGenerator, NoEmbeddingGenerator>();
     }
+
 
     /// <summary>
     /// Inject a fake text generator that will throw an exception if used

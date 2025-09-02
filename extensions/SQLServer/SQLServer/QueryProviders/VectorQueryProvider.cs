@@ -1,6 +1,7 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.Data.SqlClient;
+using Microsoft.KernelMemory.Models;
 
 namespace Microsoft.KernelMemory.MemoryDb.SQLServer.QueryProviders;
 
@@ -8,10 +9,12 @@ internal sealed class VectorQueryProvider : ISqlServerQueryProvider
 {
     private readonly SqlServerConfig _config;
 
+
     public VectorQueryProvider(SqlServerConfig config)
     {
-        this._config = config;
+        _config = config;
     }
+
 
     /// <inheritdoc/>
     public string PrepareCreateIndexQuery(int sqlServerVersion, string index, int vectorSize)
@@ -19,16 +22,16 @@ internal sealed class VectorQueryProvider : ISqlServerQueryProvider
         var sql = $"""
                    BEGIN TRANSACTION;
 
-                       INSERT INTO {this.GetFullTableName(this._config.MemoryCollectionTableName)}([id])
+                       INSERT INTO {GetFullTableName(_config.MemoryCollectionTableName)}([id])
                            VALUES (@index);
 
-                       IF OBJECT_ID(N'{this.GetFullTableName($"{this._config.TagsTableName}_{index}")}', N'U') IS NULL
-                           CREATE TABLE {this.GetFullTableName($"{this._config.TagsTableName}_{index}")}
+                       IF OBJECT_ID(N'{GetFullTableName($"{_config.TagsTableName}_{index}")}', N'U') IS NULL
+                           CREATE TABLE {GetFullTableName($"{_config.TagsTableName}_{index}")}
                            (
                                [memory_id] UNIQUEIDENTIFIER NOT NULL,
                                [name] NVARCHAR(256)  NOT NULL,
                                [value] NVARCHAR(256) NOT NULL,
-                               FOREIGN KEY ([memory_id]) REFERENCES {this.GetFullTableName(this._config.MemoryTableName)}([id])
+                               FOREIGN KEY ([memory_id]) REFERENCES {GetFullTableName(_config.MemoryTableName)}([id])
                            );
 
                    COMMIT;
@@ -37,6 +40,7 @@ internal sealed class VectorQueryProvider : ISqlServerQueryProvider
         return sql;
     }
 
+
     /// <inheritdoc/>
     public string PrepareDeleteRecordQuery(string index)
     {
@@ -44,13 +48,13 @@ internal sealed class VectorQueryProvider : ISqlServerQueryProvider
                    BEGIN TRANSACTION;
 
                        DELETE [tags]
-                           FROM {this.GetFullTableName($"{this._config.TagsTableName}_{index}")} [tags]
-                           INNER JOIN {this.GetFullTableName(this._config.MemoryTableName)} ON [tags].[memory_id] = {this.GetFullTableName(this._config.MemoryTableName)}.[id]
+                           FROM {GetFullTableName($"{_config.TagsTableName}_{index}")} [tags]
+                           INNER JOIN {GetFullTableName(_config.MemoryTableName)} ON [tags].[memory_id] = {GetFullTableName(_config.MemoryTableName)}.[id]
                            WHERE
-                               {this.GetFullTableName(this._config.MemoryTableName)}.[collection] = @index
-                               AND {this.GetFullTableName(this._config.MemoryTableName)}.[key]=@key;
+                               {GetFullTableName(_config.MemoryTableName)}.[collection] = @index
+                               AND {GetFullTableName(_config.MemoryTableName)}.[key]=@key;
 
-                       DELETE FROM {this.GetFullTableName(this._config.MemoryTableName)}
+                       DELETE FROM {GetFullTableName(_config.MemoryTableName)}
                            WHERE [collection] = @index AND [key]=@key;
 
                    COMMIT;
@@ -59,15 +63,16 @@ internal sealed class VectorQueryProvider : ISqlServerQueryProvider
         return sql;
     }
 
+
     /// <inheritdoc/>
     public string PrepareDeleteIndexQuery(string index)
     {
         var sql = $"""
                    BEGIN TRANSACTION;
 
-                       DROP TABLE {this.GetFullTableName($"{this._config.TagsTableName}_{index}")};
+                       DROP TABLE {GetFullTableName($"{_config.TagsTableName}_{index}")};
 
-                       DELETE FROM {this.GetFullTableName(this._config.MemoryCollectionTableName)}
+                       DELETE FROM {GetFullTableName(_config.MemoryCollectionTableName)}
                               WHERE [id] = @index;
 
                    COMMIT;
@@ -76,20 +81,24 @@ internal sealed class VectorQueryProvider : ISqlServerQueryProvider
         return sql;
     }
 
+
     /// <inheritdoc/>
     public string PrepareGetIndexesQuery()
     {
-        var sql = $"SELECT [id] FROM {this.GetFullTableName(this._config.MemoryCollectionTableName)}";
+        var sql = $"SELECT [id] FROM {GetFullTableName(_config.MemoryCollectionTableName)}";
         return sql;
     }
 
+
     /// <inheritdoc/>
-    public string PrepareGetRecordsListQuery(string index,
+    public string PrepareGetRecordsListQuery(
+        string index,
         ICollection<MemoryFilter>? filters,
         bool withEmbeddings,
         SqlParameterCollection parameters)
     {
         var queryColumns = "[key], [payload], [tags]";
+
         if (withEmbeddings) { queryColumns += ", CAST([embedding] AS NVARCHAR(MAX)) AS [embedding]"; }
 
         var sql = $"""
@@ -103,42 +112,40 @@ internal sealed class VectorQueryProvider : ISqlServerQueryProvider
                    SELECT TOP (@limit)
                        {queryColumns}
                    FROM
-                       {this.GetFullTableName(this._config.MemoryTableName)}
+                       {GetFullTableName(_config.MemoryTableName)}
                    WHERE
-                       {this.GetFullTableName(this._config.MemoryTableName)}.[collection] = @index
-                       {this.GenerateFilters(index, parameters, filters)};
+                       {GetFullTableName(_config.MemoryTableName)}.[collection] = @index
+                       {GenerateFilters(index, parameters, filters)};
                    """;
 
         return sql;
     }
 
+
     /// <inheritdoc/>
-    public string PrepareGetSimilarRecordsListQuery(string index,
+    public string PrepareGetSimilarRecordsListQuery(
+        string index,
         ICollection<MemoryFilter>? filters,
         bool withEmbedding,
         SqlParameterCollection parameters)
     {
-        var queryColumns = $"{this.GetFullTableName(this._config.MemoryTableName)}.[id]," +
-                           $"{this.GetFullTableName(this._config.MemoryTableName)}.[key]," +
-                           $"{this.GetFullTableName(this._config.MemoryTableName)}.[payload]," +
-                           $"{this.GetFullTableName(this._config.MemoryTableName)}.[tags]";
+        var queryColumns = $"{GetFullTableName(_config.MemoryTableName)}.[id]," + $"{GetFullTableName(_config.MemoryTableName)}.[key]," + $"{GetFullTableName(_config.MemoryTableName)}.[payload]," + $"{GetFullTableName(_config.MemoryTableName)}.[tags]";
 
         if (withEmbedding)
         {
-            queryColumns += $"," +
-                            $"CAST({this.GetFullTableName(this._config.MemoryTableName)}.[embedding] AS NVARCHAR(MAX)) AS [embedding]";
+            queryColumns += $"," + $"CAST({GetFullTableName(_config.MemoryTableName)}.[embedding] AS NVARCHAR(MAX)) AS [embedding]";
         }
 
-        var generatedFilters = this.GenerateFilters(index, parameters, filters);
+        var generatedFilters = GenerateFilters(index, parameters, filters);
 
         var sql = $"""
                    SELECT TOP (@limit)
                        {queryColumns},
-                       VECTOR_DISTANCE('cosine', CAST(@vector AS VECTOR({this._config.VectorSize})), Embedding) AS [distance]
+                       VECTOR_DISTANCE('cosine', CAST(@vector AS VECTOR({_config.VectorSize})), Embedding) AS [distance]
                    FROM
-                       {this.GetFullTableName(this._config.MemoryTableName)}
+                       {GetFullTableName(_config.MemoryTableName)}
                    WHERE
-                       VECTOR_DISTANCE('cosine', CAST(@vector AS VECTOR({this._config.VectorSize})), Embedding) <= @max_distance
+                       VECTOR_DISTANCE('cosine', CAST(@vector AS VECTOR({_config.VectorSize})), Embedding) <= @max_distance
                        {generatedFilters}
                    ORDER BY [distance] ASC
                    """;
@@ -146,38 +153,39 @@ internal sealed class VectorQueryProvider : ISqlServerQueryProvider
         return sql;
     }
 
+
     /// <inheritdoc/>
     public string PrepareUpsertRecordsBatchQuery(string index)
     {
         var sql = $"""
                    BEGIN TRANSACTION;
 
-                       MERGE INTO {this.GetFullTableName(this._config.MemoryTableName)}
+                       MERGE INTO {GetFullTableName(_config.MemoryTableName)}
                            USING (SELECT @key) as [src]([key])
-                           ON {this.GetFullTableName(this._config.MemoryTableName)}.[key] = [src].[key]
+                           ON {GetFullTableName(_config.MemoryTableName)}.[key] = [src].[key]
                            WHEN MATCHED THEN
-                               UPDATE SET payload=@payload, embedding=CAST(@embedding AS VECTOR({this._config.VectorSize})), tags=@tags
+                               UPDATE SET payload=@payload, embedding=CAST(@embedding AS VECTOR({_config.VectorSize})), tags=@tags
                            WHEN NOT MATCHED THEN
                                INSERT ([key], [collection], [payload], [tags], [embedding])
-                               VALUES (@key, @index, @payload, @tags, CAST(@embedding AS VECTOR({this._config.VectorSize})));
+                               VALUES (@key, @index, @payload, @tags, CAST(@embedding AS VECTOR({_config.VectorSize})));
 
                        DELETE FROM [tgt]
-                           FROM  {this.GetFullTableName($"{this._config.TagsTableName}_{index}")} AS [tgt]
-                           INNER JOIN {this.GetFullTableName(this._config.MemoryTableName)} ON [tgt].[memory_id] = {this.GetFullTableName(this._config.MemoryTableName)}.[id]
-                           WHERE {this.GetFullTableName(this._config.MemoryTableName)}.[key] = @key
-                                 AND {this.GetFullTableName(this._config.MemoryTableName)}.[collection] = @index;
+                           FROM  {GetFullTableName($"{_config.TagsTableName}_{index}")} AS [tgt]
+                           INNER JOIN {GetFullTableName(_config.MemoryTableName)} ON [tgt].[memory_id] = {GetFullTableName(_config.MemoryTableName)}.[id]
+                           WHERE {GetFullTableName(_config.MemoryTableName)}.[key] = @key
+                                 AND {GetFullTableName(_config.MemoryTableName)}.[collection] = @index;
 
-                       MERGE {this.GetFullTableName($"{this._config.TagsTableName}_{index}")} AS [tgt]
+                       MERGE {GetFullTableName($"{_config.TagsTableName}_{index}")} AS [tgt]
                            USING (
                                SELECT
-                                   {this.GetFullTableName(this._config.MemoryTableName)}.[id],
+                                   {GetFullTableName(_config.MemoryTableName)}.[id],
                                    cast([tags].[key] AS NVARCHAR(MAX)) COLLATE SQL_Latin1_General_CP1_CI_AS AS [tag_name],
                                    [tag_value].[value] AS [value]
-                               FROM {this.GetFullTableName(this._config.MemoryTableName)}
+                               FROM {GetFullTableName(_config.MemoryTableName)}
                                CROSS APPLY openjson(@tags) [tags]
                                CROSS APPLY openjson(cast([tags].[value] AS NVARCHAR(MAX)) COLLATE SQL_Latin1_General_CP1_CI_AS) [tag_value]
-                               WHERE {this.GetFullTableName(this._config.MemoryTableName)}.[key] = @key
-                                   AND {this.GetFullTableName(this._config.MemoryTableName)}.[collection] = @index
+                               WHERE {GetFullTableName(_config.MemoryTableName)}.[key] = @key
+                                   AND {GetFullTableName(_config.MemoryTableName)}.[collection] = @index
                            ) AS [src]
                            ON [tgt].[memory_id] = [src].[id] AND [tgt].[name] = [src].[tag_name]
                            WHEN MATCHED THEN
@@ -194,48 +202,54 @@ internal sealed class VectorQueryProvider : ISqlServerQueryProvider
         return sql;
     }
 
+
     /// <inheritdoc/>
     public string PrepareCreateAllSupportingTablesQuery()
     {
         var sql = $"""
                    IF NOT EXISTS (SELECT  *
                                    FROM   sys.schemas
-                                   WHERE  name = N'{this._config.Schema}' )
-                   EXEC('CREATE SCHEMA [{this._config.Schema}]');
+                                   WHERE  name = N'{_config.Schema}' )
+                   EXEC('CREATE SCHEMA [{_config.Schema}]');
 
-                   IF OBJECT_ID(N'{this.GetFullTableName(this._config.MemoryCollectionTableName)}', N'U') IS NULL
-                       CREATE TABLE {this.GetFullTableName(this._config.MemoryCollectionTableName)}
+                   IF OBJECT_ID(N'{GetFullTableName(_config.MemoryCollectionTableName)}', N'U') IS NULL
+                       CREATE TABLE {GetFullTableName(_config.MemoryCollectionTableName)}
                        (   [id] NVARCHAR(256) NOT NULL,
                            PRIMARY KEY ([id])
                        );
 
-                   IF OBJECT_ID(N'{this.GetFullTableName(this._config.MemoryTableName)}', N'U') IS NULL
-                       CREATE TABLE {this.GetFullTableName(this._config.MemoryTableName)}
+                   IF OBJECT_ID(N'{GetFullTableName(_config.MemoryTableName)}', N'U') IS NULL
+                       CREATE TABLE {GetFullTableName(_config.MemoryTableName)}
                        (   [id] UNIQUEIDENTIFIER NOT NULL DEFAULT NEWSEQUENTIALID(),
                            [key] NVARCHAR(256)  NOT NULL,
                            [collection] NVARCHAR(256) NOT NULL,
                            [payload] NVARCHAR(MAX),
                            [tags] NVARCHAR(MAX),
-                           [embedding] VECTOR({this._config.VectorSize}),
+                           [embedding] VECTOR({_config.VectorSize}),
                            PRIMARY KEY ([id]),
-                           FOREIGN KEY ([collection]) REFERENCES {this.GetFullTableName(this._config.MemoryCollectionTableName)}([id]) ON DELETE CASCADE,
-                           CONSTRAINT UK_{this._config.MemoryTableName} UNIQUE([collection], [key])
+                           FOREIGN KEY ([collection]) REFERENCES {GetFullTableName(_config.MemoryCollectionTableName)}([id]) ON DELETE CASCADE,
+                           CONSTRAINT UK_{_config.MemoryTableName} UNIQUE([collection], [key])
                        );
                    """;
 
         return sql;
     }
 
+
     private string GetFullTableName(string tableName)
     {
-        return Utils.GetFullTableName(this._config, tableName);
+        return Utils.GetFullTableName(_config, tableName);
     }
+
 
     private string GenerateFilters(
         string index,
         SqlParameterCollection parameters,
         ICollection<MemoryFilter>? filters)
     {
-        return Utils.GenerateFilters(this._config, index, parameters, filters);
+        return Utils.GenerateFilters(_config,
+            index,
+            parameters,
+            filters);
     }
 }

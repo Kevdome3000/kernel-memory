@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.KernelMemory.InteractiveSetup.UI;
 
@@ -9,7 +9,7 @@ internal sealed class Context
     public readonly BoundedBoolean CfgWebService = new();
 
     // Storage
-    public readonly BoundedBoolean CfgDocumentStorage = new(initialState: true);
+    public readonly BoundedBoolean CfgDocumentStorage = new(true);
     public readonly BoundedBoolean CfgAzureBlobs = new();
     public readonly BoundedBoolean CfgAWSS3 = new();
     public readonly BoundedBoolean CfgMongoDbAtlasDocumentStorage = new();
@@ -34,7 +34,7 @@ internal sealed class Context
     public readonly BoundedBoolean CfgAzureAIDocIntel = new();
 
     // Vectors
-    public readonly BoundedBoolean CfgEmbeddingGenerationEnabled = new(initialState: true);
+    public readonly BoundedBoolean CfgEmbeddingGenerationEnabled = new(true);
     public readonly BoundedBoolean CfgAzureAISearch = new();
     public readonly BoundedBoolean CfgMongoDbAtlasMemory = new();
     public readonly BoundedBoolean CfgPostgres = new();

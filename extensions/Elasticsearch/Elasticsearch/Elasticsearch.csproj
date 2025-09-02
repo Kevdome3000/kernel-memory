@@ -1,27 +1,27 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net9.0</TargetFramework>
         <RollForward>LatestMajor</RollForward>
         <AssemblyName>Microsoft.KernelMemory.MemoryDb.Elasticsearch</AssemblyName>
         <RootNamespace>Microsoft.KernelMemory.MemoryDb.Elasticsearch</RootNamespace>
         <NoWarn>$(NoWarn);CS1700;KMEXP00;KMEXP03;CA1308;CA1724;CA1812;</NoWarn>
         <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>        
+        <Nullable>enable</Nullable>
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\..\service\Abstractions\Abstractions.csproj" />
+        <ProjectReference Include="..\..\..\service\Abstractions\Abstractions.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Elastic.Clients.Elasticsearch" />
+        <PackageReference Include="Elastic.Clients.Elasticsearch"/>
     </ItemGroup>
 
     <ItemGroup>
-        <InternalsVisibleTo Include="Microsoft.Elasticsearch.FunctionalTests" />
+        <InternalsVisibleTo Include="Microsoft.Elasticsearch.FunctionalTests"/>
     </ItemGroup>
-    
+
     <PropertyGroup>
         <IsPackable>true</IsPackable>
         <PackageId>Microsoft.KernelMemory.MemoryDb.Elasticsearch</PackageId>
@@ -32,7 +32,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <None Include="..\README.md" Link="README.md" Pack="true" PackagePath="." Visible="false" />
+        <None Include="..\README.md" Link="README.md" Pack="true" PackagePath="." Visible="false"/>
     </ItemGroup>
 
 </Project>

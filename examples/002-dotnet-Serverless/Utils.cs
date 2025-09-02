@@ -1,18 +1,20 @@
-// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft.All rights reserved.
 
 using System.Net.Http.Headers;
 
-namespace Microsoft.KernelMemory.Utils;
+namespace _002_dotnet_Serverless;
 
 #pragma warning disable CA1303
 #pragma warning disable CA1812
+
 
 // TMP workaround for Azure SDK bug
 // See https://github.com/Azure/azure-sdk-for-net/issues/46109
 internal sealed class AuthFixHandler : DelegatingHandler
 {
     protected override Task<HttpResponseMessage> SendAsync(
-        HttpRequestMessage request, CancellationToken cancellationToken)
+        HttpRequestMessage request,
+        CancellationToken cancellationToken)
     {
         if (request.Headers.TryGetValues("Authorization", out var headers) && headers.Count() > 1)
         {
@@ -25,20 +27,24 @@ internal sealed class AuthFixHandler : DelegatingHandler
     }
 }
 
+
 internal sealed class HttpLogger : DelegatingHandler
 {
-    protected async override Task<HttpResponseMessage> SendAsync(
-        HttpRequestMessage request, CancellationToken cancellationToken)
+    protected override async Task<HttpResponseMessage> SendAsync(
+        HttpRequestMessage request,
+        CancellationToken cancellationToken)
     {
         // Log the request
         Console.WriteLine("## Request:");
         Console.WriteLine(request.ToString());
+
         if (request.Content != null)
         {
             Console.WriteLine(await request.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false));
         }
 
         Console.WriteLine("Headers");
+
         foreach (var h in request.Headers)
         {
             foreach (string x in h.Value)
@@ -55,6 +61,7 @@ internal sealed class HttpLogger : DelegatingHandler
         // Log the response
         Console.WriteLine("\n\n## Response:");
         Console.WriteLine(response.ToString());
+
         if (response.Content != null)
         {
             Console.WriteLine(await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false));

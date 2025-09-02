@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.KernelMemory.DataFormats;
@@ -23,12 +23,15 @@ public static partial class KernelMemoryBuilderExtensions
         return builder;
     }
 
+
     public static IKernelMemoryBuilder WithContentDecoder(
-        this IKernelMemoryBuilder builder, IContentDecoder decoder)
+        this IKernelMemoryBuilder builder,
+        IContentDecoder decoder)
     {
         builder.Services.AddContentDecoder(decoder);
         return builder;
     }
+
 
     public static IKernelMemoryBuilder WithDefaultContentDecoders(
         this IKernelMemoryBuilder builder)
@@ -37,6 +40,7 @@ public static partial class KernelMemoryBuilderExtensions
         return builder;
     }
 
+
     public static IKernelMemoryBuilder WithDefaultWebScraper(
         this IKernelMemoryBuilder builder)
     {
@@ -44,12 +48,15 @@ public static partial class KernelMemoryBuilderExtensions
         return builder;
     }
 
+
     public static IKernelMemoryBuilder WithCustomWebScraper(
-        this IKernelMemoryBuilder builder, IWebScraper webScraper)
+        this IKernelMemoryBuilder builder,
+        IWebScraper webScraper)
     {
         builder.Services.AddCustomWebScraper(webScraper);
         return builder;
     }
+
 
     public static IKernelMemoryBuilder WithCustomWebScraper<T>(
         this IKernelMemoryBuilder builder) where T : class, IWebScraper
@@ -58,6 +65,7 @@ public static partial class KernelMemoryBuilderExtensions
         return builder;
     }
 }
+
 
 /// <summary>
 /// .NET IServiceCollection dependency injection extensions.
@@ -71,12 +79,15 @@ public static partial class DependencyInjection
         return services;
     }
 
+
     public static IServiceCollection AddContentDecoder(
-        this IServiceCollection services, IContentDecoder decoder)
+        this IServiceCollection services,
+        IContentDecoder decoder)
     {
         services.AddSingleton<IContentDecoder>(decoder);
         return services;
     }
+
 
     public static IServiceCollection AddDefaultContentDecoders(
         this IServiceCollection services)
@@ -93,6 +104,7 @@ public static partial class DependencyInjection
         return services;
     }
 
+
     public static IServiceCollection AddDefaultWebScraper(
         this IServiceCollection services)
     {
@@ -105,12 +117,15 @@ public static partial class DependencyInjection
         return services;
     }
 
+
     public static IServiceCollection AddCustomWebScraper(
-        this IServiceCollection services, IWebScraper webScraper)
+        this IServiceCollection services,
+        IWebScraper webScraper)
     {
         services.AddSingleton<IWebScraper>(webScraper);
         return services;
     }
+
 
     public static IServiceCollection AddCustomWebScraper<T>(
         this IServiceCollection services) where T : class, IWebScraper

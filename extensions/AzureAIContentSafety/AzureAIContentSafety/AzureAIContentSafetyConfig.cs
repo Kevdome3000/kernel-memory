@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -10,6 +10,7 @@ namespace Microsoft.KernelMemory.Safety.AzureAIContentSafety;
 public class AzureAIContentSafetyConfig
 {
     private TokenCredential? _tokenCredential;
+
 
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum AuthTypes
@@ -23,8 +24,9 @@ public class AzureAIContentSafetyConfig
         AzureIdentity,
 
         APIKey,
-        ManualTokenCredential,
+        ManualTokenCredential
     }
+
 
     public AuthTypes Auth { get; set; } = AuthTypes.Unknown;
     public string Endpoint { get; set; } = string.Empty;
@@ -32,38 +34,41 @@ public class AzureAIContentSafetyConfig
     public double GlobalSafetyThreshold { get; set; } = 0.0;
     public List<string> IgnoredWords { get; set; } = [];
 
+
     public void SetCredential(TokenCredential credential)
     {
-        this.Auth = AuthTypes.ManualTokenCredential;
-        this._tokenCredential = credential;
+        Auth = AuthTypes.ManualTokenCredential;
+        _tokenCredential = credential;
     }
+
 
     public TokenCredential GetTokenCredential()
     {
-        return this._tokenCredential
-               ?? throw new ConfigurationException($"Azure AI Search: {nameof(this._tokenCredential)} not defined");
+        return _tokenCredential
+            ?? throw new ConfigurationException($"Azure AI Search: {nameof(_tokenCredential)} not defined");
     }
+
 
     public void Validate()
     {
-        if (this.Auth == AuthTypes.Unknown)
+        if (Auth == AuthTypes.Unknown)
         {
-            throw new ConfigurationException($"Azure AI Content Safety: {nameof(this.Auth)} (authentication type) is not defined");
+            throw new ConfigurationException($"Azure AI Content Safety: {nameof(Auth)} (authentication type) is not defined");
         }
 
-        if (this.Auth == AuthTypes.APIKey && string.IsNullOrWhiteSpace(this.APIKey))
+        if (Auth == AuthTypes.APIKey && string.IsNullOrWhiteSpace(APIKey))
         {
-            throw new ConfigurationException($"Azure AI Content Safety: {nameof(this.APIKey)} is empty");
+            throw new ConfigurationException($"Azure AI Content Safety: {nameof(APIKey)} is empty");
         }
 
-        if (string.IsNullOrWhiteSpace(this.Endpoint))
+        if (string.IsNullOrWhiteSpace(Endpoint))
         {
-            throw new ConfigurationException($"Azure AI Content Safety: {nameof(this.Endpoint)} is empty");
+            throw new ConfigurationException($"Azure AI Content Safety: {nameof(Endpoint)} is empty");
         }
 
-        if (!this.Endpoint.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        if (!Endpoint.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
         {
-            throw new ConfigurationException($"Azure AI Content Safety: {nameof(this.Endpoint)} must start with https://");
+            throw new ConfigurationException($"Azure AI Content Safety: {nameof(Endpoint)} must start with https://");
         }
     }
 }

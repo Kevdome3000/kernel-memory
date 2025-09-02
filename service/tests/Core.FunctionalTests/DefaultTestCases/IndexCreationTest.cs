@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.KernelMemory;
 
@@ -13,14 +13,16 @@ public static class IndexCreationTest
 
         // Act - No exception should occur if the pipeline tries to create an index that already exists
         string id1 = await memory.ImportTextAsync("text1", index: indexName, steps: Constants.PipelineWithoutSummary);
-        while (!await memory.IsDocumentReadyAsync(documentId: id1, index: indexName))
+
+        while (!await memory.IsDocumentReadyAsync(id1, indexName))
         {
             log($"[id1: {id1}] Waiting for memory ingestion to complete...");
             await Task.Delay(TimeSpan.FromSeconds(2));
         }
 
         string id2 = await memory.ImportTextAsync("text2", index: indexName, steps: Constants.PipelineWithoutSummary);
-        while (!await memory.IsDocumentReadyAsync(documentId: id2, index: indexName))
+
+        while (!await memory.IsDocumentReadyAsync(id2, indexName))
         {
             log($"[id2: {id2}] Waiting for memory ingestion to complete...");
             await Task.Delay(TimeSpan.FromSeconds(2));

@@ -1,11 +1,11 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Text.Json.Serialization;
 
-namespace Microsoft.KernelMemory.MemoryDb.Qdrant.Client.Http;
+namespace Microsoft.KernelMemory.MemoryDb.Qdrant.Internals.Http;
 
 internal sealed class DeleteVectorsRequest
 {
@@ -14,42 +14,48 @@ internal sealed class DeleteVectorsRequest
     [JsonPropertyName("points")]
     public List<Guid> Ids { get; set; }
 
+
     public static DeleteVectorsRequest DeleteFrom(string collectionName)
     {
         return new DeleteVectorsRequest(collectionName);
     }
 
+
     public DeleteVectorsRequest DeleteVector(Guid qdrantPointId)
     {
         ArgumentNullExceptionEx.ThrowIfNull(qdrantPointId, nameof(qdrantPointId), "The point ID is NULL");
-        this.Ids.Add(qdrantPointId);
+        Ids.Add(qdrantPointId);
         return this;
     }
+
 
     public DeleteVectorsRequest DeleteRange(IEnumerable<Guid> qdrantPointIds)
     {
         ArgumentNullExceptionEx.ThrowIfNull(qdrantPointIds, nameof(qdrantPointIds), "The collection of points' ID  is NULL");
-        this.Ids.AddRange(qdrantPointIds);
+        Ids.AddRange(qdrantPointIds);
         return this;
     }
 
+
     public HttpRequestMessage Build()
     {
-        this.Validate();
+        Validate();
         return HttpRequest.CreatePostRequest(
-            $"collections/{this._collectionName}/points/delete",
-            payload: this);
+            $"collections/{_collectionName}/points/delete",
+            this);
     }
+
 
     private DeleteVectorsRequest(string collectionName)
     {
-        this.Ids = [];
-        this._collectionName = collectionName;
+        Ids = [];
+        _collectionName = collectionName;
     }
+
 
     private void Validate()
     {
-        ArgumentNullExceptionEx.ThrowIfNullOrWhiteSpace(this._collectionName, nameof(this._collectionName), "The collection name is empty");
-        ArgumentNullExceptionEx.ThrowIfEmpty(this.Ids, nameof(this.Ids), "The list of vectors to delete is NULL or empty");
+        ArgumentNullExceptionEx.ThrowIfNullOrWhiteSpace(_collectionName, nameof(_collectionName), "The collection name is empty");
+        ArgumentNullExceptionEx.ThrowIfEmpty(Ids, nameof(Ids), "The list of vectors to delete is NULL or empty");
     }
 }

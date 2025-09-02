@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.KernelMemory.AI;
 
@@ -11,14 +11,17 @@ internal sealed class FourCharsTestTokenizer : ITextTokenizer
         return (int)Math.Ceiling(text.Length / 4d);
     }
 
+
     public IReadOnlyList<string> GetTokens(string text)
     {
         var tokens = new List<string>((text.Length + 3) / 4);
 
         Span<char> buffer = stackalloc char[4];
+
         for (int i = 0; i < text.Length; i += 4)
         {
             int tokenLength = Math.Min(4, text.Length - i);
+
             for (int j = 0; j < tokenLength; j++)
             {
                 buffer[j] = text[i + j];

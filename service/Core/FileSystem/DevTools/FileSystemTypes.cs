@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 namespace Microsoft.KernelMemory.FileSystem.DevTools;
 
@@ -15,5 +15,5 @@ public enum FileSystemTypes
     /// <summary>
     /// Save data to memory.
     /// </summary>
-    Volatile,
+    Volatile
 }

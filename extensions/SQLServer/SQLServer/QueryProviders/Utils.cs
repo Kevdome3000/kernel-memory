@@ -1,8 +1,9 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Globalization;
 using System.Text;
 using Microsoft.Data.SqlClient;
+using Microsoft.KernelMemory.Models;
 
 namespace Microsoft.KernelMemory.MemoryDb.SQLServer.QueryProviders;
 
@@ -17,6 +18,7 @@ internal static class Utils
     {
         return $"[{config.Schema}].[{tableName}]";
     }
+
 
     /// <summary>
     /// Generates the filters as SQL commands and sets the SQL parameters
@@ -60,7 +62,8 @@ internal static class Utils
 
                 filterBuilder.Append(" ( ");
 
-                filterBuilder.Append(CultureInfo.CurrentCulture, $@"EXISTS (
+                filterBuilder.Append(CultureInfo.CurrentCulture,
+                    $@"EXISTS (
                          SELECT
 	                        1
                         FROM {GetFullTableName(config, $"{config.TagsTableName}_{index}")} AS [tags]

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.ClientModel.Primitives;
 using System.Collections.Generic;
@@ -18,11 +18,13 @@ internal sealed class SingleAuthorizationHeaderPolicy : PipelinePolicy
         ProcessNext(message, pipeline, currentIndex);
     }
 
+
     public override async ValueTask ProcessAsync(PipelineMessage message, IReadOnlyList<PipelinePolicy> pipeline, int currentIndex)
     {
         RemoveDuplicateHeader(message.Request.Headers);
         await ProcessNextAsync(message, pipeline, currentIndex).ConfigureAwait(false);
     }
+
 
     private static void RemoveDuplicateHeader(PipelineRequestHeaders headers)
     {

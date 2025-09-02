@@ -1,7 +1,8 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
-
+﻿// Copyright (c) Microsoft.All rights reserved.
 using Microsoft.KernelMemory;
 using Microsoft.KernelMemory.Prompts;
+
+namespace _101_dotnet_custom_Prompts;
 
 public static class Program
 {
@@ -14,8 +15,8 @@ public static class Program
 
         new ConfigurationBuilder()
             .AddJsonFile("appsettings.json")
-            .AddJsonFile("appsettings.development.json", optional: true)
-            .AddJsonFile("appsettings.Development.json", optional: true)
+            .AddJsonFile("appsettings.development.json", true)
+            .AddJsonFile("appsettings.Development.json", true)
             .Build()
             .BindSection("KernelMemory:Services:OpenAI", openAIConfig)
             .BindSection("KernelMemory:Services:AzureOpenAIText", azureOpenAITextConfig)
@@ -54,6 +55,7 @@ public static class Program
     }
 }
 
+
 public class MyPromptProvider : IPromptProvider
 {
     private const string VerificationPrompt = """
@@ -66,10 +68,11 @@ public class MyPromptProvider : IPromptProvider
                                               If you have sufficient information to deny, reply only with 'FALSE', nothing else.
                                               If you don't have sufficient information, reply with 'NEED MORE INFO'.
                                               User: {{$input}}
-                                              Verification: 
+                                              Verification:
                                               """;
 
     private readonly EmbeddedPromptProvider _fallbackProvider = new();
+
 
     public string ReadPrompt(string promptName)
     {
@@ -80,7 +83,7 @@ public class MyPromptProvider : IPromptProvider
 
             default:
                 // Fall back to the default
-                return this._fallbackProvider.ReadPrompt(promptName);
+                return _fallbackProvider.ReadPrompt(promptName);
         }
     }
 }

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft.All rights reserved.
 
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,12 +21,14 @@ public static partial class KernelMemoryBuilderExtensions
         return builder;
     }
 
+
     public static IKernelMemoryBuilder WithAzureAIContentSafetyModeration(this IKernelMemoryBuilder builder, string endpoint, string apiKey)
     {
         builder.Services.AddAzureAIContentSafetyModeration(endpoint, apiKey);
         return builder;
     }
 }
+
 
 /// <summary>
 /// .NET IServiceCollection dependency injection extensions.
@@ -41,6 +43,7 @@ public static partial class DependencyInjection
             .AddSingleton<AzureAIContentSafetyConfig>(config)
             .AddSingleton<IContentModeration, AzureAIContentSafetyModeration>();
     }
+
 
     public static IServiceCollection AddAzureAIContentSafetyModeration(this IServiceCollection services, string endpoint, string apiKey)
     {

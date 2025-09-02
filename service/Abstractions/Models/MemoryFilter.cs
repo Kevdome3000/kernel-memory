@@ -1,33 +1,37 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Collections.Generic;
 
-namespace Microsoft.KernelMemory;
+namespace Microsoft.KernelMemory.Models;
 
 public class MemoryFilter : TagCollection
 {
     public bool IsEmpty()
     {
-        return this.Count == 0;
+        return Count == 0;
     }
+
 
     public MemoryFilter ByTag(string name, string value)
     {
-        this.Add(name, value);
+        Add(name, value);
         return this;
     }
+
 
     public MemoryFilter ByDocument(string docId)
     {
-        this.Add(Constants.ReservedDocumentIdTag, docId);
+        Add(Constants.ReservedDocumentIdTag, docId);
         return this;
     }
 
+
     public IEnumerable<KeyValuePair<string, string?>> GetFilters()
     {
-        return this.ToKeyValueList();
+        return ToKeyValueList();
     }
 }
+
 
 /// <summary>
 /// Factory for <see cref="MemoryFilter"/>, to allow for a simpler syntax
@@ -40,6 +44,7 @@ public static class MemoryFilters
     {
         return new MemoryFilter().ByTag(name, value);
     }
+
 
     public static MemoryFilter ByDocument(string docId)
     {

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -16,7 +16,8 @@ public interface ITextTokenizer
     /// </summary>
     /// <param name="text">Text to analyze</param>
     /// <returns>Number of tokens</returns>
-    public int CountTokens(string text);
+    int CountTokens(string text);
+
 
     /// <summary>
     /// Return tokens

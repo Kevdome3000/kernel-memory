@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.Extensions.Configuration;
 
@@ -32,17 +32,19 @@ public class ElasticsearchConfigBuilder
 
     private ElasticsearchConfig _config;
 
+
     /// <summary>
     /// The default constructor.
     /// </summary>
     public ElasticsearchConfigBuilder()
     {
-        this._config = new ElasticsearchConfig();
-        this.WithEndpoint(DefaultEndpoint)
+        _config = new ElasticsearchConfig();
+        WithEndpoint(DefaultEndpoint)
             .WithIndexPrefix(DefaultIndexPrefix)
             .WithCertificateFingerPrint(string.Empty)
             .WithUserNameAndPassword(DefaultUserName, string.Empty);
     }
+
 
     /// <summary>
     /// Sets Elasticsearch endpoint to connect to.
@@ -52,9 +54,10 @@ public class ElasticsearchConfigBuilder
     public ElasticsearchConfigBuilder WithEndpoint(string endpoint)
     {
         // TODO: validate URL
-        this._config.Endpoint = endpoint;
+        _config.Endpoint = endpoint;
         return this;
     }
+
 
     /// <summary>
     /// Sets the username and password used to connect to Elasticsearch.
@@ -64,10 +67,11 @@ public class ElasticsearchConfigBuilder
     /// <returns></returns>
     public ElasticsearchConfigBuilder WithUserNameAndPassword(string userName, string password)
     {
-        this._config.UserName = userName;
-        this._config.Password = password;
+        _config.UserName = userName;
+        _config.Password = password;
         return this;
     }
+
 
     /// <summary>
     /// Sets the certificate fingerprint used to communicate with Elasticsearch.
@@ -77,9 +81,10 @@ public class ElasticsearchConfigBuilder
     /// <returns></returns>
     public ElasticsearchConfigBuilder WithCertificateFingerPrint(string certificateFingerPrint)
     {
-        this._config.CertificateFingerPrint = certificateFingerPrint;
+        _config.CertificateFingerPrint = certificateFingerPrint;
         return this;
     }
+
 
     /// <summary>
     /// Sets the prefix to be prepend to the index names in Elasticsearch.
@@ -88,9 +93,10 @@ public class ElasticsearchConfigBuilder
     /// <returns></returns>
     public ElasticsearchConfigBuilder WithIndexPrefix(string indexPrefix)
     {
-        this._config.IndexPrefix = indexPrefix;
+        _config.IndexPrefix = indexPrefix;
         return this;
     }
+
 
     /// <summary>
     /// Validates the Elasticsearch configuration.
@@ -101,28 +107,29 @@ public class ElasticsearchConfigBuilder
         // TODO: improve this at some point
         const string Prefix = "Invalid Elasticsearch configuration: missing ";
 
-        if (string.IsNullOrWhiteSpace(this._config.Endpoint))
+        if (string.IsNullOrWhiteSpace(_config.Endpoint))
         {
             throw new ConfigurationException(Prefix + $"{nameof(ElasticsearchConfig.Endpoint)}.");
         }
 
-        if (string.IsNullOrWhiteSpace(this._config.UserName))
+        if (string.IsNullOrWhiteSpace(_config.UserName))
         {
             throw new ConfigurationException(Prefix + $"{nameof(ElasticsearchConfig.UserName)}.");
         }
 
-        if (string.IsNullOrWhiteSpace(this._config.Password))
+        if (string.IsNullOrWhiteSpace(_config.Password))
         {
             throw new ConfigurationException(Prefix + $"{nameof(ElasticsearchConfig.Password)}.");
         }
 
-        if (string.IsNullOrWhiteSpace(this._config.CertificateFingerPrint))
+        if (string.IsNullOrWhiteSpace(_config.CertificateFingerPrint))
         {
             throw new ConfigurationException(Prefix + $"{nameof(ElasticsearchConfig.CertificateFingerPrint)}");
         }
 
         return this;
     }
+
 
     /// <summary>
     /// Reads the Elasticsearch configuration from the Services section of KernelMemory's configuration.
@@ -134,18 +141,20 @@ public class ElasticsearchConfigBuilder
         const string SectionPath = "KernelMemory:Services:Elasticsearch";
 
         var kmSvcEsSection = configuration.GetSection(SectionPath);
+
         if (!kmSvcEsSection.Exists())
         {
             throw new ConfigurationException($"Missing configuration section {SectionPath}.");
         }
 
-        this._config = new ElasticsearchConfig();
-        kmSvcEsSection.Bind(this._config);
+        _config = new ElasticsearchConfig();
+        kmSvcEsSection.Bind(_config);
 
-        configuration.Bind(SectionPath, this._config);
+        configuration.Bind(SectionPath, _config);
 
         return this;
     }
+
 
     /// <summary>
     /// Sets the number of shards and replicas to use for the Elasticsearch index.
@@ -155,10 +164,11 @@ public class ElasticsearchConfigBuilder
     /// <returns></returns>
     public ElasticsearchConfigBuilder WithShardsAndReplicas(int shards, int replicas)
     {
-        this._config.ShardCount = shards;
-        this._config.ReplicaCount = replicas;
+        _config.ShardCount = shards;
+        _config.ReplicaCount = replicas;
         return this;
     }
+
 
     /// <summary>
     /// Builds the ElasticsearchConfig.
@@ -169,9 +179,9 @@ public class ElasticsearchConfigBuilder
     {
         if (!skipValidation)
         {
-            this.Validate();
+            Validate();
         }
 
-        return this._config;
+        return _config;
     }
 }

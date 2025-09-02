@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -10,6 +10,7 @@ using Microsoft.KernelMemory.AI;
 using Microsoft.KernelMemory.Chunkers;
 using Microsoft.KernelMemory.Diagnostics;
 using Microsoft.KernelMemory.Extensions;
+using Microsoft.KernelMemory.Models;
 using Microsoft.KernelMemory.Pipeline;
 using Microsoft.KernelMemory.Prompts;
 using Microsoft.KernelMemory.Text;
@@ -28,6 +29,7 @@ public sealed class SummarizationParallelHandler : IPipelineStepHandler
     /// <inheritdoc />
     public string StepName { get; }
 
+
     /// <summary>
     /// Handler responsible for generating a summary of each file in a document.
     /// The summary serves as an additional partition, aka it's part of the synthetic
@@ -43,90 +45,101 @@ public sealed class SummarizationParallelHandler : IPipelineStepHandler
         IPromptProvider? promptProvider = null,
         ILoggerFactory? loggerFactory = null)
     {
-        this.StepName = stepName;
-        this._orchestrator = orchestrator;
-        this._plainTextChunker = new PlainTextChunker();
+        StepName = stepName;
+        _orchestrator = orchestrator;
+        _plainTextChunker = new PlainTextChunker();
 
         promptProvider ??= new EmbeddedPromptProvider();
-        this._summarizationPrompt = promptProvider.ReadPrompt(Constants.PromptNamesSummarize);
+        _summarizationPrompt = promptProvider.ReadPrompt(Constants.PromptNamesSummarize);
 
-        this._log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<SummarizationParallelHandler>();
+        _log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<SummarizationParallelHandler>();
 
-        this._log.LogInformation("Handler '{0}' ready", stepName);
+        _log.LogInformation("Handler '{0}' ready", stepName);
     }
+
 
     /// <inheritdoc />
     public async Task<(ReturnType returnType, DataPipeline updatedPipeline)> InvokeAsync(
-        DataPipeline pipeline, CancellationToken cancellationToken = default)
+        DataPipeline pipeline,
+        CancellationToken cancellationToken = default)
     {
-        this._log.LogDebug("Generating summary, pipeline '{0}/{1}'", pipeline.Index, pipeline.DocumentId);
+        _log.LogDebug("Generating summary, pipeline '{0}/{1}'", pipeline.Index, pipeline.DocumentId);
 
         foreach (DataPipeline.FileDetails uploadedFile in pipeline.Files)
         {
             // Track new files being generated (cannot edit originalFile.GeneratedFiles while looping it)
             Dictionary<string, DataPipeline.GeneratedFileDetails> summaryFiles = [];
 
-            var options = new ParallelOptions()
+            var options = new ParallelOptions
             {
                 CancellationToken = cancellationToken,
                 MaxDegreeOfParallelism = Environment.ProcessorCount
             };
 
-            await Parallel.ForEachAsync(uploadedFile.GeneratedFiles, options, async (generatedFile, token) =>
-            {
-                var file = generatedFile.Value;
+            await Parallel.ForEachAsync(uploadedFile.GeneratedFiles,
+                    options,
+                    async (generatedFile, token) =>
+                    {
+                        var file = generatedFile.Value;
 
-                if (file.AlreadyProcessedBy(this))
-                {
-                    this._log.LogTrace("File {0} already processed by this handler", file.Name);
-                    return;
-                }
-
-                // Summarize only the original content
-                if (file.ArtifactType != DataPipeline.ArtifactTypes.ExtractedText)
-                {
-                    this._log.LogTrace("Skipping file {0}", file.Name);
-                    return;
-                }
-
-                switch (file.MimeType)
-                {
-                    case MimeTypes.PlainText:
-                    case MimeTypes.MarkDown:
-                        this._log.LogDebug("Summarizing text file {0}", file.Name);
-                        string content = (await this._orchestrator.ReadFileAsync(pipeline, file.Name, token).ConfigureAwait(false)).ToString();
-                        (string summary, bool success) = await this.SummarizeAsync(content).ConfigureAwait(false);
-                        if (success)
+                        if (file.AlreadyProcessedBy(this))
                         {
-                            var summaryData = new BinaryData(summary);
-                            var destFile = uploadedFile.GetHandlerOutputFileName(this);
-                            await this._orchestrator.WriteFileAsync(pipeline, destFile, summaryData, token).ConfigureAwait(false);
-
-                            lock (summaryFiles)
-                            {
-                                summaryFiles.Add(destFile, new DataPipeline.GeneratedFileDetails
-                                {
-                                    Id = Guid.NewGuid().ToString("N"),
-                                    ParentId = uploadedFile.Id,
-                                    Name = destFile,
-                                    Size = summary.Length,
-                                    MimeType = MimeTypes.PlainText,
-                                    ArtifactType = DataPipeline.ArtifactTypes.SyntheticData,
-                                    Tags = pipeline.Tags.Clone().AddSyntheticTag(Constants.TagsSyntheticSummary),
-                                    ContentSHA256 = summaryData.CalculateSHA256(),
-                                });
-                            }
+                            _log.LogTrace("File {0} already processed by this handler", file.Name);
+                            return;
                         }
 
-                        break;
+                        // Summarize only the original content
+                        if (file.ArtifactType != DataPipeline.ArtifactTypes.ExtractedText)
+                        {
+                            _log.LogTrace("Skipping file {0}", file.Name);
+                            return;
+                        }
 
-                    default:
-                        this._log.LogWarning("File {0} cannot be summarized, type not supported", file.Name);
-                        return;
-                }
+                        switch (file.MimeType)
+                        {
+                            case MimeTypes.PlainText:
+                            case MimeTypes.MarkDown:
+                                _log.LogDebug("Summarizing text file {0}", file.Name);
+                                string content = (await _orchestrator.ReadFileAsync(pipeline, file.Name, token).ConfigureAwait(false)).ToString();
+                                (string summary, bool success) = await SummarizeAsync(content).ConfigureAwait(false);
 
-                file.MarkProcessedBy(this);
-            }).ConfigureAwait(false);
+                                if (success)
+                                {
+                                    var summaryData = new BinaryData(summary);
+                                    var destFile = uploadedFile.GetHandlerOutputFileName(this);
+                                    await _orchestrator.WriteFileAsync(pipeline,
+                                            destFile,
+                                            summaryData,
+                                            token)
+                                        .ConfigureAwait(false);
+
+                                    lock (summaryFiles)
+                                    {
+                                        summaryFiles.Add(destFile,
+                                            new DataPipeline.GeneratedFileDetails
+                                            {
+                                                Id = Guid.NewGuid().ToString("N"),
+                                                ParentId = uploadedFile.Id,
+                                                Name = destFile,
+                                                Size = summary.Length,
+                                                MimeType = MimeTypes.PlainText,
+                                                ArtifactType = DataPipeline.ArtifactTypes.SyntheticData,
+                                                Tags = pipeline.Tags.Clone().AddSyntheticTag(Constants.TagsSyntheticSummary),
+                                                ContentSHA256 = summaryData.CalculateSHA256()
+                                            });
+                                    }
+                                }
+
+                                break;
+
+                            default:
+                                _log.LogWarning("File {0} cannot be summarized, type not supported", file.Name);
+                                return;
+                        }
+
+                        file.MarkProcessedBy(this);
+                    })
+                .ConfigureAwait(false);
 
             // Add new files to pipeline status
             foreach (var file in summaryFiles)
@@ -139,18 +152,20 @@ public sealed class SummarizationParallelHandler : IPipelineStepHandler
         return (ReturnType.Success, pipeline);
     }
 
+
     private async Task<(string summary, bool skip)> SummarizeAsync(string content)
     {
-        ITextGenerator textGenerator = this._orchestrator.GetTextGenerator();
+        ITextGenerator textGenerator = _orchestrator.GetTextGenerator();
 
         int summaryMaxTokens = textGenerator.MaxTokenTotal / 2; // 50% of model capacity
         int maxTokensPerChunk = summaryMaxTokens / 2; // 25% of model capacity
         int overlappingTokens = Math.Min(Math.Max(200, maxTokensPerChunk / 2), 500) / 2; // 100...250
 
         int contentLength = textGenerator.CountTokens(content);
+
         if (contentLength < MinLength)
         {
-            this._log.LogWarning("Content too short to summarize, {0} tokens", contentLength);
+            _log.LogWarning("Content too short to summarize, {0} tokens", contentLength);
             return (content, false);
         }
 
@@ -163,9 +178,11 @@ public sealed class SummarizationParallelHandler : IPipelineStepHandler
         // After the first run (after overlaps have been introduced), check if the summarization is causing the content to grow
         bool firstRun = overlapToRemove;
         int previousLength = contentLength;
+
         while (!done)
         {
             var paragraphs = new List<string>();
+
             if (contentLength <= summaryMaxTokens)
             {
                 overlapToRemove = false;
@@ -173,17 +190,19 @@ public sealed class SummarizationParallelHandler : IPipelineStepHandler
             }
             else
             {
-                paragraphs = this._plainTextChunker.Split(content, new PlainTextChunkerOptions { MaxTokensPerChunk = maxTokensPerChunk, Overlap = overlappingTokens });
+                paragraphs = _plainTextChunker.Split(content, new PlainTextChunkerOptions { MaxTokensPerChunk = maxTokensPerChunk, Overlap = overlappingTokens });
             }
 
-            this._log.LogTrace("Paragraphs to summarize: {0}", paragraphs.Count);
+            _log.LogTrace("Paragraphs to summarize: {0}", paragraphs.Count);
             var newContent = new StringBuilder();
+
             for (int index = 0; index < paragraphs.Count; index++)
             {
                 string paragraph = paragraphs[index];
-                this._log.LogTrace("Summarizing paragraph {0}", index);
+                _log.LogTrace("Summarizing paragraph {0}", index);
 
-                var filledPrompt = this._summarizationPrompt.Replace("{{$input}}", paragraph, StringComparison.OrdinalIgnoreCase);
+                var filledPrompt = _summarizationPrompt.Replace("{{$input}}", paragraph, StringComparison.OrdinalIgnoreCase);
+
                 await foreach (var token in textGenerator.GenerateTextAsync(filledPrompt, new TextGenerationOptions()).ConfigureAwait(false))
                 {
                     newContent.Append(token);
@@ -197,15 +216,15 @@ public sealed class SummarizationParallelHandler : IPipelineStepHandler
 
             if (!firstRun && contentLength >= previousLength)
             {
-                this._log.LogError("Summarization failed, the content is getting longer: {0} tokens => {1} tokens", previousLength, contentLength);
+                _log.LogError("Summarization failed, the content is getting longer: {0} tokens => {1} tokens", previousLength, contentLength);
                 return (content, false);
             }
 
-            this._log.LogTrace("Summary length: {0} => {1}", previousLength, contentLength);
+            _log.LogTrace("Summary length: {0} => {1}", previousLength, contentLength);
             previousLength = contentLength;
 
             firstRun = false;
-            done = !overlapToRemove && (contentLength <= summaryMaxTokens);
+            done = !overlapToRemove && contentLength <= summaryMaxTokens;
         }
 
         return (content, true);

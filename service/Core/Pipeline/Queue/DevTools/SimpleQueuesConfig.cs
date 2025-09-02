@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using Microsoft.KernelMemory.FileSystem.DevTools;
@@ -7,9 +7,9 @@ namespace Microsoft.KernelMemory.Pipeline.Queue.DevTools;
 
 public class SimpleQueuesConfig
 {
-    public static SimpleQueuesConfig Volatile { get => new() { StorageType = FileSystemTypes.Volatile }; }
+    public static SimpleQueuesConfig Volatile => new() { StorageType = FileSystemTypes.Volatile };
 
-    public static SimpleQueuesConfig Persistent { get => new() { StorageType = FileSystemTypes.Disk }; }
+    public static SimpleQueuesConfig Persistent => new() { StorageType = FileSystemTypes.Disk };
 
     /// <summary>
     /// The type of storage to use. Defaults to volatile (in RAM).
@@ -52,41 +52,42 @@ public class SimpleQueuesConfig
     /// </summary>
     public string PoisonQueueSuffix { get; set; } = "-poison";
 
+
     public void Validate()
     {
-        if (string.IsNullOrWhiteSpace(this.Directory) || this.Directory.Contains(' ', StringComparison.OrdinalIgnoreCase))
+        if (string.IsNullOrWhiteSpace(Directory) || Directory.Contains(' ', StringComparison.OrdinalIgnoreCase))
         {
-            throw new ConfigurationException($"SimpleQueue: {nameof(this.Directory)} cannot be empty or have leading or trailing spaces");
+            throw new ConfigurationException($"SimpleQueue: {nameof(Directory)} cannot be empty or have leading or trailing spaces");
         }
 
-        if (string.IsNullOrWhiteSpace(this.PoisonQueueSuffix) || this.PoisonQueueSuffix.Contains(' ', StringComparison.OrdinalIgnoreCase))
+        if (string.IsNullOrWhiteSpace(PoisonQueueSuffix) || PoisonQueueSuffix.Contains(' ', StringComparison.OrdinalIgnoreCase))
         {
-            throw new ConfigurationException($"SimpleQueue: {nameof(this.PoisonQueueSuffix)} cannot be empty or have leading or trailing spaces");
+            throw new ConfigurationException($"SimpleQueue: {nameof(PoisonQueueSuffix)} cannot be empty or have leading or trailing spaces");
         }
 
-        if (this.PollDelayMsecs < 1)
+        if (PollDelayMsecs < 1)
         {
-            throw new ConfigurationException($"SimpleQueue: {nameof(this.PollDelayMsecs)} value {this.PollDelayMsecs} is too low, cannot be less than 1");
+            throw new ConfigurationException($"SimpleQueue: {nameof(PollDelayMsecs)} value {PollDelayMsecs} is too low, cannot be less than 1");
         }
 
-        if (this.DispatchFrequencyMsecs < 1)
+        if (DispatchFrequencyMsecs < 1)
         {
-            throw new ConfigurationException($"SimpleQueue: {nameof(this.DispatchFrequencyMsecs)} value {this.DispatchFrequencyMsecs} is too low, cannot be less than 1");
+            throw new ConfigurationException($"SimpleQueue: {nameof(DispatchFrequencyMsecs)} value {DispatchFrequencyMsecs} is too low, cannot be less than 1");
         }
 
-        if (this.FetchBatchSize < 1)
+        if (FetchBatchSize < 1)
         {
-            throw new ConfigurationException($"SimpleQueue: {nameof(this.FetchBatchSize)} value {this.FetchBatchSize} is too low, cannot be less than 1");
+            throw new ConfigurationException($"SimpleQueue: {nameof(FetchBatchSize)} value {FetchBatchSize} is too low, cannot be less than 1");
         }
 
-        if (this.FetchLockSeconds < 1)
+        if (FetchLockSeconds < 1)
         {
-            throw new ConfigurationException($"SimpleQueue: {nameof(this.FetchLockSeconds)} value {this.FetchLockSeconds} is too low, cannot be less than 1");
+            throw new ConfigurationException($"SimpleQueue: {nameof(FetchLockSeconds)} value {FetchLockSeconds} is too low, cannot be less than 1");
         }
 
-        if (this.MaxRetriesBeforePoisonQueue < 0)
+        if (MaxRetriesBeforePoisonQueue < 0)
         {
-            throw new ConfigurationException($"SimpleQueue: {nameof(this.MaxRetriesBeforePoisonQueue)} value {this.MaxRetriesBeforePoisonQueue} is too low, cannot be less than 0");
+            throw new ConfigurationException($"SimpleQueue: {nameof(MaxRetriesBeforePoisonQueue)} value {MaxRetriesBeforePoisonQueue} is too low, cannot be less than 0");
         }
     }
 }

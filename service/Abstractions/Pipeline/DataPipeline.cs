@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text.Json.Serialization;
 using Microsoft.KernelMemory.Context;
+using Microsoft.KernelMemory.Models;
 
 namespace Microsoft.KernelMemory.Pipeline;
 
@@ -24,8 +25,9 @@ public sealed class DataPipeline
         ExtractedText = 2,
         TextEmbeddingVector = 3,
         SyntheticData = 4,
-        ExtractedContent = 5,
+        ExtractedContent = 5
     }
+
 
     public sealed class PipelineLogEntry
     {
@@ -41,12 +43,14 @@ public sealed class DataPipeline
         [JsonPropertyName("txt")]
         public string Text { get; set; }
 
+
         public PipelineLogEntry(string source, string text)
         {
-            this.Source = source;
-            this.Text = text;
+            Source = source;
+            Text = text;
         }
     }
+
 
     public abstract class FileDetailsBase
     {
@@ -123,6 +127,7 @@ public sealed class DataPipeline
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public List<PipelineLogEntry>? LogEntries { get; set; } = null;
 
+
         /// <summary>
         /// Check whether this file has already been processed by the given handler
         /// </summary>
@@ -131,9 +136,12 @@ public sealed class DataPipeline
         /// <returns>True if the handler already processed the file</returns>
         public bool AlreadyProcessedBy(IPipelineStepHandler handler, string? subStep = null)
         {
-            var key = string.IsNullOrWhiteSpace(subStep) ? handler.StepName : $"{handler.StepName}/{subStep}";
-            return this.ProcessedBy.Contains(key, StringComparer.OrdinalIgnoreCase);
+            var key = string.IsNullOrWhiteSpace(subStep)
+                ? handler.StepName
+                : $"{handler.StepName}/{subStep}";
+            return ProcessedBy.Contains(key, StringComparer.OrdinalIgnoreCase);
         }
+
 
         /// <summary>
         /// Mark the file as already processed by the given handler
@@ -142,9 +150,12 @@ public sealed class DataPipeline
         /// <param name="subStep">Optional value used by handlers that process the same file multiple times, to distinguish each pass</param>
         public void MarkProcessedBy(IPipelineStepHandler handler, string? subStep = null)
         {
-            var key = string.IsNullOrWhiteSpace(subStep) ? handler.StepName : $"{handler.StepName}/{subStep}";
-            this.ProcessedBy.Add(key);
+            var key = string.IsNullOrWhiteSpace(subStep)
+                ? handler.StepName
+                : $"{handler.StepName}/{subStep}";
+            ProcessedBy.Add(key);
         }
+
 
         /// <summary>
         /// Add a new log entry, with some important information for the end user.
@@ -154,10 +165,11 @@ public sealed class DataPipeline
         /// <param name="text">Text to store for the end user</param>
         public void Log(IPipelineStepHandler handler, string text)
         {
-            this.LogEntries ??= [];
-            this.LogEntries.Add(new PipelineLogEntry(source: handler.StepName, text: text));
+            LogEntries ??= [];
+            LogEntries.Add(new PipelineLogEntry(handler.StepName, text));
         }
     }
+
 
     public class GeneratedFileDetails : FileDetailsBase
     {
@@ -184,6 +196,7 @@ public sealed class DataPipeline
         public string ContentSHA256 { get; set; } = string.Empty;
     }
 
+
     public class FileDetails : FileDetailsBase
     {
         /// <summary>
@@ -193,16 +206,19 @@ public sealed class DataPipeline
         [JsonPropertyName("generated_files")]
         public Dictionary<string, GeneratedFileDetails> GeneratedFiles { get; set; } = [];
 
+
         public string GetPartitionFileName(int partitionNumber)
         {
-            return $"{this.Name}.partition.{partitionNumber}.txt";
+            return $"{Name}.partition.{partitionNumber}.txt";
         }
+
 
         public string GetHandlerOutputFileName(IPipelineStepHandler handler, int index = 0)
         {
-            return $"{this.Name}.{handler.StepName}.{index}.txt";
+            return $"{Name}.{handler.StepName}.{index}.txt";
         }
     }
+
 
     /// <summary>
     /// Index where the data ingestion pipeline is working.
@@ -288,7 +304,7 @@ public sealed class DataPipeline
     public List<DataPipeline> PreviousExecutionsToPurge { get; set; } = [];
 
     [JsonIgnore]
-    public bool Complete => this.RemainingSteps.Count == 0;
+    public bool Complete => RemainingSteps.Count == 0;
 
     [JsonIgnore]
     public List<DocumentUploadRequest.UploadedFile> FilesToUpload { get; set; } = [];
@@ -296,49 +312,56 @@ public sealed class DataPipeline
     [JsonIgnore]
     public bool UploadComplete { get; set; }
 
+
     public DataPipeline Then(string stepName)
     {
-        this.Steps.Add(stepName);
+        Steps.Add(stepName);
         return this;
     }
 
+
     public DataPipeline AddUploadFile(string name, string filename, string sourceFile)
     {
-        return this.AddUploadFile(name, filename, File.ReadAllBytes(sourceFile));
+        return AddUploadFile(name, filename, File.ReadAllBytes(sourceFile));
     }
+
 
     public DataPipeline AddUploadFile(string name, string filename, byte[] content)
     {
-        return this.AddUploadFile(name, filename, new BinaryData(content));
+        return AddUploadFile(name, filename, new BinaryData(content));
     }
+
 
     public DataPipeline AddUploadFile(string name, string filename, BinaryData content)
     {
-        return this.AddUploadFile(name, filename, content.ToStream());
+        return AddUploadFile(name, filename, content.ToStream());
     }
+
 
     public DataPipeline AddUploadFile(string name, string filename, Stream content)
     {
         content.Seek(0, SeekOrigin.Begin);
-        this.FilesToUpload.Add(new DocumentUploadRequest.UploadedFile(filename, content));
+        FilesToUpload.Add(new DocumentUploadRequest.UploadedFile(filename, content));
         return this;
     }
+
 
     public DataPipeline Build()
     {
-        if (this.FilesToUpload.Count > 0)
+        if (FilesToUpload.Count > 0)
         {
-            this.UploadComplete = false;
+            UploadComplete = false;
         }
 
-        this.RemainingSteps = this.Steps.Select(x => x).ToList();
-        this.Creation = DateTimeOffset.UtcNow;
-        this.LastUpdate = this.Creation;
+        RemainingSteps = Steps.Select(x => x).ToList();
+        Creation = DateTimeOffset.UtcNow;
+        LastUpdate = Creation;
 
-        this.Validate();
+        Validate();
 
         return this;
     }
+
 
     /// <summary>
     /// Change the pipeline to the next step, returning the name of the next step to execute.
@@ -346,82 +369,88 @@ public sealed class DataPipeline
     /// </summary>
     public string MoveToNextStep()
     {
-        if (this.RemainingSteps.Count == 0)
+        if (RemainingSteps.Count == 0)
         {
             throw new KernelMemoryException("The list of remaining steps is empty");
         }
 
-        var stepName = this.RemainingSteps.First();
-        this.RemainingSteps.RemoveAt(0);
-        this.CompletedSteps.Add(stepName);
+        var stepName = RemainingSteps.First();
+        RemainingSteps.RemoveAt(0);
+        CompletedSteps.Add(stepName);
 
         return stepName;
     }
+
 
     /// <summary>
     /// Change the pipeline to the previous step, returning the name of the step to execute
     /// </summary>
     public string RollbackToPreviousStep()
     {
-        if (this.CompletedSteps.Count == 0)
+        if (CompletedSteps.Count == 0)
         {
             throw new KernelMemoryException("The list of completed steps is empty");
         }
 
-        var stepName = this.CompletedSteps.Last();
-        this.CompletedSteps.RemoveAt(this.CompletedSteps.Count - 1);
-        this.RemainingSteps.Insert(0, stepName);
+        var stepName = CompletedSteps.Last();
+        CompletedSteps.RemoveAt(CompletedSteps.Count - 1);
+        RemainingSteps.Insert(0, stepName);
 
         return stepName;
     }
 
+
     public bool IsDocumentDeletionPipeline()
     {
-        return this.Steps.Count == 1 && this.Steps.First() == Constants.PipelineStepsDeleteDocument;
+        return Steps.Count == 1 && Steps.First() == Constants.PipelineStepsDeleteDocument;
     }
+
 
     public bool IsIndexDeletionPipeline()
     {
-        return this.Steps.Count == 1 && this.Steps.First() == Constants.PipelineStepsDeleteIndex;
+        return Steps.Count == 1 && Steps.First() == Constants.PipelineStepsDeleteIndex;
     }
+
 
     public void Validate()
     {
-        if (string.IsNullOrEmpty(this.DocumentId))
+        if (string.IsNullOrEmpty(DocumentId))
         {
             // Rule exception: when deleting an index, the document ID is empty
-            if (!this.IsIndexDeletionPipeline())
+            if (!IsIndexDeletionPipeline())
             {
-                throw new ArgumentException("Data pipeline: the pipeline ID is empty", nameof(this.DocumentId));
+                throw new ArgumentException("Data pipeline: the pipeline ID is empty", nameof(DocumentId));
             }
         }
 
-        if (string.IsNullOrEmpty(this.Index))
+        if (string.IsNullOrEmpty(Index))
         {
-            throw new ArgumentException("Data pipeline: the index name is empty", nameof(this.Index));
+            throw new ArgumentException("Data pipeline: the index name is empty", nameof(Index));
         }
 
         string previous = string.Empty;
-        foreach (string step in this.Steps)
+
+        foreach (string step in Steps)
         {
             if (string.IsNullOrEmpty(step))
             {
-                throw new ArgumentException("Data pipeline: the pipeline contains a step with empty name", nameof(this.Steps));
+                throw new ArgumentException("Data pipeline: the pipeline contains a step with empty name", nameof(Steps));
             }
 
             // This scenario is not allowed, to ensure execution consistency
             if (string.Equals(step, previous, StringComparison.OrdinalIgnoreCase))
             {
-                throw new ArgumentException("Data pipeline: the pipeline contains two consecutive steps with the same name", nameof(this.Steps));
+                throw new ArgumentException("Data pipeline: the pipeline contains two consecutive steps with the same name", nameof(Steps));
             }
 
             previous = step;
         }
     }
 
+
     public FileDetails GetFile(string id)
     {
-        foreach (FileDetails file in this.Files)
+        foreach (FileDetails file in Files)
         {
             if (file.Id == id) { return file; }
         }
@@ -429,23 +458,25 @@ public sealed class DataPipeline
         throw new OrchestrationException($"File '{id}' not found in the upload");
     }
 
+
     public DataPipelineStatus ToDataPipelineStatus()
     {
         return new DataPipelineStatus
         {
-            Completed = this.Complete,
-            Empty = this.Files.Count == 0,
-            Index = this.Index,
-            DocumentId = this.DocumentId,
-            Tags = this.Tags,
-            Creation = this.Creation,
-            LastUpdate = this.LastUpdate,
-            Steps = this.Steps,
-            RemainingSteps = this.RemainingSteps,
-            CompletedSteps = this.CompletedSteps,
+            Completed = Complete,
+            Empty = Files.Count == 0,
+            Index = Index,
+            DocumentId = DocumentId,
+            Tags = Tags,
+            Creation = Creation,
+            LastUpdate = LastUpdate,
+            Steps = Steps,
+            RemainingSteps = RemainingSteps,
+            CompletedSteps = CompletedSteps
         };
     }
 }
+
 
 public static partial class DataPipelineExtensions
 {

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Collections.Generic;
 using System.Globalization;
@@ -8,7 +8,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.KernelMemory.Text;
 
-namespace Microsoft.KernelMemory;
+namespace Microsoft.KernelMemory.Models;
 
 public class MemoryAnswer
 {
@@ -66,6 +66,7 @@ public class MemoryAnswer
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<Citation> RelevantSources { get; set; } = [];
 
+
     /// <summary>
     /// Serialize using .NET JSON serializer, e.g. to avoid ambiguity
     /// with other serializers and other options
@@ -74,7 +75,7 @@ public class MemoryAnswer
     /// <returns>JSON serialization</returns>
     public string ToJson(bool optimizeForStream)
     {
-        if (!optimizeForStream || this.StreamState != StreamStates.Append)
+        if (!optimizeForStream || StreamState != StreamStates.Append)
         {
             return JsonSerializer.Serialize(this);
         }
@@ -90,15 +91,17 @@ public class MemoryAnswer
         return JsonSerializer.Serialize(clone);
     }
 
+
     public override string ToString()
     {
         var result = new StringBuilder();
-        result.AppendLineNix(this.Result);
+        result.AppendLineNix(Result);
 
-        if (!this.NoResult && this.RelevantSources is { Count: > 0 })
+        if (!NoResult && RelevantSources is { Count: > 0 })
         {
             var sources = new Dictionary<string, string>();
-            foreach (var x in this.RelevantSources)
+
+            foreach (var x in RelevantSources)
             {
                 string date = x.Partitions.First().LastUpdate.ToString("D", CultureInfo.CurrentCulture);
                 sources[x.Index + x.Link] = $"  - {x.SourceName} [{date}]";

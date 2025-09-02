@@ -1,9 +1,9 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Collections.Concurrent;
 using MongoDB.Driver;
 
-namespace Microsoft.KernelMemory.MongoDbAtlas;
+namespace Microsoft.KernelMemory.MongoDbAtlas.Internals;
 
 /// <summary>
 /// Allow keeping a singleton for IMongoDatabase and MongoClient
@@ -12,11 +12,13 @@ internal static class MongoDbAtlasDatabaseHelper
 {
     private static readonly ConcurrentDictionary<string, IMongoClient> s_mongoClientCache = new();
 
+
     internal static IMongoDatabase GetDatabase(string connectionString, string databaseName)
     {
         IMongoClient? client = GetClient(connectionString);
 
         var builder = new MongoUrlBuilder(connectionString);
+
         if (!string.IsNullOrEmpty(databaseName))
         {
             builder.DatabaseName = databaseName;
@@ -25,9 +27,11 @@ internal static class MongoDbAtlasDatabaseHelper
         return client.GetDatabase(builder.DatabaseName);
     }
 
+
     internal static IMongoClient GetClient(string connectionString)
     {
         var connectionKey = GetConnectionKey(connectionString);
+
         if (!s_mongoClientCache.TryGetValue(connectionKey, out var client))
         {
             //never encountered this connection string before, create a new client
@@ -37,6 +41,7 @@ internal static class MongoDbAtlasDatabaseHelper
 
         return client;
     }
+
 
     /// <summary>
     /// From a connection string to MongoDB it get a key that can uniquely identify the

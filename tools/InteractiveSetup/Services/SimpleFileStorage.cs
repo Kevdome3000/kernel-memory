@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Collections.Generic;
 using Microsoft.KernelMemory.InteractiveSetup.UI;
@@ -30,7 +30,11 @@ internal static class SimpleFileStorage
         AppSettings.Change(x => x.Services[ServiceName] = new Dictionary<string, object>
         {
             { "Directory", SetupUI.AskOpenQuestion("Directory where to store files", config["Directory"].ToString()) },
-            { "StorageType", persistent ? "Disk" : "Volatile" }
+            {
+                "StorageType", persistent
+                    ? "Disk"
+                    : "Volatile"
+            }
         });
     }
 }

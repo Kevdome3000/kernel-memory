@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.KernelMemory;
 using Microsoft.KernelMemory.AI.Anthropic;
@@ -10,8 +10,8 @@ var azureOpenAIEmbeddingConfig = new AzureOpenAIConfig();
 
 new ConfigurationBuilder()
     .AddJsonFile("appsettings.json")
-    .AddJsonFile("appsettings.development.json", optional: true)
-    .AddJsonFile("appsettings.Development.json", optional: true)
+    .AddJsonFile("appsettings.development.json", true)
+    .AddJsonFile("appsettings.Development.json", true)
     .AddEnvironmentVariables()
     .Build()
     .BindSection("KernelMemory:Services:Anthropic", anthropicConfig)

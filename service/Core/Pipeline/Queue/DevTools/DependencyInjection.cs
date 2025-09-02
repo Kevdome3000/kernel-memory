@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,12 +21,14 @@ public static partial class KernelMemoryBuilderExtensions
         return builder;
     }
 
+
     public static IKernelMemoryBuilder WithSimpleQueuesPipeline(this IKernelMemoryBuilder builder, string directory)
     {
         builder.Services.AddSimpleQueues(directory);
         return builder;
     }
 }
+
 
 /// <summary>
 /// .NET IServiceCollection dependency injection extensions.
@@ -35,10 +37,7 @@ public static partial class DependencyInjection
 {
     public static IServiceCollection AddSimpleQueues(this IServiceCollection services, SimpleQueuesConfig config)
     {
-        IQueue QueueFactory(IServiceProvider serviceProvider)
-        {
-            return new SimpleQueues(config, loggerFactory: serviceProvider.GetService<ILoggerFactory>());
-        }
+        IQueue QueueFactory(IServiceProvider serviceProvider) => new SimpleQueues(config, serviceProvider.GetService<ILoggerFactory>());
 
         // The orchestrator uses multiple queue clients, each linked to a specific queue,
         // so it requires a factory rather than a single queue injected to the ctor.
@@ -47,6 +46,7 @@ public static partial class DependencyInjection
             .AddTransient<SimpleQueues>()
             .AddSingleton<QueueClientFactory>(serviceProvider => new QueueClientFactory(() => QueueFactory(serviceProvider)));
     }
+
 
     public static IServiceCollection AddSimpleQueues(this IServiceCollection services, string directory)
     {

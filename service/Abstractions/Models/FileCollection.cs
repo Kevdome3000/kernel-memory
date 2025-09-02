@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -33,9 +33,10 @@ public class FileCollection
     /// </summary>
     private readonly HashSet<string> _fileNames = new(StringComparer.OrdinalIgnoreCase);
 
+
     public void AddFile(string filePath)
     {
-        if (this._filePaths.ContainsKey(filePath)) { return; }
+        if (_filePaths.ContainsKey(filePath)) { return; }
 
         if (!File.Exists(filePath))
         {
@@ -44,22 +45,25 @@ public class FileCollection
 
         var file = new FileInfo(filePath);
         var fileName = file.Name;
-        if (this._fileNames.Contains(fileName))
+
+        if (_fileNames.Contains(fileName))
         {
             var count = 0;
 
             // Note: anonymize the path. This value will be visible in the storage service.
             var dirNameId = CalculateSHA256(Document.ReplaceInvalidChars(file.DirectoryName));
+
             do
             {
                 // Prepend a unique ID (do not append, to avoid changing the file extension)
                 fileName = $"{dirNameId}{count++}_{file.Name}";
-            } while (this._fileNames.Contains(fileName));
+            } while (_fileNames.Contains(fileName));
         }
 
-        this._filePaths.Add(filePath, fileName);
-        this._fileNames.Add(fileName);
+        _filePaths.Add(filePath, fileName);
+        _fileNames.Add(fileName);
     }
+
 
     public void AddStream(string? fileName, Stream content)
     {
@@ -74,29 +78,32 @@ public class FileCollection
         }
 
         var count = 0;
-        while (this._fileNames.Contains(fileName!))
+
+        while (_fileNames.Contains(fileName!))
         {
             fileName = $"stream{count++}_{fileName}";
         }
 
-        this._streams.Add(fileName!, content);
-        this._fileNames.Add(fileName!);
+        _streams.Add(fileName!, content);
+        _fileNames.Add(fileName!);
     }
+
 
     public IEnumerable<(string name, Stream content)> GetStreams()
     {
-        foreach (KeyValuePair<string, string> file in this._filePaths)
+        foreach (KeyValuePair<string, string> file in _filePaths)
         {
             byte[] bytes = File.ReadAllBytes(file.Key);
             var data = new BinaryData(bytes);
             yield return (file.Value, data.ToStream());
         }
 
-        foreach (KeyValuePair<string, Stream> stream in this._streams)
+        foreach (KeyValuePair<string, Stream> stream in _streams)
         {
             yield return (stream.Key, stream.Value);
         }
     }
+
 
 #pragma warning disable CA1308 // lowercase is safe here and better for accessibility in external tools
     /// <summary>
@@ -123,12 +130,14 @@ public class FileCollection
     }
 #pragma warning restore CA1308
 
+
     /// <summary>
     /// .NET Core 2.0 equivalent of Convert.ToHexString
     /// </summary>
     public static string ToHexString(byte[] byteArray)
     {
         StringBuilder hex = new(byteArray.Length * 2);
+
         foreach (byte b in byteArray) { hex.AppendFormat(CultureInfo.InvariantCulture, "{0:x2}", b); }
 
         return hex.ToString();

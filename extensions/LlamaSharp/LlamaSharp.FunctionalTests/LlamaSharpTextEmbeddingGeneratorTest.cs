@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.KernelMemory;
@@ -11,22 +11,24 @@ public sealed class LlamaSharpTextEmbeddingGeneratorTest : BaseFunctionalTestCas
 {
     private readonly LlamaSharpTextEmbeddingGenerator _target;
 
+
     public LlamaSharpTextEmbeddingGeneratorTest(
         IConfiguration cfg,
         ITestOutputHelper output) : base(cfg, output)
     {
-        this.LlamaSharpConfig.Validate();
-        this._target = new LlamaSharpTextEmbeddingGenerator(this.LlamaSharpConfig.EmbeddingModel, loggerFactory: null);
-        var modelFilename = this.LlamaSharpConfig.TextModel.ModelPath.Split('/').Last().Split('\\').Last();
+        LlamaSharpConfig.Validate();
+        _target = new LlamaSharpTextEmbeddingGenerator(LlamaSharpConfig.EmbeddingModel, loggerFactory: null);
+        var modelFilename = LlamaSharpConfig.TextModel.ModelPath.Split('/').Last().Split('\\').Last();
         Console.WriteLine($"Model in use: {modelFilename}");
     }
+
 
     [Fact]
     [Trait("Category", "LlamaSharp")]
     public async Task ItGeneratesEmbeddingVectors()
     {
         // Act
-        Embedding embedding = await this._target.GenerateEmbeddingAsync("some text");
+        Embedding embedding = await _target.GenerateEmbeddingAsync("some text");
 
         // Assert
         Console.WriteLine("Embedding size: " + embedding.Length);
@@ -35,11 +37,12 @@ public sealed class LlamaSharpTextEmbeddingGeneratorTest : BaseFunctionalTestCas
         Assert.Equal(768, embedding.Length);
     }
 
+
     protected override void Dispose(bool disposing)
     {
         if (disposing)
         {
-            this._target.Dispose();
+            _target.Dispose();
         }
 
         base.Dispose(disposing);

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.KernelMemory.Context;
 using Microsoft.KernelMemory.Diagnostics;
+using Microsoft.KernelMemory.Models;
 using OllamaSharp;
 using OllamaSharp.Models;
 
@@ -26,6 +27,7 @@ public class OllamaTextGenerator : ITextGenerator
 
     public int MaxTokenTotal { get; }
 
+
     public OllamaTextGenerator(
         IOllamaApiClient ollamaClient,
         OllamaModelConfig modelConfig,
@@ -33,24 +35,26 @@ public class OllamaTextGenerator : ITextGenerator
         IContextProvider? contextProvider = null,
         ILoggerFactory? loggerFactory = null)
     {
-        this._client = ollamaClient;
-        this._modelConfig = modelConfig;
-        this._log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<OllamaTextGenerator>();
+        _client = ollamaClient;
+        _modelConfig = modelConfig;
+        _log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<OllamaTextGenerator>();
 
         textTokenizer ??= TokenizerFactory.GetTokenizerForEncoding(modelConfig.Tokenizer);
+
         if (textTokenizer == null)
         {
             textTokenizer = new O200KTokenizer();
-            this._log.LogWarning(
+            _log.LogWarning(
                 "Tokenizer not specified, will use {0}. The token count might be incorrect, causing unexpected errors",
                 textTokenizer.GetType().FullName);
         }
 
-        this._textTokenizer = textTokenizer;
-        this._contextProvider = contextProvider ?? new RequestContextProvider();
+        _textTokenizer = textTokenizer;
+        _contextProvider = contextProvider ?? new RequestContextProvider();
 
-        this.MaxTokenTotal = modelConfig.MaxTokenTotal ?? MaxTokensIfUndefined;
+        MaxTokenTotal = modelConfig.MaxTokenTotal ?? MaxTokensIfUndefined;
     }
+
 
     public OllamaTextGenerator(
         OllamaConfig config,
@@ -65,6 +69,7 @@ public class OllamaTextGenerator : ITextGenerator
             loggerFactory)
     {
     }
+
 
     public OllamaTextGenerator(
         HttpClient httpClient,
@@ -81,23 +86,26 @@ public class OllamaTextGenerator : ITextGenerator
     {
     }
 
+
     public int CountTokens(string text)
     {
-        return this._textTokenizer.CountTokens(text);
+        return _textTokenizer.CountTokens(text);
     }
+
 
     public IReadOnlyList<string> GetTokens(string text)
     {
-        return this._textTokenizer.GetTokens(text);
+        return _textTokenizer.GetTokens(text);
     }
+
 
     public async IAsyncEnumerable<GeneratedTextContent> GenerateTextAsync(
         string prompt,
         TextGenerationOptions options,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        string modelName = this._contextProvider.GetContext().GetCustomTextGenerationModelNameOrDefault(this._client.SelectedModel);
-        this._log.LogTrace("Generating text with model {0}", modelName);
+        string modelName = _contextProvider.GetContext().GetCustomTextGenerationModelNameOrDefault(_client.SelectedModel);
+        _log.LogTrace("Generating text with model {0}", modelName);
 
         var request = new GenerateRequest
         {
@@ -112,25 +120,26 @@ public class OllamaTextGenerator : ITextGenerator
                 RepeatPenalty = (float)options.FrequencyPenalty,
 
                 // Global settings
-                MiroStat = this._modelConfig.MiroStat,
-                MiroStatEta = this._modelConfig.MiroStatEta,
-                MiroStatTau = this._modelConfig.MiroStatTau,
-                NumCtx = this._modelConfig.NumCtx,
-                NumGqa = this._modelConfig.NumGqa,
-                NumGpu = this._modelConfig.NumGpu,
-                NumThread = this._modelConfig.NumThread,
-                RepeatLastN = this._modelConfig.RepeatLastN,
-                Seed = this._modelConfig.Seed,
-                TfsZ = this._modelConfig.TfsZ,
-                NumPredict = this._modelConfig.NumPredict,
-                TopK = this._modelConfig.TopK,
-                MinP = this._modelConfig.MinP,
+                MiroStat = _modelConfig.MiroStat,
+                MiroStatEta = _modelConfig.MiroStatEta,
+                MiroStatTau = _modelConfig.MiroStatTau,
+                NumCtx = _modelConfig.NumCtx,
+                NumGqa = _modelConfig.NumGqa,
+                NumGpu = _modelConfig.NumGpu,
+                NumThread = _modelConfig.NumThread,
+                RepeatLastN = _modelConfig.RepeatLastN,
+                Seed = _modelConfig.Seed,
+                TfsZ = _modelConfig.TfsZ,
+                NumPredict = _modelConfig.NumPredict,
+                TopK = _modelConfig.TopK,
+                MinP = _modelConfig.MinP
             }
         };
 
         if (options.StopSequences is { Count: > 0 })
         {
             var stop = new List<string>();
+
             foreach (var s in options.StopSequences) { stop.Add(s); }
 
             request.Options.Stop = stop.ToArray();
@@ -142,8 +151,9 @@ public class OllamaTextGenerator : ITextGenerator
         //     if (token != null) { yield return token.Response; }
         // }
 
-        var chat = new Chat(this._client);
+        var chat = new Chat(_client);
         IAsyncEnumerable<string?> stream = chat.SendAsync(prompt, cancellationToken);
+
         await foreach (string? token in stream.ConfigureAwait(false))
         {
             if (token != null) { yield return token; }

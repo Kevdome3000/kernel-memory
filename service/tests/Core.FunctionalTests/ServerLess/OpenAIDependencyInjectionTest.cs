@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.KernelMemory;
@@ -14,13 +14,14 @@ public class OpenAIDependencyInjectionTest : BaseFunctionalTestCase
     {
     }
 
+
     [Fact]
     [Trait("Category", "Serverless")]
     public async Task TestExtensionMethod1()
     {
         // Arrange
         var memory = new KernelMemoryBuilder()
-            .WithOpenAIDefaults(this.OpenAiConfig.APIKey)
+            .WithOpenAIDefaults(OpenAiConfig.APIKey)
             .Build<MemoryServerless>();
 
         // Act
@@ -32,13 +33,14 @@ public class OpenAIDependencyInjectionTest : BaseFunctionalTestCase
         Assert.Contains("2099", answer.Result);
     }
 
+
     [Fact]
     [Trait("Category", "Serverless")]
     public async Task TestExtensionMethod2()
     {
         // Arrange
         var memory = new KernelMemoryBuilder()
-            .WithOpenAI(this.OpenAiConfig)
+            .WithOpenAI(OpenAiConfig)
             .Build<MemoryServerless>();
 
         // Act
@@ -49,6 +51,7 @@ public class OpenAIDependencyInjectionTest : BaseFunctionalTestCase
         Assert.Contains("2099", answer.Result);
     }
 
+
     [Fact]
     [Trait("Category", "Serverless")]
     public async Task TestExtensionMethod3()
@@ -57,12 +60,12 @@ public class OpenAIDependencyInjectionTest : BaseFunctionalTestCase
         var memory = new KernelMemoryBuilder()
             .WithOpenAITextEmbeddingGeneration(new OpenAIConfig
             {
-                APIKey = this.OpenAiConfig.APIKey,
-                EmbeddingModel = "text-embedding-ada-002",
+                APIKey = OpenAiConfig.APIKey,
+                EmbeddingModel = "text-embedding-ada-002"
             })
             .WithOpenAITextGeneration(new OpenAIConfig
             {
-                APIKey = this.OpenAiConfig.APIKey,
+                APIKey = OpenAiConfig.APIKey,
                 TextModel = "gpt-4"
             })
             .Build<MemoryServerless>();

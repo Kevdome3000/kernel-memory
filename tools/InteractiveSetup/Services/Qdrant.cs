@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Collections.Generic;
 using Microsoft.KernelMemory.InteractiveSetup.UI;
@@ -19,7 +19,7 @@ internal static class Qdrant
             config = new Dictionary<string, object>
             {
                 { "Endpoint", "http://127.0.0.1:6333" },
-                { "APIKey", "" },
+                { "APIKey", "" }
             };
             AppSettings.AddService(ServiceName, config);
         }
@@ -27,7 +27,7 @@ internal static class Qdrant
         AppSettings.Change(x => x.Services[ServiceName] = new Dictionary<string, object>
         {
             { "Endpoint", SetupUI.AskOpenQuestion("Qdrant <endpoint>", config["Endpoint"].ToString()) },
-            { "APIKey", SetupUI.AskPassword("Qdrant <API Key> (for cloud only)", config["APIKey"].ToString(), optional: true) },
+            { "APIKey", SetupUI.AskPassword("Qdrant <API Key> (for cloud only)", config["APIKey"].ToString(), optional: true) }
         });
     }
 }

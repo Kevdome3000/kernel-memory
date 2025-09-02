@@ -1,11 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
         <RollForward>LatestMajor</RollForward>
         <AssemblyName>Microsoft.KernelMemory.WebClient</AssemblyName>
         <RootNamespace>Microsoft.KernelMemory</RootNamespace>
         <NoWarn>$(NoWarn);</NoWarn>
+        <TargetFramework>net9.0</TargetFramework>
+        <LangVersion>default</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>

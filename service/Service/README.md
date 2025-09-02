@@ -19,7 +19,8 @@ with **OpenAPI** enabled.
 # ▶️ Docker support
 
 If you're looking for a Docker image, we publish a build [here](https://hub.docker.com/r/kernelmemory/service) and
-you can use the [Dockerfile](https://github.com/microsoft/kernel-memory/blob/main/Dockerfile) in the repo for custom builds.
+you can use the [Dockerfile](https://github.com/microsoft/kernel-memory/blob/main/Dockerfile) in the repo for custom
+builds.
 
 You can test the image in demo mode passing the OPENAI_API_KEY environment variable:
 
@@ -55,14 +56,18 @@ Configuration settings can be saved in multiple places, each source can also ove
 
 1. `appsettings.json`: although possible, it's not recommended, to avoid risks of leaking secrets
    in source code repositories. The file is mandatory and is used only for default settings.
-2. `appsettings.Development.json`: this is used only when the environment variable `ASPNETCORE_ENVIRONMENT` is set to `Development`.
-3. `appsettings.Production.json`: this is used only when the environment variable `ASPNETCORE_ENVIRONMENT` is set to `Production`.
+2. `appsettings.Development.json`: this is used only when the environment variable `ASPNETCORE_ENVIRONMENT` is set to
+   `Development`.
+3. `appsettings.Production.json`: this is used only when the environment variable `ASPNETCORE_ENVIRONMENT` is set to
+   `Production`.
 4. [.NET Secret Manager](https://learn.microsoft.com/aspnet/core/security/app-secrets#secret-manager)
 5. using **env vars**: preferred method for credentials. Any setting in appsettings.json can be overridden by env vars.
-   The env var name corresponds to the configuration key name, using `__` (double underscore) as a separator instead of `:`. For instance:
-   - `Logging:LogLevel:Default` is set with `Logging__LogLevel__Default`.
-   - `KernelMemory:DataIngestion:EmbeddingGeneratorTypes` is an array and for setting its first value use `KernelMemory__DataIngestion__EmbeddingGeneratorTypes__0`.
-     If the array contains 2 elements the second would be `__1`, and so on.
+   The env var name corresponds to the configuration key name, using `__` (double underscore) as a separator instead of
+   `:`. For instance:
+    - `Logging:LogLevel:Default` is set with `Logging__LogLevel__Default`.
+    - `KernelMemory:DataIngestion:EmbeddingGeneratorTypes` is an array and for setting its first value use
+      `KernelMemory__DataIngestion__EmbeddingGeneratorTypes__0`.
+      If the array contains 2 elements the second would be `__1`, and so on.
 
 # ▶️ Start the service from source
 

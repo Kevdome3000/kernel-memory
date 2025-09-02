@@ -1,7 +1,7 @@
-// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft.All rights reserved.
 
-using Microsoft.KernelMemory;
-using Microsoft.KernelMemory.MemoryDb.AzureAISearch;
+using Microsoft.KernelMemory.MemoryDb.AzureAISearch.Internals;
+using Microsoft.KernelMemory.Models;
 using Microsoft.KM.TestHelpers;
 
 namespace Microsoft.AzureAISearch.UnitTests;
@@ -11,6 +11,7 @@ public class AzureAISearchFilteringTest : BaseUnitTestCase
     public AzureAISearchFilteringTest(ITestOutputHelper output) : base(output)
     {
     }
+
 
     [Fact]
     [Trait("Category", "UnitTest")]
@@ -32,6 +33,7 @@ public class AzureAISearchFilteringTest : BaseUnitTestCase
         Assert.Equal(string.Empty, result2);
     }
 
+
     [Fact]
     [Trait("Category", "UnitTest")]
     [Trait("Category", "AzAISearch")]
@@ -47,6 +49,7 @@ public class AzureAISearchFilteringTest : BaseUnitTestCase
         Console.WriteLine($"Result: {result}");
         Assert.Equal("(tags/any(s: s eq 'color:blue'))", result);
     }
+
 
     [Fact]
     [Trait("Category", "UnitTest")]
@@ -68,6 +71,7 @@ public class AzureAISearchFilteringTest : BaseUnitTestCase
         Assert.Equal("(tags/any(s: s eq 'color:blue')) or (tags/any(s: s eq 'size:medium'))", result);
     }
 
+
     [Fact]
     [Trait("Category", "UnitTest")]
     [Trait("Category", "AzAISearch")]
@@ -87,6 +91,7 @@ public class AzureAISearchFilteringTest : BaseUnitTestCase
         Console.WriteLine($"Result: {result}");
         Assert.Equal("tags/any(s: search.in(s, 'color:blue|color:green', '|'))", result);
     }
+
 
     [Fact]
     [Trait("Category", "UnitTest")]
@@ -116,6 +121,7 @@ public class AzureAISearchFilteringTest : BaseUnitTestCase
         Assert.Equal("tags/any(s: search.in(s, 'color:bl|ue,color:gr|e|en', ','))", result2);
     }
 
+
     [Fact]
     [Trait("Category", "UnitTest")]
     [Trait("Category", "AzAISearch")]
@@ -133,9 +139,9 @@ public class AzureAISearchFilteringTest : BaseUnitTestCase
 
         // Assert
         Console.WriteLine($"Result: {result}");
-        Assert.Equal("(tags/any(s: s eq 'color:blue') and tags/any(s: s eq 'size:medium')) or " +
-                     "(tags/any(s: s eq 'color:blue'))", result);
+        Assert.Equal("(tags/any(s: s eq 'color:blue') and tags/any(s: s eq 'size:medium')) or " + "(tags/any(s: s eq 'color:blue'))", result);
     }
+
 
     [Fact]
     [Trait("Category", "UnitTest")]
@@ -157,6 +163,7 @@ public class AzureAISearchFilteringTest : BaseUnitTestCase
         Assert.Equal("(tags/any(s: s eq 'col|or:blue')) or (tags/any(s: s eq 'si,ze:small'))", result);
     }
 
+
     [Fact]
     [Trait("Category", "UnitTest")]
     [Trait("Category", "AzAISearch")]
@@ -176,9 +183,9 @@ public class AzureAISearchFilteringTest : BaseUnitTestCase
 
         // Assert
         Console.WriteLine($"Result: {result}");
-        Assert.Equal("tags/any(s: search.in(s, 'col|or:blue,col|or:white', ',')) or " +
-                     "tags/any(s: search.in(s, 'si,ze:small|si,ze:medium', '|'))", result);
+        Assert.Equal("tags/any(s: search.in(s, 'col|or:blue,col|or:white', ',')) or " + "tags/any(s: search.in(s, 'si,ze:small|si,ze:medium', '|'))", result);
     }
+
 
     [Fact]
     [Trait("Category", "UnitTest")]
@@ -199,9 +206,9 @@ public class AzureAISearchFilteringTest : BaseUnitTestCase
 
         // Assert
         Console.WriteLine($"Result: {result}");
-        Assert.Equal("tags/any(s: search.in(s, 'col|or:blue,col|or:white', ',')) or " +
-                     "tags/any(s: search.in(s, 'si,ze:sm|all-si,ze:med;ium', '-'))", result);
+        Assert.Equal("tags/any(s: search.in(s, 'col|or:blue,col|or:white', ',')) or " + "tags/any(s: search.in(s, 'si,ze:sm|all-si,ze:med;ium', '-'))", result);
     }
+
 
     [Fact]
     [Trait("Category", "UnitTest")]
@@ -221,6 +228,7 @@ public class AzureAISearchFilteringTest : BaseUnitTestCase
         Console.WriteLine($"Result: {result}");
         Assert.Equal("(tags/any(s: s eq 'color:blue') and tags/any(s: s eq 'color:blue'))", result);
     }
+
 
     [Fact]
     [Trait("Category", "UnitTest")]
@@ -242,6 +250,7 @@ public class AzureAISearchFilteringTest : BaseUnitTestCase
         Assert.Equal("tags/any(s: search.in(s, 'color:blue|color:blue', '|'))", result);
     }
 
+
     [Fact]
     [Trait("Category", "UnitTest")]
     [Trait("Category", "AzAISearch")]
@@ -261,6 +270,7 @@ public class AzureAISearchFilteringTest : BaseUnitTestCase
         Assert.Equal("(tags/any(s: s eq 'color:blue') and tags/any(s: s eq 'color:green'))", result);
     }
 
+
     [Fact]
     [Trait("Category", "UnitTest")]
     [Trait("Category", "AzAISearch")]
@@ -278,7 +288,6 @@ public class AzureAISearchFilteringTest : BaseUnitTestCase
 
         // Assert
         Console.WriteLine($"Result: {result}");
-        Assert.Equal("(tags/any(s: s eq 'color:blue') and tags/any(s: s eq 'color:green')) " +
-                     "or (tags/any(s: s eq 'color:green'))", result);
+        Assert.Equal("(tags/any(s: s eq 'color:blue') and tags/any(s: s eq 'color:green')) " + "or (tags/any(s: s eq 'color:green'))", result);
     }
 }

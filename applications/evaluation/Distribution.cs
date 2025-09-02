@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 
@@ -16,27 +16,34 @@ public struct Distribution : IEquatable<Distribution>
 
     public Distribution() { }
 
+
     // TODO: use tolerance when comparing floating numbers for equality
-    public override readonly bool Equals(object? obj) => obj is Distribution distribution &&
-                                                         this.Simple == distribution.Simple &&
-                                                         this.Reasoning == distribution.Reasoning &&
-                                                         this.MultiContext == distribution.MultiContext &&
-                                                         this.Conditioning == distribution.Conditioning;
+    public override readonly bool Equals(object? obj)
+    {
+        return obj is Distribution distribution && Simple == distribution.Simple && Reasoning == distribution.Reasoning && MultiContext == distribution.MultiContext && Conditioning == distribution.Conditioning;
+    }
+
 
     public override readonly int GetHashCode()
     {
-        return HashCode.Combine(this.Simple, this.Reasoning, this.MultiContext, this.Conditioning);
+        return HashCode.Combine(Simple,
+            Reasoning,
+            MultiContext,
+            Conditioning);
     }
+
 
     public static bool operator ==(Distribution left, Distribution right)
     {
         return left.Equals(right);
     }
 
+
     public static bool operator !=(Distribution left, Distribution right)
     {
         return !(left == right);
     }
+
 
     public readonly bool Equals(Distribution other)
     {

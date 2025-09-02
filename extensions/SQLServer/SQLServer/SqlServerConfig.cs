@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 namespace Microsoft.KernelMemory.MemoryDb.SQLServer;
 
@@ -87,19 +87,20 @@ public class SqlServerConfig
     /// <seealso cref="UseNativeVectorSearch"/>
     public int VectorSize { get; set; } = DefaultVectorSize;
 
+
     /// <summary>
     /// Verify that the current state is valid.
     /// </summary>
     public void Validate()
     {
-        if (this.UseNativeVectorSearch)
+        if (UseNativeVectorSearch)
         {
-            if (this.VectorSize < 0)
+            if (VectorSize < 0)
             {
                 throw new ConfigurationException("The vector size must be greater than 0");
             }
 
-            if (this.VectorSize > 1998)
+            if (VectorSize > 1998)
             {
                 throw new ConfigurationException("The vector size must be less than or equal to 1998");
             }

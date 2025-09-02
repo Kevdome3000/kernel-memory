@@ -1,8 +1,9 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Text;
-using Microsoft.KernelMemory;
 using Microsoft.KernelMemory.HTTP;
+using Microsoft.KernelMemory.Models;
+using Xunit;
 
 namespace Microsoft.KM.Abstractions.UnitTests.Http;
 
@@ -19,6 +20,7 @@ public class SSETest
         Assert.Null(SSE.ParseMessage<MemoryAnswer>(input));
     }
 
+
     [Fact]
     public void ItParsesSingleLineMessage()
     {
@@ -34,6 +36,7 @@ public class SSETest
         Assert.NotNull(x);
         Assert.Equal("q", x.Question);
     }
+
 
     [Fact]
     public void ItParsesSingleLineMessageWithSeparator()
@@ -52,6 +55,7 @@ public class SSETest
         Assert.NotNull(x);
         Assert.Equal("q", x.Question);
     }
+
 
     [Fact]
     public void ItParsesMultiLineMessage()
@@ -72,6 +76,7 @@ public class SSETest
         Assert.Equal("abc", x.NoResultReason);
     }
 
+
     [Theory]
     [InlineData("data: [DONE]")]
     [InlineData("data: [DONE]\n")]
@@ -86,6 +91,7 @@ public class SSETest
 
         // Assert
         var messages = new List<MemoryAnswer>();
+
         await foreach (var message in result)
         {
             messages.Add(message);
@@ -93,6 +99,7 @@ public class SSETest
 
         Assert.Equal(0, messages.Count);
     }
+
 
     [Theory]
     [InlineData("data: { \"question\": \"qq\" }")]
@@ -111,6 +118,7 @@ public class SSETest
 
         // Assert
         var messages = new List<MemoryAnswer>();
+
         await foreach (var message in result)
         {
             messages.Add(message);
@@ -120,6 +128,7 @@ public class SSETest
         Assert.NotNull(messages[0]);
         Assert.Equal("qq", messages[0].Question);
     }
+
 
     [Theory]
     [InlineData("data: { \"question\": \"qq\" }\n\ndata: { \"question\": \"kk\" }\n\n")]
@@ -136,6 +145,7 @@ public class SSETest
 
         // Assert
         var messages = new List<MemoryAnswer>();
+
         await foreach (var message in result)
         {
             messages.Add(message);

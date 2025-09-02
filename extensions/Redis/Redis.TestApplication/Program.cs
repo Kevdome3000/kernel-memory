@@ -1,10 +1,11 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.KernelMemory;
 using Microsoft.KernelMemory.AI;
 using Microsoft.KernelMemory.AI.OpenAI;
 using Microsoft.KernelMemory.MemoryDb.Redis;
 using Microsoft.KernelMemory.MemoryStorage;
+using Microsoft.KernelMemory.Models;
 using StackExchange.Redis;
 
 namespace Microsoft.Redis.TestApplication;
@@ -13,6 +14,7 @@ public static class Program
 {
     private const string Text1 = "this is test 1";
     private const string Text2 = "this is test 2";
+
 
     public static async Task Main()
     {
@@ -32,6 +34,7 @@ public static class Program
         Console.WriteLine("===== LIST INDEXES =====");
 
         IEnumerable<string> indexes = await memory.GetIndexesAsync();
+
         foreach (var indexName in indexes)
         {
             Console.WriteLine(indexName);
@@ -64,6 +67,7 @@ public static class Program
         Console.WriteLine("===== LIST INDEXES =====");
 
         indexes = await memory.GetIndexesAsync();
+
         foreach (var indexName in indexes)
         {
             Console.WriteLine(indexName);
@@ -91,7 +95,11 @@ public static class Program
         Console.WriteLine("===== SEARCH 1 =====");
 
         var similarList = memory.GetSimilarListAsync(
-            "test", text: Text1, limit: 10, withEmbeddings: true);
+            "test",
+            Text1,
+            limit: 10,
+            withEmbeddings: true);
+
         await foreach ((MemoryRecord, double) record in similarList)
         {
             Console.WriteLine(record.Item1.Id);
@@ -102,8 +110,12 @@ public static class Program
         Console.WriteLine("===== SEARCH 2 =====");
 
         similarList = memory.GetSimilarListAsync(
-            "test", text: Text1, limit: 10, withEmbeddings: true,
+            "test",
+            Text1,
+            limit: 10,
+            withEmbeddings: true,
             filters: [MemoryFilters.ByTag("type", "email")]);
+
         await foreach ((MemoryRecord, double) record in similarList)
         {
             Console.WriteLine(record.Item1.Id);
@@ -113,6 +125,7 @@ public static class Program
         Console.WriteLine("===== LIST =====");
 
         var list = memory.GetListAsync("test", limit: 10, withEmbeddings: false);
+
         await foreach (MemoryRecord record in list)
         {
             Console.WriteLine(record.Id);
@@ -126,6 +139,7 @@ public static class Program
         Console.WriteLine("===== LIST AFTER DELETE =====");
 
         list = memory.GetListAsync("test", limit: 10, withEmbeddings: false);
+
         await foreach (MemoryRecord record in list)
         {
             Console.WriteLine(record.Id);
@@ -135,12 +149,13 @@ public static class Program
         Console.WriteLine("== Done ==");
     }
 
+
     private static async Task<(RedisMemory, Embedding[])> SetupAsync()
     {
         IConfiguration config = new ConfigurationBuilder()
             .AddJsonFile("appsettings.json")
-            .AddJsonFile("appsettings.development.json", optional: true)
-            .AddJsonFile("appsettings.Development.json", optional: true)
+            .AddJsonFile("appsettings.development.json", true)
+            .AddJsonFile("appsettings.Development.json", true)
             .Build();
 
         var useRealEmbeddingGenerator = config.GetValue<bool>("UseRealEmbeddingGenerator");
@@ -152,14 +167,16 @@ public static class Program
         // ======================================================
 
         ITextEmbeddingGenerator embeddingGenerator;
+
         if (useRealEmbeddingGenerator)
         {
             embeddingGenerator = new OpenAITextEmbeddingGenerator(new OpenAIConfig
-            {
-                EmbeddingModel = "text-embedding-ada-002",
-                EmbeddingModelMaxTokenTotal = 8_191,
-                APIKey = openAIApiKey
-            }, loggerFactory: null);
+                {
+                    EmbeddingModel = "text-embedding-ada-002",
+                    EmbeddingModelMaxTokenTotal = 8_191,
+                    APIKey = openAIApiKey
+                },
+                loggerFactory: null);
         }
         else
         {
@@ -177,6 +194,7 @@ public static class Program
 
         Embedding embedding1 = new[] { 0f, 0, 1, 0, 1 };
         Embedding embedding2 = new[] { 0, 0, 0.95f, 0.01f, 0.95f };
+
         if (useRealEmbeddingGenerator)
         {
             embedding1 = await embeddingGenerator.GenerateEmbeddingAsync(Text1);

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 
@@ -10,18 +10,20 @@ public class PipelineCompletedException : KernelMemoryException
     /// Initializes a new instance.
     /// </summary>
     public PipelineCompletedException()
-        : this(message: null, innerException: null)
+        : this(null, null)
     {
     }
+
 
     /// <summary>
     /// Initializes a new instance.
     /// </summary>
     /// <param name="message">The exception message.</param>
     public PipelineCompletedException(string? message)
-        : this(message, innerException: null)
+        : this(message, null)
     {
     }
+
 
     /// <summary>
     /// Initializes a new instance.

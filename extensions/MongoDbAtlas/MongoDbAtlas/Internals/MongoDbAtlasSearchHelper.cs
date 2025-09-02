@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Globalization;
@@ -8,7 +8,7 @@ using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Conventions;
 using MongoDB.Driver;
 
-namespace Microsoft.KernelMemory.MongoDbAtlas;
+namespace Microsoft.KernelMemory.MongoDbAtlas.Internals;
 
 /// <summary>
 /// <para>Wrapper for ATLAS search indexes stuff</para>
@@ -23,6 +23,7 @@ internal sealed class MongoDbAtlasSearchHelper
 {
     private readonly IMongoDatabase _db;
 
+
     /// <summary>
     /// Construct helper to interact with atlas and create mappings etc.
     /// </summary>
@@ -31,15 +32,20 @@ internal sealed class MongoDbAtlasSearchHelper
     public MongoDbAtlasSearchHelper(string connection, string dbName)
     {
         var client = MongoDbAtlasDatabaseHelper.GetClient(connection);
-        this._db = client.GetDatabase(dbName);
+        _db = client.GetDatabase(dbName);
     }
+
 
     /// <summary>
     /// Get the name of the index to perform a $search aggregation
     /// </summary>
     /// <param name="collectionName"></param>
     /// <returns></returns>
-    public string GetIndexName(string collectionName) => $"searchix_{collectionName}";
+    public string GetIndexName(string collectionName)
+    {
+        return $"searchix_{collectionName}";
+    }
+
 
     /// <summary>
     /// Create an ATLAS index and return the id of the index. It also wait for the index to be
@@ -53,20 +59,21 @@ internal sealed class MongoDbAtlasSearchHelper
         //I need to be able to create index even if collection does not exists
         //if collection does not exists, create collection and index
         //if collection does not exists, index does not exists
-        if (!await this.CollectionExistsAsync(collectionName).ConfigureAwait(false))
+        if (!await CollectionExistsAsync(collectionName).ConfigureAwait(false))
         {
             //index does not exists because collection does not exists
-            await this._db.CreateCollectionAsync(collectionName).ConfigureAwait(false);
+            await _db.CreateCollectionAsync(collectionName).ConfigureAwait(false);
         }
 
-        var status = await this.GetIndexInfoAsync(collectionName).ConfigureAwait(false);
+        var status = await GetIndexInfoAsync(collectionName).ConfigureAwait(false);
+
         if (status.Exists)
         {
             //index exists, but we found that status is "does_not_exist" this identify a stale state.
             if (status.Status == "does_not_exist")
             {
                 //delete the index and recreate it.
-                await this.DeleteIndicesAsync(collectionName).ConfigureAwait(false);
+                await DeleteIndicesAsync(collectionName).ConfigureAwait(false);
             }
             else
             {
@@ -75,16 +82,18 @@ internal sealed class MongoDbAtlasSearchHelper
         }
 
         //now I can create the index.
-        var command = this.CreateCreationCommand(collectionName, embeddingDimension);
-        var result = await this._db.RunCommandAsync<BsonDocument>(command).ConfigureAwait(false);
+        var command = CreateCreationCommand(collectionName, embeddingDimension);
+        var result = await _db.RunCommandAsync<BsonDocument>(command).ConfigureAwait(false);
         var creationResult = result["indexesCreated"] as BsonArray;
+
         if (creationResult == null || creationResult.Count == 0)
         {
             return s_falseIndexInfo;
         }
 
-        return await this.GetIndexInfoAsync(collectionName).ConfigureAwait(false);
+        return await GetIndexInfoAsync(collectionName).ConfigureAwait(false);
     }
+
 
     /// <summary>
     /// Delete all the indices for a specific collection
@@ -103,7 +112,7 @@ internal sealed class MongoDbAtlasSearchHelper
             }
         };
 
-        var collection = this._db.GetCollection<BsonDocument>(collectionName);
+        var collection = _db.GetCollection<BsonDocument>(collectionName);
         var result = await collection.AggregateAsync<BsonDocument>(pipeline).ConfigureAwait(false);
         var allIndexInfo = await result.ToListAsync().ConfigureAwait(false);
 
@@ -117,9 +126,10 @@ internal sealed class MongoDbAtlasSearchHelper
                 { "dropSearchIndex", collectionName },
                 { "id", id }
             };
-            await this._db.RunCommandAsync<BsonDocument>(command).ConfigureAwait(false);
+            await _db.RunCommandAsync<BsonDocument>(command).ConfigureAwait(false);
         }
     }
+
 
     /// <summary>
     /// Simply wait for the index to be ready for a specific collection
@@ -130,9 +140,11 @@ internal sealed class MongoDbAtlasSearchHelper
     {
         //cycle for max 10 seconds to wait for index to be ready
         var maxWait = DateTime.UtcNow.AddSeconds(secondsToWait);
+
         while (DateTime.UtcNow < maxWait)
         {
-            var indexInfo = await this.GetIndexInfoAsync(collectionName).ConfigureAwait(false);
+            var indexInfo = await GetIndexInfoAsync(collectionName).ConfigureAwait(false);
+
             if (indexInfo.Exists && indexInfo.Queryable)
             {
                 return;
@@ -141,6 +153,7 @@ internal sealed class MongoDbAtlasSearchHelper
             await Task.Delay(100).ConfigureAwait(false);
         }
     }
+
 
     /// <summary>
     /// https://www.mongodb.com/docs/upcoming/reference/command/createSearchIndexes/
@@ -160,7 +173,7 @@ internal sealed class MongoDbAtlasSearchHelper
                 {
                     new BsonDocument
                     {
-                        { "name", this.GetIndexName(collectionName) },
+                        { "name", GetIndexName(collectionName) },
                         { "type", "vectorSearch" },
                         {
                             "definition", new BsonDocument
@@ -200,6 +213,7 @@ internal sealed class MongoDbAtlasSearchHelper
         };
     }
 
+
     /// <summary>
     /// Utility function to drop the entire database with all search indexes created.
     /// </summary>
@@ -207,14 +221,16 @@ internal sealed class MongoDbAtlasSearchHelper
     public async Task DropDatabaseAsync()
     {
         //enumerate all collection
-        var collections = await this._db.ListCollectionsAsync().ConfigureAwait(false);
+        var collections = await _db.ListCollectionsAsync().ConfigureAwait(false);
         var collectionsName = await collections.ToListAsync().ConfigureAwait(false);
+
         foreach (var collection in collectionsName.Select(b => b["name"].AsString))
         {
-            await this.DeleteIndicesAsync(collection).ConfigureAwait(false);
-            await this._db.DropCollectionAsync(collection).ConfigureAwait(false);
+            await DeleteIndicesAsync(collection).ConfigureAwait(false);
+            await _db.DropCollectionAsync(collection).ConfigureAwait(false);
         }
     }
+
 
     /// <summary>
     /// Utility function to delete all documents from all collections but leave search index
@@ -223,17 +239,20 @@ internal sealed class MongoDbAtlasSearchHelper
     /// <returns></returns>
     public async Task DropAllDocumentsFromCollectionsAsync()
     {
-        var collections = await this._db.ListCollectionsAsync().ConfigureAwait(false);
+        var collections = await _db.ListCollectionsAsync().ConfigureAwait(false);
         var collectionsName = await collections.ToListAsync().ConfigureAwait(false);
+
         foreach (var collectionName in collectionsName.Select(b => b["name"].AsString))
         {
-            var collection = this._db.GetCollection<BsonDocument>(collectionName);
+            var collection = _db.GetCollection<BsonDocument>(collectionName);
             //delete all documents
             await collection.DeleteManyAsync(new BsonDocument()).ConfigureAwait(false);
         }
     }
 
-    public sealed record IndexInfo(bool Exists, string Status, Boolean Queryable);
+
+    public sealed record IndexInfo(bool Exists, string Status, bool Queryable);
+
 
     /// <summary>
     /// Verify CreateIndexSettingsAnalysisDescriptor for mapper 7
@@ -246,12 +265,14 @@ internal sealed class MongoDbAtlasSearchHelper
         return analyzers;
     }
 
+
     private async Task<bool> CollectionExistsAsync(string connectionName)
     {
         var filter = new BsonDocument("name", connectionName);
-        var collections = await this._db.ListCollectionsAsync(new ListCollectionsOptions { Filter = filter }).ConfigureAwait(false);
+        var collections = await _db.ListCollectionsAsync(new ListCollectionsOptions { Filter = filter }).ConfigureAwait(false);
         return collections.Any();
     }
+
 
     /// <summary>
     /// Retrieve information about an MongoDB Atlas index for a specific
@@ -259,7 +280,7 @@ internal sealed class MongoDbAtlasSearchHelper
     /// </summary>
     private async Task<IndexInfo> GetIndexInfoAsync(string collectionName)
     {
-        var collection = this._db.GetCollection<BsonDocument>(collectionName);
+        var collection = _db.GetCollection<BsonDocument>(collectionName);
         var pipeline = new BsonDocument[]
         {
             new()
@@ -268,14 +289,14 @@ internal sealed class MongoDbAtlasSearchHelper
                     "$listSearchIndexes",
                     new BsonDocument
                     {
-                        { "name", this.GetIndexName(collectionName) }
+                        { "name", GetIndexName(collectionName) }
                     }
                 }
             }
         };
 
         //if collection does not exists, index does not exists
-        if (!await this.CollectionExistsAsync(collectionName).ConfigureAwait(false))
+        if (!await CollectionExistsAsync(collectionName).ConfigureAwait(false))
         {
             //index does not exists because collection does not exists
             return s_falseIndexInfo;
@@ -296,11 +317,13 @@ internal sealed class MongoDbAtlasSearchHelper
         }
 
         var indexInfo = allIndexInfo[0];
-        var status = indexInfo["status"]!.AsString!.ToLower(System.Globalization.CultureInfo.InvariantCulture);
+        var status = indexInfo["status"]!.AsString!.ToLower(CultureInfo.InvariantCulture);
         return new IndexInfo(true, status, indexInfo["queryable"].AsBoolean);
     }
 
+
     private static readonly IndexInfo s_falseIndexInfo = new(false, "", false);
+
 
     private static bool CamelCaseConventionEnabled()
     {
@@ -309,8 +332,11 @@ internal sealed class MongoDbAtlasSearchHelper
         return conventionPack.Conventions.Any(c => c is CamelCaseElementNameConvention);
     }
 
+
     private static string ToLowerIfTrue(string value, bool toLower)
     {
-        return toLower ? value.ToLower(CultureInfo.InvariantCulture) : value;
+        return toLower
+            ? value.ToLower(CultureInfo.InvariantCulture)
+            : value;
     }
 }

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.KernelMemory;
 
@@ -10,6 +10,8 @@ using Microsoft.KernelMemory;
  *
  * 3. Run the code
  */
+namespace _213_onnx;
+
 public static class Program
 {
     public static async Task Main()
@@ -19,8 +21,8 @@ public static class Program
 
         new ConfigurationBuilder()
             .AddJsonFile("appsettings.json")
-            .AddJsonFile("appsettings.development.json", optional: true)
-            .AddJsonFile("appsettings.Development.json", optional: true)
+            .AddJsonFile("appsettings.development.json", true)
+            .AddJsonFile("appsettings.Development.json", true)
             .Build()
             .BindSection("KernelMemory:Services:Onnx", onnxCfg)
             .BindSection("KernelMemory:Services:AzureOpenAIEmbedding", azureOpenAIEmbeddingConfig);
@@ -45,9 +47,9 @@ public static class Program
 
         /*
 
-        -- Output using phi-4-onnx:
+    -- Output using phi-4-onnx:
 
-        Based on the provided information, if yesterday was October 21st, 2476, then today is October 22nd, 2476.
-        */
+    Based on the provided information, if yesterday was October 21st, 2476, then today is October 22nd, 2476.
+    */
     }
 }

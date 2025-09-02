@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -7,7 +7,11 @@ namespace Microsoft.KernelMemory.InteractiveSetup.Doctor;
 
 public static class Services
 {
-    public static void CheckAndShow(KernelMemoryConfig config, HashSet<string> services, List<Tuple<string, string>> warnings, List<Tuple<string, string>> errors)
+    public static void CheckAndShow(
+        KernelMemoryConfig config,
+        HashSet<string> services,
+        List<Tuple<string, string>> warnings,
+        List<Tuple<string, string>> errors)
     {
         string title = "Services Dependencies";
         Console.WriteLine($"\n\u001b[1;37m### {title}\u001b[0m\n");
@@ -37,6 +41,7 @@ public static class Services
                     string endpoint = (string)config.Services[k]["Endpoint"];
                     string auth = (string)config.Services[k]["Auth"];
                     string key = (string)config.Services[k]["APIKey"];
+
                     if (auth == "ApiKey" && string.IsNullOrWhiteSpace(key))
                     {
                         errors.Add(k, "API Key is not set");
@@ -114,6 +119,7 @@ public static class Services
                     string endpoint = (string)config.Services[k]["Endpoint"];
                     string auth = (string)config.Services[k]["Auth"];
                     string key = (string)config.Services[k]["APIKey"];
+
                     if (auth == "ApiKey" && string.IsNullOrWhiteSpace(key))
                     {
                         errors.Add(k, "API Key is not set");
@@ -138,6 +144,7 @@ public static class Services
                     string endpoint = (string)config.Services[k]["Endpoint"];
                     string auth = (string)config.Services[k]["Auth"];
                     string key = (string)config.Services[k]["APIKey"];
+
                     if (auth == "ApiKey" && string.IsNullOrWhiteSpace(key))
                     {
                         errors.Add(k, "API Key is not set");
@@ -165,6 +172,7 @@ public static class Services
                     Console.WriteLine($"- {k}");
                     Console.WriteLine($"  - TextModel: {config.Services[k]["TextModel"]}");
                     Console.WriteLine($"  - TextModelMaxTokenTotal: {config.Services[k]["TextModelMaxTokenTotal"]}");
+
                     if (openAIEmbeddings)
                     {
                         Console.WriteLine($"  - EmbeddingModel: {config.Services[k]["EmbeddingModel"]}");
@@ -175,6 +183,7 @@ public static class Services
 
                     string key = (string)config.Services[k]["APIKey"];
                     string textModel = (string)config.Services[k]["TextModel"];
+
                     if (string.IsNullOrWhiteSpace(key))
                     {
                         errors.Add(k, "API Key is not set");
@@ -188,6 +197,7 @@ public static class Services
                     if (openAIEmbeddings)
                     {
                         string embeddingModel = (string)config.Services[k]["EmbeddingModel"];
+
                         if (string.IsNullOrWhiteSpace(embeddingModel))
                         {
                             errors.Add(k, "EmbeddingModel is not set");

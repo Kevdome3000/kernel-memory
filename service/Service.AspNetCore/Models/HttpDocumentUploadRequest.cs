@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
+using Microsoft.KernelMemory.Models;
 
 namespace Microsoft.KernelMemory.Service.AspNetCore.Models;
 
@@ -59,6 +60,7 @@ public class HttpDocumentUploadRequest
     /// </summary>
     public IDictionary<string, object?> ContextArguments { get; set; } = new Dictionary<string, object?>();
 
+
     /* Resources:
      * https://learn.microsoft.com/en-us/aspnet/core/mvc/models/file-uploads?view=aspnetcore-7.0
      * https://learn.microsoft.com/en-us/aspnet/core/mvc/models/file-uploads?view=aspnetcore-7.0#upload-large-files-with-streaming
@@ -66,7 +68,8 @@ public class HttpDocumentUploadRequest
      * https://stackoverflow.com/questions/57033535/multipartformdatacontent-add-stringcontent-is-adding-carraige-return-linefeed-to
      */
     public static async Task<(HttpDocumentUploadRequest model, bool isValid, string errMsg)> BindHttpRequestAsync(
-        HttpRequest httpRequest, CancellationToken cancellationToken = default)
+        HttpRequest httpRequest,
+        CancellationToken cancellationToken = default)
     {
         var result = new HttpDocumentUploadRequest();
 
@@ -99,6 +102,7 @@ public class HttpDocumentUploadRequest
 
         // Document ID is optional, e.g. used if the client wants to retry the same upload, otherwise a random/unique one is generated
         string? documentId = documentIds.FirstOrDefault();
+
         if (string.IsNullOrWhiteSpace(documentId))
         {
             documentId = DateTimeOffset.Now.ToString("yyyyMMdd.HHmmss.", CultureInfo.InvariantCulture) + Guid.NewGuid().ToString("N");
@@ -113,11 +117,15 @@ public class HttpDocumentUploadRequest
 
                 var keyValue = tag.Trim().Split(Constants.ReservedEqualsChar, 2);
                 string key = keyValue[0].Trim();
+
                 if (string.IsNullOrWhiteSpace(key)) { continue; }
 
                 ValidateTagName(key);
 
-                string? value = keyValue.Length == 1 ? null : keyValue[1].Trim();
+                string? value = keyValue.Length == 1
+                    ? null
+                    : keyValue[1].Trim();
+
                 if (string.IsNullOrWhiteSpace(value)) { value = null; }
 
                 result.Tags.Add(key, value);
@@ -146,11 +154,13 @@ public class HttpDocumentUploadRequest
             }
 
             string? json = args.FirstOrDefault();
+
             if (!string.IsNullOrWhiteSpace(json))
             {
                 try
                 {
                     var arguments = JsonSerializer.Deserialize<Dictionary<string, object?>>(json);
+
                     if (arguments != null)
                     {
                         foreach (var arg in arguments)
@@ -172,6 +182,7 @@ public class HttpDocumentUploadRequest
 
         return (result, true, string.Empty);
     }
+
 
     private static void ValidateTagName(string tagName)
     {

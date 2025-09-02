@@ -1,7 +1,8 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
+using Microsoft.KernelMemory.Models;
 
 namespace Microsoft.KernelMemory.MemoryStorage;
 
@@ -50,14 +51,11 @@ public class MemoryRecord
     {
         get
         {
-            if (this.UpgradeRequired()) { this.Upgrade(); }
+            if (UpgradeRequired()) { Upgrade(); }
 
-            return this._tags;
+            return _tags;
         }
-        set
-        {
-            this._tags = value;
-        }
+        set => _tags = value;
     }
 
     /// <summary>
@@ -79,30 +77,29 @@ public class MemoryRecord
     {
         get
         {
-            if (this.UpgradeRequired()) { this.Upgrade(); }
+            if (UpgradeRequired()) { Upgrade(); }
 
-            return this._payload;
+            return _payload;
         }
-        set
-        {
-            this._payload = value;
-        }
+        set => _payload = value;
     }
+
 
     /// <summary>
     /// Check if the current state requires an upgrade
     /// </summary>
     private bool UpgradeRequired()
     {
-        if (this._payload == null) { return true; }
+        if (_payload == null) { return true; }
 
-        if (!this._payload.TryGetValue(Constants.ReservedPayloadSchemaVersionField, out object? versionValue))
+        if (!_payload.TryGetValue(Constants.ReservedPayloadSchemaVersionField, out object? versionValue))
         {
             return true;
         }
 
-        return (versionValue == null || versionValue.ToString() != CurrentSchemaVersion);
+        return versionValue == null || versionValue.ToString() != CurrentSchemaVersion;
     }
+
 
 #pragma warning disable CA1820 // readability
     /// <summary>
@@ -110,26 +107,29 @@ public class MemoryRecord
     /// </summary>
     private void Upgrade()
     {
-        if (this._payload == null) { this._payload = []; }
+        if (_payload == null) { _payload = []; }
 
-        if (this._tags == null) { this._tags = []; }
+        if (_tags == null) { _tags = []; }
 
         string version = SchemaVersionZero;
-        if (this._payload.TryGetValue(Constants.ReservedPayloadSchemaVersionField, out object? versionValue))
+
+        if (_payload.TryGetValue(Constants.ReservedPayloadSchemaVersionField, out object? versionValue))
         {
-            version = versionValue == null ? string.Empty : versionValue.ToString()!;
+            version = versionValue == null
+                ? string.Empty
+                : versionValue.ToString()!;
         }
 
         // Upgrade to "20231218A"
         if (version == SchemaVersionZero)
         {
-            if (!this._payload.ContainsKey(Constants.ReservedPayloadUrlField))
+            if (!_payload.ContainsKey(Constants.ReservedPayloadUrlField))
             {
-                this._payload[Constants.ReservedPayloadUrlField] = string.Empty;
+                _payload[Constants.ReservedPayloadUrlField] = string.Empty;
             }
 
             version = SchemaVersion20231218A;
-            this._payload[Constants.ReservedPayloadSchemaVersionField] = SchemaVersion20231218A;
+            _payload[Constants.ReservedPayloadSchemaVersionField] = SchemaVersion20231218A;
         }
 
         // if (version == SchemaVersion20231218A)
@@ -138,7 +138,7 @@ public class MemoryRecord
         //     Add future upgrade logic here if required
         // }
 
-        this._payload[Constants.ReservedPayloadSchemaVersionField] = CurrentSchemaVersion;
+        _payload[Constants.ReservedPayloadSchemaVersionField] = CurrentSchemaVersion;
     }
 #pragma warning restore CA1820
 }

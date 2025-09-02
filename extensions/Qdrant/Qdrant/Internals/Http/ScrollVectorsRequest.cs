@@ -1,11 +1,11 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Text.Json.Serialization;
 
-namespace Microsoft.KernelMemory.MemoryDb.Qdrant.Client.Http;
+namespace Microsoft.KernelMemory.MemoryDb.Qdrant.Internals.Http;
 
 internal sealed class ScrollVectorsRequest
 {
@@ -26,17 +26,20 @@ internal sealed class ScrollVectorsRequest
     [JsonPropertyName("with_vector")]
     public bool WithVector { get; set; }
 
+
     public static ScrollVectorsRequest Create(string collectionName)
     {
         return new ScrollVectorsRequest(collectionName);
     }
 
+
     public ScrollVectorsRequest HavingExternalId(string id)
     {
         ArgumentNullExceptionEx.ThrowIfNullOrWhiteSpace(id, nameof(id), "External ID is empty");
-        this.Filters.AndValue(QdrantConstants.PayloadIdField, id);
+        Filters.AndValue(QdrantConstants.PayloadIdField, id);
         return this;
     }
+
 
     public ScrollVectorsRequest HavingAllTags(IEnumerable<string>? tags)
     {
@@ -46,29 +49,33 @@ internal sealed class ScrollVectorsRequest
         {
             if (!string.IsNullOrEmpty(tag))
             {
-                this.Filters.AndValue(QdrantConstants.PayloadTagsField, tag);
+                Filters.AndValue(QdrantConstants.PayloadTagsField, tag);
             }
         }
 
         return this;
     }
 
+
     public ScrollVectorsRequest HavingSomeTags(IEnumerable<IEnumerable<string>?>? tagGroups)
     {
         if (tagGroups == null) { return this; }
 
         var list = tagGroups.ToList();
+
         if (list.Count < 2)
         {
-            return this.HavingAllTags(list.FirstOrDefault());
+            return HavingAllTags(list.FirstOrDefault());
         }
 
         var orFilter = new Filter.OrClause();
+
         foreach (var tags in list)
         {
             if (tags == null) { continue; }
 
             var andFilter = new Filter.AndClause();
+
             foreach (var tag in tags)
             {
                 if (!string.IsNullOrEmpty(tag))
@@ -80,64 +87,72 @@ internal sealed class ScrollVectorsRequest
             orFilter.Or(andFilter);
         }
 
-        this.Filters.And(orFilter);
+        Filters.And(orFilter);
 
         return this;
     }
+
 
     public ScrollVectorsRequest IncludePayLoad()
     {
-        this.WithPayload = true;
+        WithPayload = true;
         return this;
     }
+
 
     public ScrollVectorsRequest IncludeVectorData(bool withVector)
     {
-        this.WithVector = withVector;
+        WithVector = withVector;
         return this;
     }
+
 
     public ScrollVectorsRequest FromPosition(int offset)
     {
-        this.Offset = offset;
+        Offset = offset;
         return this;
     }
+
 
     public ScrollVectorsRequest Take(int count)
     {
-        this.Limit = count;
+        Limit = count;
         return this;
     }
 
+
     public ScrollVectorsRequest TakeFirst()
     {
-        return this.FromPosition(0).Take(1);
+        return FromPosition(0).Take(1);
     }
+
 
     public HttpRequestMessage Build()
     {
-        this.Validate();
+        Validate();
         return HttpRequest.CreatePostRequest(
-            $"collections/{this._collectionName}/points/scroll",
-            payload: this);
+            $"collections/{_collectionName}/points/scroll",
+            this);
     }
+
 
     private void Validate()
     {
-        ArgumentNullExceptionEx.ThrowIfNullOrWhiteSpace(this._collectionName, nameof(this._collectionName), "The collection name cannot be empty");
-        ArgumentOutOfRangeExceptionEx.ThrowIfZeroOrNegative(this.Limit, nameof(this.Limit), "The max number of vectors to retrieve must be greater than zero");
+        ArgumentNullExceptionEx.ThrowIfNullOrWhiteSpace(_collectionName, nameof(_collectionName), "The collection name cannot be empty");
+        ArgumentOutOfRangeExceptionEx.ThrowIfZeroOrNegative(Limit, nameof(Limit), "The max number of vectors to retrieve must be greater than zero");
 
-        this.Filters.Validate();
+        Filters.Validate();
     }
+
 
     private ScrollVectorsRequest(string collectionName)
     {
-        this._collectionName = collectionName;
-        this.Filters = new Filter.AndClause();
-        this.WithPayload = false;
-        this.WithVector = false;
+        _collectionName = collectionName;
+        Filters = new Filter.AndClause();
+        WithPayload = false;
+        WithVector = false;
 
         // By default take the closest vector only
-        this.FromPosition(0).TakeFirst();
+        FromPosition(0).TakeFirst();
     }
 }

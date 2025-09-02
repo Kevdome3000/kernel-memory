@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.KernelMemory;
@@ -21,6 +21,8 @@ using Microsoft.KernelMemory.Pipeline;
 using Microsoft.KernelMemory.Prompts;
 using Microsoft.KernelMemory.Safety.AzureAIContentSafety;
 using Microsoft.KernelMemory.Search;
+
+namespace _210_KM_without_builder;
 
 /// <summary>
 /// This example shows how to create an instance of Kernel Memory without using Kernel Memory builder
@@ -53,8 +55,8 @@ public static class Program
         WebApplicationBuilder appBuilder = WebApplication.CreateBuilder();
         appBuilder.Configuration
             .AddJsonFile("appsettings.json")
-            .AddJsonFile("appsettings.development.json", optional: true)
-            .AddJsonFile("appsettings.Development.json", optional: true)
+            .AddJsonFile("appsettings.development.json", true)
+            .AddJsonFile("appsettings.Development.json", true)
             .AddEnvironmentVariables();
         var app = appBuilder.Build();
         app.Configuration
@@ -81,9 +83,15 @@ public static class Program
         var tokenizerForChat = new O200KTokenizer();
         var tokenizerForEmbeddings = new CL100KTokenizer();
         var embeddingGeneratorHttpClient = new HttpClient();
-        var embeddingGenerator = new AzureOpenAITextEmbeddingGenerator(azureOpenAIEmbeddingConfig, tokenizerForEmbeddings, loggerFactory, embeddingGeneratorHttpClient);
+        var embeddingGenerator = new AzureOpenAITextEmbeddingGenerator(azureOpenAIEmbeddingConfig,
+            tokenizerForEmbeddings,
+            loggerFactory,
+            embeddingGeneratorHttpClient);
         var textGeneratorHttpClient = new HttpClient();
-        var textGenerator = new AzureOpenAITextGenerator(azureOpenAITextConfig, tokenizerForChat, loggerFactory, textGeneratorHttpClient);
+        var textGenerator = new AzureOpenAITextGenerator(azureOpenAITextConfig,
+            tokenizerForChat,
+            loggerFactory,
+            textGeneratorHttpClient);
         var contentModeration = new AzureAIContentSafetyModeration(azureAIContentSafetyModerationConfig, loggerFactory);
 
         // Storage
@@ -93,7 +101,14 @@ public static class Program
         // Ingestion pipeline orchestration
         var memoryDbs = new List<IMemoryDb> { memoryDb };
         var embeddingGenerators = new List<ITextEmbeddingGenerator> { embeddingGenerator };
-        var orchestrator = new InProcessPipelineOrchestrator(documentStorage, embeddingGenerators, memoryDbs, textGenerator, mimeTypeDetection, null, kernelMemoryConfig, loggerFactory);
+        var orchestrator = new InProcessPipelineOrchestrator(documentStorage,
+            embeddingGenerators,
+            memoryDbs,
+            textGenerator,
+            mimeTypeDetection,
+            null,
+            kernelMemoryConfig,
+            loggerFactory);
 
         // Ingestion handlers' dependencies
         var webScraperHttpClient = new HttpClient();
@@ -108,25 +123,52 @@ public static class Program
             new MsWordDecoder(loggerFactory),
             new MsExcelDecoder(msExcelDecoderConfig, loggerFactory),
             new MsPowerPointDecoder(msPowerPointDecoderConfig, loggerFactory),
-            new ImageDecoder(ocrEngine, loggerFactory),
+            new ImageDecoder(ocrEngine, loggerFactory)
         };
 
         // Ingestion handlers
-        orchestrator.AddHandler(new TextExtractionHandler("extract", orchestrator, decoders, webScraper, loggerFactory));
-        orchestrator.AddHandler(new TextPartitioningHandler("partition", orchestrator, textPartitioningOptions, loggerFactory));
+        orchestrator.AddHandler(new TextExtractionHandler("extract",
+            orchestrator,
+            decoders,
+            webScraper,
+            loggerFactory));
+        orchestrator.AddHandler(new TextPartitioningHandler("partition",
+            orchestrator,
+            textPartitioningOptions,
+            loggerFactory));
         orchestrator.AddHandler(new GenerateEmbeddingsHandler("gen_embeddings", orchestrator, loggerFactory));
-        orchestrator.AddHandler(new SaveRecordsHandler("save_records", orchestrator, kernelMemoryConfig, loggerFactory));
-        orchestrator.AddHandler(new SummarizationHandler("summarize", orchestrator, promptProvider, loggerFactory));
+        orchestrator.AddHandler(new SaveRecordsHandler("save_records",
+            orchestrator,
+            kernelMemoryConfig,
+            loggerFactory));
+        orchestrator.AddHandler(new SummarizationHandler("summarize",
+            orchestrator,
+            promptProvider,
+            loggerFactory));
         orchestrator.AddHandler(new DeleteGeneratedFilesHandler("delete_generated_files", documentStorage, loggerFactory));
-        orchestrator.AddHandler(new DeleteIndexHandler("private_delete_index", documentStorage, memoryDbs, loggerFactory));
-        orchestrator.AddHandler(new DeleteDocumentHandler("private_delete_document", documentStorage, memoryDbs, loggerFactory));
+        orchestrator.AddHandler(new DeleteIndexHandler("private_delete_index",
+            documentStorage,
+            memoryDbs,
+            loggerFactory));
+        orchestrator.AddHandler(new DeleteDocumentHandler("private_delete_document",
+            documentStorage,
+            memoryDbs,
+            loggerFactory));
 
         // Create memory instance
-        var searchClient = new SearchClient(memoryDb, textGenerator, searchClientConfig, promptProvider, contentModeration, loggerFactory);
-        var memory = new MemoryServerless(orchestrator, searchClient, requestContextProvider, kernelMemoryConfig);
+        var searchClient = new SearchClient(memoryDb,
+            textGenerator,
+            searchClientConfig,
+            promptProvider,
+            contentModeration,
+            loggerFactory);
+        var memory = new MemoryServerless(orchestrator,
+            searchClient,
+            requestContextProvider,
+            kernelMemoryConfig);
 
         // End-to-end test
-        await memory.ImportTextAsync("I'm waiting for Godot", documentId: "tg01");
+        await memory.ImportTextAsync("I'm waiting for Godot", "tg01");
         Console.WriteLine(await memory.AskAsync("Who am I waiting for?"));
     }
 }

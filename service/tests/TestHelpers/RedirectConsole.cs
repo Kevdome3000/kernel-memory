@@ -1,7 +1,8 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Globalization;
 using System.Text;
+using Xunit.Abstractions;
 
 namespace Microsoft.KM.TestHelpers;
 
@@ -13,54 +14,64 @@ internal sealed class RedirectConsole : TextWriter
 
     public override Encoding Encoding { get; } = Encoding.Default;
 
+
     public RedirectConsole(ITestOutputHelper output)
     {
-        this._output = output;
+        _output = output;
     }
+
 
     public override void Write(string? value)
     {
-        this.Text(value);
+        Text(value);
     }
+
 
     public override void WriteLine(string? value)
     {
-        this.Line(value);
+        Line(value);
     }
+
 
     public override void Write(char value)
     {
-        this.Text($"{value}");
+        Text($"{value}");
     }
+
 
     public override void WriteLine(char value)
     {
-        this.Line($"{value}");
+        Line($"{value}");
     }
+
 
     public override void Write(char[]? buffer)
     {
         if (buffer == null || buffer.Length == 0) { return; }
 
         var s = new StringBuilder();
+
         foreach (var c in buffer) { s.Append(c); }
 
-        this.Text(s.ToString());
+        Text(s.ToString());
     }
+
 
     public override void WriteLine(char[]? buffer)
     {
         if (buffer == null)
         {
-            this.Line();
+            Line();
             return;
         }
 
         var s = new StringBuilder();
+
         foreach (var c in buffer) { s.Append(c); }
 
-        this.Line(s.ToString());
+        Line(s.ToString());
     }
+
 
     public override void Write(char[] buffer, int index, int count)
     {
@@ -70,152 +81,182 @@ internal sealed class RedirectConsole : TextWriter
         }
 
         var s = new StringBuilder();
+
         for (int i = 0; i < count; i++)
         {
             s.Append(buffer[index + i]);
         }
 
-        this.Text(s.ToString());
+        Text(s.ToString());
     }
+
 
     public override void WriteLine(char[] buffer, int index, int count)
     {
         if (count <= 0 || index < 0 || buffer.Length - index < count)
         {
-            this.Line();
+            Line();
             return;
         }
 
         var s = new StringBuilder();
+
         for (int i = 0; i < count; i++)
         {
             s.Append(buffer[index + i]);
         }
 
-        this.Line(s.ToString());
+        Line(s.ToString());
     }
+
 
     public override void Write(ReadOnlySpan<char> buffer)
     {
         if (buffer == null || buffer.Length == 0) { return; }
 
         var s = new StringBuilder();
+
         foreach (var c in buffer) { s.Append(c); }
 
-        this.Text(s.ToString());
+        Text(s.ToString());
     }
+
 
     public override void WriteLine(ReadOnlySpan<char> buffer)
     {
         if (buffer == null)
         {
-            this.Line();
+            Line();
             return;
         }
 
         var s = new StringBuilder();
+
         foreach (var c in buffer) { s.Append(c); }
 
-        this.Line(s.ToString());
+        Line(s.ToString());
     }
+
 
     public override void Write(StringBuilder? buffer)
     {
         if (buffer == null || buffer.Length == 0) { return; }
 
-        this.Text(buffer.ToString());
+        Text(buffer.ToString());
     }
+
 
     public override void WriteLine(StringBuilder? buffer)
     {
         if (buffer == null)
         {
-            this.Line();
+            Line();
             return;
         }
 
-        this.Line(buffer.ToString());
+        Line(buffer.ToString());
     }
+
 
     public override void Write(bool value)
     {
-        this.Text(value ? "True" : "False");
+        Text(value
+            ? "True"
+            : "False");
     }
+
 
     public override void WriteLine(bool value)
     {
-        this.Line(value ? "True" : "False");
+        Line(value
+            ? "True"
+            : "False");
     }
+
 
     public override void Write(int value)
     {
-        this.Text(value.ToString(this.FormatProvider));
+        Text(value.ToString(FormatProvider));
     }
+
 
     public override void WriteLine(int value)
     {
-        this.Line(value.ToString(this.FormatProvider));
+        Line(value.ToString(FormatProvider));
     }
+
 
     public override void Write(uint value)
     {
-        this.Text(value.ToString(this.FormatProvider));
+        Text(value.ToString(FormatProvider));
     }
+
 
     public override void WriteLine(uint value)
     {
-        this.Line(value.ToString(this.FormatProvider));
+        Line(value.ToString(FormatProvider));
     }
+
 
     public override void Write(long value)
     {
-        this.Text(value.ToString(this.FormatProvider));
+        Text(value.ToString(FormatProvider));
     }
+
 
     public override void WriteLine(long value)
     {
-        this.Line(value.ToString(this.FormatProvider));
+        Line(value.ToString(FormatProvider));
     }
+
 
     public override void Write(ulong value)
     {
-        this.Text(value.ToString(this.FormatProvider));
+        Text(value.ToString(FormatProvider));
     }
+
 
     public override void WriteLine(ulong value)
     {
-        this.Line(value.ToString(this.FormatProvider));
+        Line(value.ToString(FormatProvider));
     }
+
 
     public override void Write(float value)
     {
-        this.Text(value.ToString(this.FormatProvider));
+        Text(value.ToString(FormatProvider));
     }
+
 
     public override void WriteLine(float value)
     {
-        this.Line(value.ToString(this.FormatProvider));
+        Line(value.ToString(FormatProvider));
     }
+
 
     public override void Write(double value)
     {
-        this.Text(value.ToString(this.FormatProvider));
+        Text(value.ToString(FormatProvider));
     }
+
 
     public override void WriteLine(double value)
     {
-        this.Line(value.ToString(this.FormatProvider));
+        Line(value.ToString(FormatProvider));
     }
+
 
     public override void Write(decimal value)
     {
-        this.Text(value.ToString(this.FormatProvider));
+        Text(value.ToString(FormatProvider));
     }
+
 
     public override void WriteLine(decimal value)
     {
-        this.Line(value.ToString(this.FormatProvider));
+        Line(value.ToString(FormatProvider));
     }
+
 
     public override void Write(object? value)
     {
@@ -223,14 +264,15 @@ internal sealed class RedirectConsole : TextWriter
         {
             if (value is IFormattable f)
             {
-                this.Text(f.ToString(null, this.FormatProvider));
+                Text(f.ToString(null, FormatProvider));
             }
             else
             {
-                this.Text(value.ToString());
+                Text(value.ToString());
             }
         }
     }
+
 
     public override void WriteLine(object? value)
     {
@@ -238,18 +280,19 @@ internal sealed class RedirectConsole : TextWriter
         {
             if (value is IFormattable f)
             {
-                this.Line(f.ToString(null, this.FormatProvider));
+                Line(f.ToString(null, FormatProvider));
             }
             else
             {
-                this.Line(value.ToString());
+                Line(value.ToString());
             }
         }
         else
         {
-            this.Line();
+            Line();
         }
     }
+
 
     // public override void Write([StringSyntax(StringSyntaxAttribute.CompositeFormat)] string format, object? arg0)
     // {
@@ -291,13 +334,14 @@ internal sealed class RedirectConsole : TextWriter
     //     this.Line(string.Format(this.FormatProvider, format, arg));
     // }
 
+
     private void Text(string? s)
     {
         if (string.IsNullOrEmpty(s)) { return; }
 
         try
         {
-            this._output.WriteLine(s);
+            _output.WriteLine(s);
         }
         catch (InvalidOperationException e) when (e.Message.Contains("no currently active test", StringComparison.OrdinalIgnoreCase))
         {
@@ -305,11 +349,12 @@ internal sealed class RedirectConsole : TextWriter
         }
     }
 
+
     private void Line(string? s = null)
     {
         try
         {
-            this._output.WriteLine(s ?? string.Empty);
+            _output.WriteLine(s ?? string.Empty);
         }
         catch (InvalidOperationException e) when (e.Message.Contains("no currently active test", StringComparison.OrdinalIgnoreCase))
         {

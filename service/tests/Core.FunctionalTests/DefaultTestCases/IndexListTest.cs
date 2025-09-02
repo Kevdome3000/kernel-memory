@@ -1,6 +1,7 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.KernelMemory;
+using Microsoft.KernelMemory.Models;
 
 namespace Microsoft.KM.Core.FunctionalTests.DefaultTestCases;
 
@@ -21,6 +22,7 @@ public static class IndexListTest
         await memory.DeleteIndexAsync(indexNameWithUnderscores);
     }
 
+
     public static async Task ItUsesDefaultIndexName(IKernelMemory memory, Action<string> log, string expectedDefault)
     {
         // Arrange
@@ -29,6 +31,7 @@ public static class IndexListTest
         // Act
         var id = await memory.ImportTextAsync("something", index: emptyIndexName);
         var count = 0;
+
         while (!await memory.IsDocumentReadyAsync(id))
         {
             Assert.True(count++ <= 30, "Document import timed out");
@@ -43,6 +46,7 @@ public static class IndexListTest
         // Assert
         Assert.True(list.Any(x => x.Name == expectedDefault));
     }
+
 
     public static async Task ItListsIndexes(IKernelMemory memory, Action<string> log)
     {
@@ -63,25 +67,25 @@ public static class IndexListTest
         string id3 = await memory.ImportTextAsync("text3", index: indexNameWithDashes, steps: Constants.PipelineWithoutSummary);
         string id4 = await memory.ImportTextAsync("text4", index: indexNameWithUnderscores, steps: Constants.PipelineWithoutSummary);
 
-        while (!await memory.IsDocumentReadyAsync(documentId: id1, index: indexName1))
+        while (!await memory.IsDocumentReadyAsync(id1, indexName1))
         {
             log($"[id1: {id1}] Waiting for memory ingestion to complete...");
             await Task.Delay(TimeSpan.FromSeconds(2));
         }
 
-        while (!await memory.IsDocumentReadyAsync(documentId: id2, index: indexName2))
+        while (!await memory.IsDocumentReadyAsync(id2, indexName2))
         {
             log($"[id2: {id2}] Waiting for memory ingestion to complete...");
             await Task.Delay(TimeSpan.FromSeconds(2));
         }
 
-        while (!await memory.IsDocumentReadyAsync(documentId: id3, index: indexNameWithDashes))
+        while (!await memory.IsDocumentReadyAsync(id3, indexNameWithDashes))
         {
             log($"[id3: {id3}] Waiting for memory ingestion to complete...");
             await Task.Delay(TimeSpan.FromSeconds(2));
         }
 
-        while (!await memory.IsDocumentReadyAsync(documentId: id4, index: indexNameWithUnderscores))
+        while (!await memory.IsDocumentReadyAsync(id4, indexNameWithUnderscores))
         {
             log($"[id4: {id4}] Waiting for memory ingestion to complete...");
             await Task.Delay(TimeSpan.FromSeconds(2));
@@ -90,6 +94,7 @@ public static class IndexListTest
         // Act
         List<IndexDetails> list = (await memory.ListIndexesAsync()).ToList();
         Console.WriteLine("Indexes found:");
+
         foreach (var index in list)
         {
             Console.WriteLine(" - " + index.Name);

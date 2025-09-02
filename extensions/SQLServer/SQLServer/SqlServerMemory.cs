@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Globalization;
 using System.Runtime.CompilerServices;
@@ -10,6 +10,7 @@ using Microsoft.KernelMemory.AI;
 using Microsoft.KernelMemory.Diagnostics;
 using Microsoft.KernelMemory.MemoryDb.SQLServer.QueryProviders;
 using Microsoft.KernelMemory.MemoryStorage;
+using Microsoft.KernelMemory.Models;
 
 namespace Microsoft.KernelMemory.MemoryDb.SQLServer;
 
@@ -54,6 +55,7 @@ public sealed class SqlServerMemory : IMemoryDb, IMemoryDbUpsertBatch, IDisposab
     /// </summary>
     private int _cachedServerVersion = int.MinValue;
 
+
     /// <summary>
     /// Initializes a new instance of the <see cref="SqlServerMemory"/> class.
     /// </summary>
@@ -67,32 +69,34 @@ public sealed class SqlServerMemory : IMemoryDb, IMemoryDbUpsertBatch, IDisposab
         ISqlServerQueryProvider? queryProvider = null,
         ILoggerFactory? loggerFactory = null)
     {
-        this._config = config;
-        this._embeddingGenerator = embeddingGenerator ?? throw new ConfigurationException("Embedding generator not configured");
-        this._log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<SqlServerMemory>();
-        this._queryProvider = queryProvider
-                              ?? (this._config.UseNativeVectorSearch
-                                  ? new VectorQueryProvider(this._config)
-                                  : new DefaultQueryProvider(this._config));
+        _config = config;
+        _embeddingGenerator = embeddingGenerator ?? throw new ConfigurationException("Embedding generator not configured");
+        _log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<SqlServerMemory>();
+        _queryProvider = queryProvider
+            ?? (_config.UseNativeVectorSearch
+                ? new VectorQueryProvider(_config)
+                : new DefaultQueryProvider(_config));
     }
+
 
     /// <inheritdoc/>
     public async Task CreateIndexAsync(string index, int vectorSize, CancellationToken cancellationToken = default)
     {
-        if (!this._isReady) { await this.InitAsync(cancellationToken).ConfigureAwait(false); }
+        if (!_isReady) { await InitAsync(cancellationToken).ConfigureAwait(false); }
 
         index = NormalizeIndexName(index);
 
-        if (await this.DoesIndexExistsAsync(index, cancellationToken).ConfigureAwait(false))
+        if (await DoesIndexExistsAsync(index, cancellationToken).ConfigureAwait(false))
         {
             // Index already exists
             return;
         }
 
-        var sql = this._queryProvider.PrepareCreateIndexQuery(this._cachedServerVersion, index, vectorSize);
+        var sql = _queryProvider.PrepareCreateIndexQuery(_cachedServerVersion, index, vectorSize);
 
-        var connection = new SqlConnection(this._config.ConnectionString);
+        var connection = new SqlConnection(_config.ConnectionString);
         await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
+
         try
         {
             SqlCommand command = connection.CreateCommand();
@@ -108,23 +112,25 @@ public sealed class SqlServerMemory : IMemoryDb, IMemoryDbUpsertBatch, IDisposab
         }
     }
 
+
     /// <inheritdoc/>
     public async Task DeleteAsync(string index, MemoryRecord record, CancellationToken cancellationToken = default)
     {
-        if (!this._isReady) { await this.InitAsync(cancellationToken).ConfigureAwait(false); }
+        if (!_isReady) { await InitAsync(cancellationToken).ConfigureAwait(false); }
 
         index = NormalizeIndexName(index);
 
-        if (!await this.DoesIndexExistsAsync(index, cancellationToken).ConfigureAwait(false))
+        if (!await DoesIndexExistsAsync(index, cancellationToken).ConfigureAwait(false))
         {
             // Index does not exist
             return;
         }
 
-        var sql = this._queryProvider.PrepareDeleteRecordQuery(index);
+        var sql = _queryProvider.PrepareDeleteRecordQuery(index);
 
-        var connection = new SqlConnection(this._config.ConnectionString);
+        var connection = new SqlConnection(_config.ConnectionString);
         await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
+
         try
         {
             SqlCommand command = connection.CreateCommand();
@@ -142,24 +148,26 @@ public sealed class SqlServerMemory : IMemoryDb, IMemoryDbUpsertBatch, IDisposab
         }
     }
 
+
     /// <inheritdoc/>
     public async Task DeleteIndexAsync(string index, CancellationToken cancellationToken = default)
     {
-        if (!this._isReady) { await this.InitAsync(cancellationToken).ConfigureAwait(false); }
+        if (!_isReady) { await InitAsync(cancellationToken).ConfigureAwait(false); }
 
         index = NormalizeIndexName(index);
 
-        if (!await this.DoesIndexExistsAsync(index, cancellationToken).ConfigureAwait(false))
+        if (!await DoesIndexExistsAsync(index, cancellationToken).ConfigureAwait(false))
         {
             // Index does not exist
             return;
         }
 
-        var sql = this._queryProvider.PrepareDeleteIndexQuery(index);
+        var sql = _queryProvider.PrepareDeleteIndexQuery(index);
 
-        var connection = new SqlConnection(this._config.ConnectionString);
+        var connection = new SqlConnection(_config.ConnectionString);
         await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
         SqlCommand command = connection.CreateCommand();
+
         try
         {
             command.CommandText = sql;
@@ -174,22 +182,25 @@ public sealed class SqlServerMemory : IMemoryDb, IMemoryDbUpsertBatch, IDisposab
         }
     }
 
+
     /// <inheritdoc/>
     public async Task<IEnumerable<string>> GetIndexesAsync(CancellationToken cancellationToken = default)
     {
-        if (!this._isReady) { await this.InitAsync(cancellationToken).ConfigureAwait(false); }
+        if (!_isReady) { await InitAsync(cancellationToken).ConfigureAwait(false); }
 
         List<string> indexes = [];
 
-        var sql = this._queryProvider.PrepareGetIndexesQuery();
+        var sql = _queryProvider.PrepareGetIndexesQuery();
 
-        var connection = new SqlConnection(this._config.ConnectionString);
+        var connection = new SqlConnection(_config.ConnectionString);
         await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
         SqlCommand command = connection.CreateCommand();
+
         try
         {
             command.CommandText = sql;
             var dataReader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+
             while (await dataReader.ReadAsync(cancellationToken).ConfigureAwait(false))
             {
                 indexes.Add(dataReader.GetString(dataReader.GetOrdinal("id")));
@@ -207,6 +218,7 @@ public sealed class SqlServerMemory : IMemoryDb, IMemoryDbUpsertBatch, IDisposab
         return indexes;
     }
 
+
     /// <inheritdoc/>
     public async IAsyncEnumerable<MemoryRecord> GetListAsync(
         string index,
@@ -215,11 +227,11 @@ public sealed class SqlServerMemory : IMemoryDb, IMemoryDbUpsertBatch, IDisposab
         bool withEmbeddings = false,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        if (!this._isReady) { await this.InitAsync(cancellationToken).ConfigureAwait(false); }
+        if (!_isReady) { await InitAsync(cancellationToken).ConfigureAwait(false); }
 
         index = NormalizeIndexName(index);
 
-        if (!await this.DoesIndexExistsAsync(index, cancellationToken).ConfigureAwait(false))
+        if (!await DoesIndexExistsAsync(index, cancellationToken).ConfigureAwait(false))
         {
             // Index does not exist
             yield break;
@@ -229,14 +241,18 @@ public sealed class SqlServerMemory : IMemoryDb, IMemoryDbUpsertBatch, IDisposab
 
         var list = new List<MemoryRecord>();
 
-        var connection = new SqlConnection(this._config.ConnectionString);
+        var connection = new SqlConnection(_config.ConnectionString);
         await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
         SqlCommand command = connection.CreateCommand();
+
         try
         {
             var tagFilters = new TagCollection();
 
-            var sql = this._queryProvider.PrepareGetRecordsListQuery(index, filters, withEmbeddings, command.Parameters);
+            var sql = _queryProvider.PrepareGetRecordsListQuery(index,
+                filters,
+                withEmbeddings,
+                command.Parameters);
             command.CommandText = sql;
 
             command.Parameters.AddWithValue("@index", index);
@@ -244,10 +260,11 @@ public sealed class SqlServerMemory : IMemoryDb, IMemoryDbUpsertBatch, IDisposab
             command.Parameters.AddWithValue("@filters", JsonSerializer.Serialize(tagFilters));
 
             var dataReader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+
             while (await dataReader.ReadAsync(cancellationToken).ConfigureAwait(false))
             {
                 // Iterates over the entries and saves them in a list so that the connection can be closed before returning the results.
-                var entry = await this.ReadEntryAsync(dataReader, withEmbeddings, cancellationToken).ConfigureAwait(false);
+                var entry = await ReadEntryAsync(dataReader, withEmbeddings, cancellationToken).ConfigureAwait(false);
                 list.Add(entry);
             }
 
@@ -265,27 +282,39 @@ public sealed class SqlServerMemory : IMemoryDb, IMemoryDbUpsertBatch, IDisposab
         }
     }
 
+
     /// <inheritdoc/>
-    public async IAsyncEnumerable<(MemoryRecord, double)> GetSimilarListAsync(string index, string text, ICollection<MemoryFilter>? filters = null, double minRelevance = 0, int limit = 1, bool withEmbeddings = false, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<(MemoryRecord, double)> GetSimilarListAsync(
+        string index,
+        string text,
+        ICollection<MemoryFilter>? filters = null,
+        double minRelevance = 0,
+        int limit = 1,
+        bool withEmbeddings = false,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        if (!this._isReady) { await this.InitAsync(cancellationToken).ConfigureAwait(false); }
+        if (!_isReady) { await InitAsync(cancellationToken).ConfigureAwait(false); }
 
         index = NormalizeIndexName(index);
 
-        if (!await this.DoesIndexExistsAsync(index, cancellationToken).ConfigureAwait(false))
+        if (!await DoesIndexExistsAsync(index, cancellationToken).ConfigureAwait(false))
         {
             // Index does not exist
             yield break;
         }
 
-        Embedding embedding = await this._embeddingGenerator.GenerateEmbeddingAsync(text, cancellationToken).ConfigureAwait(false);
+        Embedding embedding = await _embeddingGenerator.GenerateEmbeddingAsync(text, cancellationToken).ConfigureAwait(false);
 
-        var connection = new SqlConnection(this._config.ConnectionString);
+        var connection = new SqlConnection(_config.ConnectionString);
         await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
         SqlCommand command = connection.CreateCommand();
+
         try
         {
-            var sql = this._queryProvider.PrepareGetSimilarRecordsListQuery(index, filters, withEmbeddings, command.Parameters);
+            var sql = _queryProvider.PrepareGetSimilarRecordsListQuery(index,
+                filters,
+                withEmbeddings,
+                command.Parameters);
             command.CommandText = sql;
 
             command.Parameters.AddWithValue("@min_relevance_score", minRelevance);
@@ -295,10 +324,12 @@ public sealed class SqlServerMemory : IMemoryDb, IMemoryDbUpsertBatch, IDisposab
             command.Parameters.AddWithValue("@limit", limit);
 
             var dataReader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+
             while (await dataReader.ReadAsync(cancellationToken).ConfigureAwait(false))
             {
                 double cosineSimilarity = 0;
-                if (this._config.UseNativeVectorSearch)
+
+                if (_config.UseNativeVectorSearch)
                 {
                     double distance = dataReader.GetDouble(dataReader.GetOrdinal("distance"));
                     cosineSimilarity = 1 - distance;
@@ -308,7 +339,7 @@ public sealed class SqlServerMemory : IMemoryDb, IMemoryDbUpsertBatch, IDisposab
                     cosineSimilarity = dataReader.GetDouble(dataReader.GetOrdinal("cosine_similarity"));
                 }
 
-                yield return (await this.ReadEntryAsync(dataReader, withEmbeddings, cancellationToken).ConfigureAwait(false), cosineSimilarity);
+                yield return (await ReadEntryAsync(dataReader, withEmbeddings, cancellationToken).ConfigureAwait(false), cosineSimilarity);
             }
 
             await dataReader.DisposeAsync().ConfigureAwait(false);
@@ -321,12 +352,13 @@ public sealed class SqlServerMemory : IMemoryDb, IMemoryDbUpsertBatch, IDisposab
         }
     }
 
+
     /// <inheritdoc/>
     public async Task<string> UpsertAsync(string index, MemoryRecord record, CancellationToken cancellationToken = default)
     {
-        if (!this._isReady) { await this.InitAsync(cancellationToken).ConfigureAwait(false); }
+        if (!_isReady) { await InitAsync(cancellationToken).ConfigureAwait(false); }
 
-        await foreach (var item in this.UpsertBatchAsync(index, [record], cancellationToken).ConfigureAwait(false))
+        await foreach (var item in UpsertBatchAsync(index, [record], cancellationToken).ConfigureAwait(false))
         {
             return item;
         }
@@ -334,25 +366,27 @@ public sealed class SqlServerMemory : IMemoryDb, IMemoryDbUpsertBatch, IDisposab
         return null!;
     }
 
+
     /// <inheritdoc/>
     public async IAsyncEnumerable<string> UpsertBatchAsync(string index, IEnumerable<MemoryRecord> records, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         List<MemoryRecord> list = records.ToList();
-        this._log.LogDebug("Upserting records, batch size {0}", list.Count);
+        _log.LogDebug("Upserting records, batch size {0}", list.Count);
 
-        if (!this._isReady) { await this.InitAsync(cancellationToken).ConfigureAwait(false); }
+        if (!_isReady) { await InitAsync(cancellationToken).ConfigureAwait(false); }
 
         index = NormalizeIndexName(index);
 
-        if (!await this.DoesIndexExistsAsync(index, cancellationToken).ConfigureAwait(false))
+        if (!await DoesIndexExistsAsync(index, cancellationToken).ConfigureAwait(false))
         {
             throw new IndexNotFoundException($"The index '{index}' does not exist.");
         }
 
-        var sql = this._queryProvider.PrepareUpsertRecordsBatchQuery(index);
+        var sql = _queryProvider.PrepareUpsertRecordsBatchQuery(index);
 
-        var connection = new SqlConnection(this._config.ConnectionString);
+        var connection = new SqlConnection(_config.ConnectionString);
         await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
+
         try
         {
             foreach (var record in list)
@@ -377,11 +411,13 @@ public sealed class SqlServerMemory : IMemoryDb, IMemoryDbUpsertBatch, IDisposab
         }
     }
 
+
     /// <inheritdoc />
     public void Dispose()
     {
-        this._initSemaphore.Dispose();
+        _initSemaphore.Dispose();
     }
+
 
     #region private ================================================================================
 
@@ -389,24 +425,26 @@ public sealed class SqlServerMemory : IMemoryDb, IMemoryDbUpsertBatch, IDisposab
     private static readonly Regex s_replaceIndexNameCharsRegex = new(@"[\s|\\|/|.|_|:]");
     private const string ValidSeparator = "-";
 
+
     /// <summary>
     /// Prepare instance, ensuring tables exist and reusable info is cached.
     /// </summary>
     private async Task InitAsync(CancellationToken cancellationToken)
     {
-        if (this._isReady) { return; }
+        if (_isReady) { return; }
 
         var lockAcquired = false;
+
         try
         {
-            await this._initSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await _initSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
             lockAcquired = true;
 
-            if (this._isReady) { return; }
+            if (_isReady) { return; }
 
-            await this.CacheSqlServerMajorVersionNumberAsync(cancellationToken).ConfigureAwait(false);
-            await this.CreateTablesIfNotExistsAsync(cancellationToken).ConfigureAwait(false);
-            this._isReady = true;
+            await CacheSqlServerMajorVersionNumberAsync(cancellationToken).ConfigureAwait(false);
+            await CreateTablesIfNotExistsAsync(cancellationToken).ConfigureAwait(false);
+            _isReady = true;
         }
         finally
         {
@@ -414,17 +452,18 @@ public sealed class SqlServerMemory : IMemoryDb, IMemoryDbUpsertBatch, IDisposab
             // e.g. not when WaitAsync times out or throws some exception
             if (lockAcquired)
             {
-                this._initSemaphore.Release();
+                _initSemaphore.Release();
             }
         }
     }
+
 
     /// <summary>
     /// Cache SQL Server version
     /// </summary>
     private async Task CacheSqlServerMajorVersionNumberAsync(CancellationToken cancellationToken)
     {
-        var connection = new SqlConnection(this._config.ConnectionString);
+        var connection = new SqlConnection(_config.ConnectionString);
         await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
         SqlCommand command = connection.CreateCommand();
 
@@ -432,7 +471,7 @@ public sealed class SqlServerMemory : IMemoryDb, IMemoryDbUpsertBatch, IDisposab
         {
             command.CommandText = "SELECT SERVERPROPERTY('ProductMajorVersion')";
             var result = await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
-            this._cachedServerVersion = Convert.ToInt32(result, CultureInfo.InvariantCulture);
+            _cachedServerVersion = Convert.ToInt32(result, CultureInfo.InvariantCulture);
         }
         finally
         {
@@ -442,17 +481,19 @@ public sealed class SqlServerMemory : IMemoryDb, IMemoryDbUpsertBatch, IDisposab
         }
     }
 
+
     /// <summary>
     /// Creates the SQL Server tables if they do not exist.
     /// </summary>
     /// <returns></returns>
     private async Task CreateTablesIfNotExistsAsync(CancellationToken cancellationToken)
     {
-        var sql = this._queryProvider.PrepareCreateAllSupportingTablesQuery();
+        var sql = _queryProvider.PrepareCreateAllSupportingTablesQuery();
 
-        var connection = new SqlConnection(this._config.ConnectionString);
+        var connection = new SqlConnection(_config.ConnectionString);
         await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
         SqlCommand command = connection.CreateCommand();
+
         try
         {
             command.CommandText = sql;
@@ -466,18 +507,21 @@ public sealed class SqlServerMemory : IMemoryDb, IMemoryDbUpsertBatch, IDisposab
         }
     }
 
+
     /// <summary>
     /// Checks if the index exists.
     /// </summary>
     /// <param name="indexName">The index name.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>True is the index exists</returns>
-    private async Task<bool> DoesIndexExistsAsync(string indexName,
+    private async Task<bool> DoesIndexExistsAsync(
+        string indexName,
         CancellationToken cancellationToken = default)
     {
-        var collections = await this.GetIndexesAsync(cancellationToken).ConfigureAwait(false);
+        var collections = await GetIndexesAsync(cancellationToken).ConfigureAwait(false);
         return collections.Any(x => x.Equals(indexName, StringComparison.OrdinalIgnoreCase));
     }
+
 
     private async Task<MemoryRecord> ReadEntryAsync(SqlDataReader dataReader, bool withEmbedding, CancellationToken cancellationToken = default)
     {
@@ -504,6 +548,7 @@ public sealed class SqlServerMemory : IMemoryDb, IMemoryDbUpsertBatch, IDisposab
         return entry;
     }
 
+
     private static string NormalizeIndexName(string index)
     {
         ArgumentNullExceptionEx.ThrowIfNullOrWhiteSpace(index, nameof(index), "The index name is empty");
@@ -514,4 +559,6 @@ public sealed class SqlServerMemory : IMemoryDb, IMemoryDbUpsertBatch, IDisposab
     }
 
     #endregion
+
+
 }

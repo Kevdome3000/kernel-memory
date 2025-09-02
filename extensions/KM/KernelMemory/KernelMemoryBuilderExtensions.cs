@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.KernelMemory.Internals;
@@ -36,9 +36,7 @@ public static partial class KernelMemoryBuilderExtensions
 
         if (memoryConfig is null)
         {
-            throw new ConfigurationException($"Unable to load Kernel Memory settings from the given configuration. " +
-                                             $"There should be a '{KernelMemoryComposer.ConfigRoot}' root node, " +
-                                             $"with data mapping to '{nameof(KernelMemoryConfig)}'");
+            throw new ConfigurationException($"Unable to load Kernel Memory settings from the given configuration. " + $"There should be a '{KernelMemoryComposer.ConfigRoot}' root node, " + $"with data mapping to '{nameof(KernelMemoryConfig)}'");
         }
 
         var composer = new KernelMemoryComposer(builder, appSettings, memoryConfig);

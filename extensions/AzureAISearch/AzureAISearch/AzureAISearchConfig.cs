@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System.Text.Json.Serialization;
 using Azure.Core;
@@ -12,6 +12,7 @@ public class AzureAISearchConfig
 {
     private TokenCredential? _tokenCredential;
 
+
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum AuthTypes
     {
@@ -24,8 +25,9 @@ public class AzureAISearchConfig
         AzureIdentity,
 
         APIKey,
-        ManualTokenCredential,
+        ManualTokenCredential
     }
+
 
     /// <summary>
     /// Azure authentication type
@@ -72,15 +74,17 @@ public class AzureAISearchConfig
     /// </summary>
     public bool UseStickySessions { get; set; } = false;
 
+
     public void SetCredential(TokenCredential credential)
     {
-        this.Auth = AuthTypes.ManualTokenCredential;
-        this._tokenCredential = credential;
+        Auth = AuthTypes.ManualTokenCredential;
+        _tokenCredential = credential;
     }
+
 
     public TokenCredential GetTokenCredential()
     {
-        return this._tokenCredential
-               ?? throw new ConfigurationException($"Azure AI Search: {nameof(this._tokenCredential)} not defined");
+        return _tokenCredential
+            ?? throw new ConfigurationException($"Azure AI Search: {nameof(_tokenCredential)} not defined");
     }
 }

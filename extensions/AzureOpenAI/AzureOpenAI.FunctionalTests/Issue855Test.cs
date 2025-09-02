@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.KernelMemory.AI.AzureOpenAI;
@@ -16,10 +16,12 @@ public class Issue855Test : BaseFunctionalTestCase
 {
     private readonly AzureOpenAITextEmbeddingGenerator _target;
 
+
     public Issue855Test(IConfiguration cfg, ITestOutputHelper output) : base(cfg, output)
     {
-        this._target = new AzureOpenAITextEmbeddingGenerator(this.AzureOpenAIEmbeddingConfiguration);
+        _target = new AzureOpenAITextEmbeddingGenerator(AzureOpenAIEmbeddingConfiguration);
     }
+
 
     // [Fact] // Enable manually on a need basis
     [Fact(Skip = "Enable and run manually")]
@@ -30,17 +32,19 @@ public class Issue855Test : BaseFunctionalTestCase
         for (int i = 0; i < 50; i++)
         {
             Console.WriteLine($"## {i}");
-            await this._target.GenerateEmbeddingBatchAsync(
+            await _target.GenerateEmbeddingBatchAsync(
                 [RndStr(), RndStr(), RndStr(), RndStr(), RndStr(), RndStr(), RndStr(), RndStr(), RndStr(), RndStr()]);
         }
     }
+
 
 #pragma warning disable CA5394
     private static string RndStr()
     {
         var random = new Random();
-        return new(Enumerable.Repeat(" ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz 0123456789 ", 8000)
-            .Select(s => s[random.Next(s.Length)]).ToArray());
+        return new string(Enumerable.Repeat(" ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz 0123456789 ", 8000)
+            .Select(s => s[random.Next(s.Length)])
+            .ToArray());
     }
 }
 

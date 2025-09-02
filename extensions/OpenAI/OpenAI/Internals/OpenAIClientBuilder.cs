@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.ClientModel;
@@ -19,8 +19,8 @@ internal static class OpenAIClientBuilder
     {
         OpenAIClientOptions options = new()
         {
-            RetryPolicy = new ClientSequentialRetryPolicy(maxRetries: Math.Max(0, config.MaxRetries), loggerFactory),
-            UserAgentApplicationId = Telemetry.HttpUserAgent,
+            RetryPolicy = new ClientSequentialRetryPolicy(Math.Max(0, config.MaxRetries), loggerFactory),
+            UserAgentApplicationId = Telemetry.HttpUserAgent
         };
 
         if (httpClient is not null)

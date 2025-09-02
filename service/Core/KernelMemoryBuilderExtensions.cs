@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.KernelMemory.Pipeline;
 using Microsoft.KernelMemory.Prompts;
@@ -16,6 +16,7 @@ public static partial class KernelMemoryBuilderExtensions
         builder.AddSingleton<IMimeTypeDetection, MimeTypesDetection>();
         return builder;
     }
+
 
     public static IKernelMemoryBuilder WithDefaultPromptProvider(
         this IKernelMemoryBuilder builder)

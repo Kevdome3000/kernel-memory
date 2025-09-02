@@ -3,32 +3,20 @@
     <PropertyGroup>
         <AssemblyName>Microsoft.KM.TestHelpers</AssemblyName>
         <RootNamespace>Microsoft.KM.TestHelpers</RootNamespace>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net9.0</TargetFramework>
         <RollForward>LatestMajor</RollForward>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
     <ItemGroup>
-        <Using Include="Xunit" />
-        <Using Include="Xunit.Abstractions" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
-        <PackageReference Include="Microsoft.NET.Test.Sdk" />
-        <PackageReference Include="Xunit.DependencyInjection" />
-        <PackageReference Include="Xunit.DependencyInjection.Logging" />
-        <PackageReference Include="xunit" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection"/>
+        <PackageReference Include="Microsoft.NET.Test.Sdk"/>
         <PackageReference Include="xunit.abstractions" />
-        <PackageReference Include="xunit.runner.visualstudio">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\..\extensions\KM\KernelMemory\KernelMemory.csproj" />
+        <ProjectReference Include="..\..\..\extensions\KM\KernelMemory\KernelMemory.csproj"/>
     </ItemGroup>
 
     <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">

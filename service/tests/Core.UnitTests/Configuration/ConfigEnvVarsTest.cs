@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.KernelMemory;
 using Microsoft.KernelMemory.Configuration;
@@ -18,6 +18,7 @@ public class ConfigEnvVarsTest : BaseUnitTestCase
     {
     }
 
+
     [Fact]
     public void ItIgnoresDefaultValues()
     {
@@ -26,12 +27,17 @@ public class ConfigEnvVarsTest : BaseUnitTestCase
 
         // Act
         Dictionary<string, string> result = ConfigEnvVars.GenerateEnvVarsFromObjectNoDefaults(
-            target, "KernelMemory", "Services", "AzureAIContentSafety");
+            target,
+            "KernelMemory",
+            "Services",
+            "AzureAIContentSafety");
+
         foreach (var v in result) { Console.WriteLine($"{v.Key}: {v.Value}"); }
 
         // Assert
         Assert.Empty(result);
     }
+
 
     [Fact]
     public void ItWorksForAzureAIContentSafetyConfig()
@@ -48,7 +54,11 @@ public class ConfigEnvVarsTest : BaseUnitTestCase
 
         // Act
         Dictionary<string, string> result = ConfigEnvVars.GenerateEnvVarsFromObject(
-            target, "KernelMemory", "Services", "AzureAIContentSafety");
+            target,
+            "KernelMemory",
+            "Services",
+            "AzureAIContentSafety");
+
         foreach (var v in result) { Console.WriteLine($"{v.Key}: {v.Value}"); }
 
         // Assert
@@ -61,6 +71,7 @@ public class ConfigEnvVarsTest : BaseUnitTestCase
         Assert.Equal("bar", result["KernelMemory__Services__AzureAIContentSafety__IgnoredWords__1"]);
     }
 
+
     [Fact]
     public void ItWorksForAzureAIDocIntelConfig()
     {
@@ -69,12 +80,16 @@ public class ConfigEnvVarsTest : BaseUnitTestCase
         {
             Auth = AzureAIDocIntelConfig.AuthTypes.APIKey,
             Endpoint = "http://endpoint",
-            APIKey = "xyz",
+            APIKey = "xyz"
         };
 
         // Act
         Dictionary<string, string> result = ConfigEnvVars.GenerateEnvVarsFromObject(
-            target, "KernelMemory", "Services", "AzureAIDocIntel");
+            target,
+            "KernelMemory",
+            "Services",
+            "AzureAIDocIntel");
+
         foreach (var v in result) { Console.WriteLine($"{v.Key}: {v.Value}"); }
 
         // Assert
@@ -83,6 +98,7 @@ public class ConfigEnvVarsTest : BaseUnitTestCase
         Assert.Equal("http://endpoint", result["KernelMemory__Services__AzureAIDocIntel__Endpoint"]);
         Assert.Equal("xyz", result["KernelMemory__Services__AzureAIDocIntel__APIKey"]);
     }
+
 
     [Fact]
     public void ItWorksForAzureAISearchConfig()
@@ -94,12 +110,16 @@ public class ConfigEnvVarsTest : BaseUnitTestCase
             Endpoint = "http://endpoint",
             APIKey = "xyz",
             UseHybridSearch = true,
-            UseStickySessions = true,
+            UseStickySessions = true
         };
 
         // Act
         Dictionary<string, string> result = ConfigEnvVars.GenerateEnvVarsFromObject(
-            target, "KernelMemory", "Services", "AzureAISearch");
+            target,
+            "KernelMemory",
+            "Services",
+            "AzureAISearch");
+
         foreach (var v in result) { Console.WriteLine($"{v.Key}: {v.Value}"); }
 
         // Assert
@@ -110,6 +130,7 @@ public class ConfigEnvVarsTest : BaseUnitTestCase
         Assert.Equal("True", result["KernelMemory__Services__AzureAISearch__UseHybridSearch"]);
         Assert.Equal("True", result["KernelMemory__Services__AzureAISearch__UseStickySessions"]);
     }
+
 
     [Fact]
     public void ItWorksForAzureBlobsConfig()
@@ -122,12 +143,16 @@ public class ConfigEnvVarsTest : BaseUnitTestCase
             Account = "acct",
             AccountKey = "acctKey",
             Container = "container name",
-            EndpointSuffix = "sfx",
+            EndpointSuffix = "sfx"
         };
 
         // Act
         Dictionary<string, string> result = ConfigEnvVars.GenerateEnvVarsFromObject(
-            target, "KernelMemory", "Services", "AzureBlobs");
+            target,
+            "KernelMemory",
+            "Services",
+            "AzureBlobs");
+
         foreach (var v in result) { Console.WriteLine($"{v.Key}: {v.Value}"); }
 
         // Assert
@@ -139,6 +164,7 @@ public class ConfigEnvVarsTest : BaseUnitTestCase
         Assert.Equal("container name", result["KernelMemory__Services__AzureBlobs__Container"]);
         Assert.Equal("sfx", result["KernelMemory__Services__AzureBlobs__EndpointSuffix"]);
     }
+
 
     [Fact]
     public void ItWorksForAzureOpenAIConfig()
@@ -156,12 +182,16 @@ public class ConfigEnvVarsTest : BaseUnitTestCase
             EmbeddingDimensions = 1000,
             MaxEmbeddingBatchSize = 10,
             MaxRetries = 5,
-            TrustedCertificateThumbprints = ["abc", "bb"],
+            TrustedCertificateThumbprints = ["abc", "bb"]
         };
 
         // Act
         Dictionary<string, string> result = ConfigEnvVars.GenerateEnvVarsFromObject(
-            target, "KernelMemory", "Services", "AzureOpenAIxyz");
+            target,
+            "KernelMemory",
+            "Services",
+            "AzureOpenAIxyz");
+
         foreach (var v in result) { Console.WriteLine($"{v.Key}: {v.Value}"); }
 
         // Assert
@@ -179,6 +209,7 @@ public class ConfigEnvVarsTest : BaseUnitTestCase
         Assert.Equal("bb", result["KernelMemory__Services__AzureOpenAIxyz__TrustedCertificateThumbprints__1"]);
     }
 
+
     [Fact]
     public void ItWorksForAzureQueuesConfig()
     {
@@ -194,12 +225,16 @@ public class ConfigEnvVarsTest : BaseUnitTestCase
             FetchBatchSize = 6,
             FetchLockSeconds = 7,
             MaxRetriesBeforePoisonQueue = 8,
-            PoisonQueueSuffix = "dl",
+            PoisonQueueSuffix = "dl"
         };
 
         // Act
         Dictionary<string, string> result = ConfigEnvVars.GenerateEnvVarsFromObject(
-            target, "KernelMemory", "Services", "AzureQueues");
+            target,
+            "KernelMemory",
+            "Services",
+            "AzureQueues");
+
         foreach (var v in result) { Console.WriteLine($"{v.Key}: {v.Value}"); }
 
         // Assert
@@ -215,6 +250,7 @@ public class ConfigEnvVarsTest : BaseUnitTestCase
         Assert.Equal("8", result["KernelMemory__Services__AzureQueues__MaxRetriesBeforePoisonQueue"]);
         Assert.Equal("dl", result["KernelMemory__Services__AzureQueues__PoisonQueueSuffix"]);
     }
+
 
     [Fact]
     public void ItWorksForOpenAIConfig()
@@ -239,7 +275,11 @@ public class ConfigEnvVarsTest : BaseUnitTestCase
 
         // Act
         Dictionary<string, string> result = ConfigEnvVars.GenerateEnvVarsFromObject(
-            target, "KernelMemory", "Services", "OpenAI");
+            target,
+            "KernelMemory",
+            "Services",
+            "OpenAI");
+
         foreach (var v in result) { Console.WriteLine($"{v.Key}: {v.Value}"); }
 
         // Assert
@@ -259,6 +299,7 @@ public class ConfigEnvVarsTest : BaseUnitTestCase
         Assert.Equal("8", result["KernelMemory__Services__OpenAI__MaxRetries"]);
     }
 
+
     [Fact]
     public void ItWorksForSimpleFileStorageConfig()
     {
@@ -271,7 +312,11 @@ public class ConfigEnvVarsTest : BaseUnitTestCase
 
         // Act
         Dictionary<string, string> result = ConfigEnvVars.GenerateEnvVarsFromObject(
-            target, "KernelMemory", "Services", "SimpleFileStorage");
+            target,
+            "KernelMemory",
+            "Services",
+            "SimpleFileStorage");
+
         foreach (var v in result) { Console.WriteLine($"{v.Key}: {v.Value}"); }
 
         // Assert
@@ -279,6 +324,7 @@ public class ConfigEnvVarsTest : BaseUnitTestCase
         Assert.Equal("Disk", result["KernelMemory__Services__SimpleFileStorage__StorageType"]);
         Assert.Equal("c:/", result["KernelMemory__Services__SimpleFileStorage__Directory"]);
     }
+
 
     [Fact]
     public void ItWorksForSimpleVectorDbConfig()
@@ -292,7 +338,11 @@ public class ConfigEnvVarsTest : BaseUnitTestCase
 
         // Act
         Dictionary<string, string> result = ConfigEnvVars.GenerateEnvVarsFromObject(
-            target, "KernelMemory", "Services", "SimpleVectorDb");
+            target,
+            "KernelMemory",
+            "Services",
+            "SimpleVectorDb");
+
         foreach (var v in result) { Console.WriteLine($"{v.Key}: {v.Value}"); }
 
         // Assert
@@ -300,6 +350,7 @@ public class ConfigEnvVarsTest : BaseUnitTestCase
         Assert.Equal("Disk", result["KernelMemory__Services__SimpleVectorDb__StorageType"]);
         Assert.Equal("c:/", result["KernelMemory__Services__SimpleVectorDb__Directory"]);
     }
+
 
     [Fact]
     public void ItWorksForSimpleQueuesConfig()
@@ -319,7 +370,11 @@ public class ConfigEnvVarsTest : BaseUnitTestCase
 
         // Act
         Dictionary<string, string> result = ConfigEnvVars.GenerateEnvVarsFromObject(
-            target, "KernelMemory", "Services", "SimpleQueues");
+            target,
+            "KernelMemory",
+            "Services",
+            "SimpleQueues");
+
         foreach (var v in result) { Console.WriteLine($"{v.Key}: {v.Value}"); }
 
         // Assert

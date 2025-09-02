@@ -1,8 +1,9 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -13,6 +14,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.KernelMemory.Diagnostics;
 using Microsoft.KernelMemory.FileSystem.DevTools;
+using Microsoft.KernelMemory.Models;
 
 namespace Microsoft.KernelMemory.MemoryStorage.DevTools;
 
@@ -27,19 +29,21 @@ public class SimpleTextDb : IMemoryDb
     private readonly IFileSystem _fileSystem;
     private readonly ILogger<SimpleTextDb> _log;
 
+
     public SimpleTextDb(
         SimpleTextDbConfig config,
         ILoggerFactory? loggerFactory = null)
     {
-        this._log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<SimpleTextDb>();
+        _log = (loggerFactory ?? DefaultLogger.Factory).CreateLogger<SimpleTextDb>();
+
         switch (config.StorageType)
         {
             case FileSystemTypes.Disk:
-                this._fileSystem = new DiskFileSystem(config.Directory, null, loggerFactory);
+                _fileSystem = new DiskFileSystem(config.Directory, null, loggerFactory);
                 break;
 
             case FileSystemTypes.Volatile:
-                this._fileSystem = VolatileFileSystem.GetInstance(config.Directory, null, loggerFactory);
+                _fileSystem = VolatileFileSystem.GetInstance(config.Directory, null, loggerFactory);
                 break;
 
             default:
@@ -47,33 +51,43 @@ public class SimpleTextDb : IMemoryDb
         }
     }
 
+
     /// <inheritdoc />
     public Task CreateIndexAsync(string index, int vectorSize, CancellationToken cancellationToken = default)
     {
         index = NormalizeIndexName(index);
-        return this._fileSystem.CreateVolumeAsync(index, cancellationToken);
+        return _fileSystem.CreateVolumeAsync(index, cancellationToken);
     }
+
 
     /// <inheritdoc />
     public Task<IEnumerable<string>> GetIndexesAsync(CancellationToken cancellationToken = default)
     {
-        return this._fileSystem.ListVolumesAsync(cancellationToken);
+        return _fileSystem.ListVolumesAsync(cancellationToken);
     }
+
 
     /// <inheritdoc />
     public Task DeleteIndexAsync(string index, CancellationToken cancellationToken = default)
     {
         index = NormalizeIndexName(index);
-        return this._fileSystem.DeleteVolumeAsync(index, cancellationToken);
+        return _fileSystem.DeleteVolumeAsync(index, cancellationToken);
     }
+
 
     /// <inheritdoc />
     public async Task<string> UpsertAsync(string index, MemoryRecord record, CancellationToken cancellationToken = default)
     {
         index = NormalizeIndexName(index);
-        await this._fileSystem.WriteFileAsync(index, "", EncodeId(record.Id), JsonSerializer.Serialize(record), cancellationToken).ConfigureAwait(false);
+        await _fileSystem.WriteFileAsync(index,
+                "",
+                EncodeId(record.Id),
+                JsonSerializer.Serialize(record),
+                cancellationToken)
+            .ConfigureAwait(false);
         return record.Id;
     }
+
 
     /// <inheritdoc />
     public async IAsyncEnumerable<(MemoryRecord, double)> GetSimilarListAsync(
@@ -89,21 +103,31 @@ public class SimpleTextDb : IMemoryDb
 
         index = NormalizeIndexName(index);
 
-        var list = this.GetListAsync(index, filters, limit, withEmbeddings, cancellationToken);
+        var list = GetListAsync(index,
+            filters,
+            limit,
+            withEmbeddings,
+            cancellationToken);
         var records = new Dictionary<string, MemoryRecord>();
+
         await foreach (MemoryRecord r in list.ConfigureAwait(false))
         {
             records[r.Id] = r;
         }
 
         var words = Regex.Replace(text, "[^a-zA-Z0-9_]+", " ")
-            .Split(' ').Select(x => x.Trim()).Where(x => !string.IsNullOrEmpty(x)).ToList();
+            .Split(' ')
+            .Select(x => x.Trim())
+            .Where(x => !string.IsNullOrEmpty(x))
+            .ToList();
 
         var similarity = new Dictionary<string, int>();
+
         foreach (var record in records)
         {
             similarity[record.Value.Id] = 0;
             var storedText = record.Value.Payload[Constants.ReservedPayloadTextField].ToString();
+
             if (string.IsNullOrEmpty(storedText)) { continue; }
 
             foreach (var word in words)
@@ -124,6 +148,7 @@ public class SimpleTextDb : IMemoryDb
 
         // Return <count> records, including the calculated distance
         var count = 0;
+
         foreach (string id in sorted)
         {
             if (count++ < limit)
@@ -132,6 +157,7 @@ public class SimpleTextDb : IMemoryDb
             }
         }
     }
+
 
     /// <inheritdoc />
     public async IAsyncEnumerable<MemoryRecord> GetListAsync(
@@ -149,11 +175,12 @@ public class SimpleTextDb : IMemoryDb
         filters = filters?.Where(f => !f.IsEmpty()).ToList();
 
         IDictionary<string, string> list;
+
         try
         {
-            list = await this._fileSystem.ReadAllFilesAsTextAsync(index, "", cancellationToken).ConfigureAwait(false);
+            list = await _fileSystem.ReadAllFilesAsTextAsync(index, "", cancellationToken).ConfigureAwait(false);
         }
-        catch (System.IO.DirectoryNotFoundException)
+        catch (DirectoryNotFoundException)
         {
             // Index doesn't exist
             list = new Dictionary<string, string>();
@@ -162,6 +189,7 @@ public class SimpleTextDb : IMemoryDb
         foreach (KeyValuePair<string, string> v in list)
         {
             var record = JsonSerializer.Deserialize<MemoryRecord>(v.Value);
+
             if (record == null) { continue; }
 
             if (TagsMatchFilters(record.Tags, filters))
@@ -173,18 +201,24 @@ public class SimpleTextDb : IMemoryDb
         }
     }
 
+
     /// <inheritdoc />
     public Task DeleteAsync(string index, MemoryRecord record, CancellationToken cancellationToken = default)
     {
         index = NormalizeIndexName(index);
-        return this._fileSystem.DeleteFileAsync(index, "", EncodeId(record.Id), cancellationToken);
+        return _fileSystem.DeleteFileAsync(index,
+            "",
+            EncodeId(record.Id),
+            cancellationToken);
     }
+
 
     #region private
 
     // Note: normalize "_" to "-" for consistency with other DBs
     private static readonly Regex s_replaceIndexNameCharsRegex = new(@"[\s|\\|/|.|_|:]");
     private const string ValidSeparator = "-";
+
 
     private static string NormalizeIndexName(string index)
     {
@@ -193,6 +227,7 @@ public class SimpleTextDb : IMemoryDb
 
         return index.Trim();
     }
+
 
     private static bool TagsMatchFilters(TagCollection tags, ICollection<MemoryFilter>? filters)
     {
@@ -209,7 +244,7 @@ public class SimpleTextDb : IMemoryDb
                 // Check if the tag name + value is present
                 for (int index = 0; match && index < condition.Value.Count; index++)
                 {
-                    match = match && (tags.ContainsKey(condition.Key) && tags[condition.Key].Contains(condition.Value[index]));
+                    match = match && tags.ContainsKey(condition.Key) && tags[condition.Key].Contains(condition.Value[index]);
                 }
             }
 
@@ -219,11 +254,13 @@ public class SimpleTextDb : IMemoryDb
         return false;
     }
 
+
     private static string EncodeId(string realId)
     {
         var bytes = Encoding.UTF8.GetBytes(realId);
         return Convert.ToBase64String(bytes).Replace('=', '_');
     }
+
 
     private static string DecodeId(string encodedId)
     {
@@ -232,4 +269,6 @@ public class SimpleTextDb : IMemoryDb
     }
 
     #endregion
+
+
 }

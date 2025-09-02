@@ -1,10 +1,10 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using System.IO;
 using System.Threading.Tasks;
 
-namespace Microsoft.KernelMemory;
+namespace Microsoft.KernelMemory.Models;
 
 public sealed class StreamableFileContent : IDisposable
 {
@@ -16,10 +16,12 @@ public sealed class StreamableFileContent : IDisposable
     public DateTimeOffset LastWrite { get; } = default;
     public Func<Task<Stream>> GetStreamAsync { get; }
 
+
     public StreamableFileContent()
     {
-        this.GetStreamAsync = () => Task.FromResult<Stream>(new MemoryStream());
+        GetStreamAsync = () => Task.FromResult<Stream>(new MemoryStream());
     }
+
 
     public StreamableFileContent(
         string fileName,
@@ -32,22 +34,23 @@ public sealed class StreamableFileContent : IDisposable
         ArgumentNullExceptionEx.ThrowIfNull(lastWriteTimeUtc, nameof(lastWriteTimeUtc), "File last write time is NULL");
         ArgumentNullExceptionEx.ThrowIfNull(asyncStreamDelegate, nameof(asyncStreamDelegate), "asyncStreamDelegate is NULL");
 
-        this.FileName = fileName;
-        this.FileSize = fileSize;
-        this.FileType = fileType;
-        this.LastWrite = lastWriteTimeUtc;
-        this.GetStreamAsync = async () =>
+        FileName = fileName;
+        FileSize = fileSize;
+        FileType = fileType;
+        LastWrite = lastWriteTimeUtc;
+        GetStreamAsync = async () =>
         {
-            this._stream = await asyncStreamDelegate().ConfigureAwait(false);
-            return this._stream;
+            _stream = await asyncStreamDelegate().ConfigureAwait(false);
+            return _stream;
         };
     }
 
+
     public void Dispose()
     {
-        if (this._stream == null) { return; }
+        if (_stream == null) { return; }
 
-        this._stream.Close();
-        this._stream.Dispose();
+        _stream.Close();
+        _stream.Dispose();
     }
 }

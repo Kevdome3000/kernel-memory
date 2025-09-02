@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+﻿// Copyright (c) Microsoft.All rights reserved.
 
 using System;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,6 +26,7 @@ public static partial class KernelMemoryBuilderExtensions
         return builder;
     }
 
+
     public static IKernelMemoryBuilder WithOllamaTextGeneration(
         this IKernelMemoryBuilder builder,
         string modelName,
@@ -36,6 +37,7 @@ public static partial class KernelMemoryBuilderExtensions
         return builder;
     }
 
+
     public static IKernelMemoryBuilder WithOllamaTextEmbeddingGeneration(
         this IKernelMemoryBuilder builder,
         OllamaConfig config,
@@ -44,6 +46,7 @@ public static partial class KernelMemoryBuilderExtensions
         builder.Services.AddOllamaTextEmbeddingGeneration(config, textTokenizer);
         return builder;
     }
+
 
     public static IKernelMemoryBuilder WithOllamaTextEmbeddingGeneration(
         this IKernelMemoryBuilder builder,
@@ -55,6 +58,7 @@ public static partial class KernelMemoryBuilderExtensions
         return builder;
     }
 }
+
 
 /// <summary>
 /// .NET IServiceCollection dependency injection extensions.
@@ -68,14 +72,14 @@ public static partial class DependencyInjection
         ITextTokenizer? textTokenizer = null)
     {
         return services
-            .AddSingleton<ITextGenerator>(
-                serviceProvider => new OllamaTextGenerator(
-                    new OllamaApiClient(new Uri(endpoint), modelName),
-                    new OllamaModelConfig { ModelName = modelName },
-                    textTokenizer,
-                    serviceProvider.GetService<IContextProvider>(),
-                    serviceProvider.GetService<ILoggerFactory>()));
+            .AddSingleton<ITextGenerator>(serviceProvider => new OllamaTextGenerator(
+                new OllamaApiClient(new Uri(endpoint), modelName),
+                new OllamaModelConfig { ModelName = modelName },
+                textTokenizer,
+                serviceProvider.GetService<IContextProvider>(),
+                serviceProvider.GetService<ILoggerFactory>()));
     }
+
 
     public static IServiceCollection AddOllamaTextGeneration(
         this IServiceCollection services,
@@ -83,14 +87,14 @@ public static partial class DependencyInjection
         ITextTokenizer? textTokenizer = null)
     {
         return services
-            .AddSingleton<ITextGenerator>(
-                serviceProvider => new OllamaTextGenerator(
-                    new OllamaApiClient(new Uri(config.Endpoint), config.TextModel.ModelName),
-                    config.TextModel,
-                    textTokenizer,
-                    serviceProvider.GetService<IContextProvider>(),
-                    serviceProvider.GetService<ILoggerFactory>()));
+            .AddSingleton<ITextGenerator>(serviceProvider => new OllamaTextGenerator(
+                new OllamaApiClient(new Uri(config.Endpoint), config.TextModel.ModelName),
+                config.TextModel,
+                textTokenizer,
+                serviceProvider.GetService<IContextProvider>(),
+                serviceProvider.GetService<ILoggerFactory>()));
     }
+
 
     public static IServiceCollection AddOllamaTextEmbeddingGeneration(
         this IServiceCollection services,
@@ -99,14 +103,14 @@ public static partial class DependencyInjection
         ITextTokenizer? textTokenizer = null)
     {
         return services
-            .AddSingleton<ITextEmbeddingGenerator>(
-                serviceProvider => new OllamaTextEmbeddingGenerator(
-                    new OllamaApiClient(new Uri(endpoint), modelName),
-                    new OllamaModelConfig { ModelName = modelName },
-                    textTokenizer,
-                    serviceProvider.GetService<IContextProvider>(),
-                    serviceProvider.GetService<ILoggerFactory>()));
+            .AddSingleton<ITextEmbeddingGenerator>(serviceProvider => new OllamaTextEmbeddingGenerator(
+                new OllamaApiClient(new Uri(endpoint), modelName),
+                new OllamaModelConfig { ModelName = modelName },
+                textTokenizer,
+                serviceProvider.GetService<IContextProvider>(),
+                serviceProvider.GetService<ILoggerFactory>()));
     }
+
 
     public static IServiceCollection AddOllamaTextEmbeddingGeneration(
         this IServiceCollection services,
@@ -114,12 +118,11 @@ public static partial class DependencyInjection
         ITextTokenizer? textTokenizer = null)
     {
         return services
-            .AddSingleton<ITextEmbeddingGenerator>(
-                serviceProvider => new OllamaTextEmbeddingGenerator(
-                    new OllamaApiClient(new Uri(config.Endpoint), config.EmbeddingModel.ModelName),
-                    config.EmbeddingModel,
-                    textTokenizer,
-                    serviceProvider.GetService<IContextProvider>(),
-                    serviceProvider.GetService<ILoggerFactory>()));
+            .AddSingleton<ITextEmbeddingGenerator>(serviceProvider => new OllamaTextEmbeddingGenerator(
+                new OllamaApiClient(new Uri(config.Endpoint), config.EmbeddingModel.ModelName),
+                config.EmbeddingModel,
+                textTokenizer,
+                serviceProvider.GetService<IContextProvider>(),
+                serviceProvider.GetService<ILoggerFactory>()));
     }
 }
