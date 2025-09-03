@@ -1,7 +1,8 @@
 ﻿// ReSharper disable once CheckNamespace
 using Microsoft.KernelMemory.Models;
 
-namespace Microsoft.KernelMemory;
+// ReSharper disable once CheckNamespace
+namespace Microsoft.KernelMemory.Neoo4j;
 
 /// <summary>
 ///     Extensions methods for MemoryFilter.

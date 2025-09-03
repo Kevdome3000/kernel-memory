@@ -1,5 +1,6 @@
 ﻿using Microsoft.KernelMemory;
 using Microsoft.KernelMemory.MemoryStorage;
+using Microsoft.KernelMemory.Neoo4j;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 // ReSharper disable once CheckNamespace
@@ -14,18 +15,14 @@ public static class ServiceCollectionExtensions
     ///     Inject Neo4j as the default implementation of IMemoryDb
     /// </summary>
     // ReSharper disable once InconsistentNaming
-    public static IServiceCollection AddNeo4jAsVectorDb(this IServiceCollection services, Neo4jConfig neo4jConfig)
+    public static IServiceCollection AddNeo4jAsVectorDb(this IServiceCollection services, Neo4jConfig neo4JConfig)
     {
-        ArgumentNullException.ThrowIfNull(neo4jConfig);
+        ArgumentNullException.ThrowIfNull(neo4JConfig);
 
-        services.AddSingleton(sp =>
-        {
-            Neo4jConfig neo4jConfig = sp.GetRequiredService<Neo4jConfig>();
-            return Neo4jDriverFactory.BuildDriver(neo4jConfig, sp.GetRequiredService<ILogger>());
-        });
+        services.AddSingleton(sp => Neo4jDriverFactory.BuildDriver(neo4JConfig, sp.GetRequiredService<ILogger>()));
 
         return services
-            .AddSingleton(neo4jConfig)
+            .AddSingleton(neo4JConfig)
             .AddSingleton<IMemoryDb, Neo4jMemory>();
     }
 }

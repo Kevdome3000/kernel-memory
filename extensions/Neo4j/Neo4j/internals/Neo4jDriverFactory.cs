@@ -4,14 +4,15 @@ using ILogger = Microsoft.Extensions.Logging.ILogger;
 using Neo4jLogger = Neo4j.Driver.ILogger;
 
 // ReSharper disable once CheckNamespace
-namespace Microsoft.KernelMemory;
+namespace Microsoft.KernelMemory.Neoo4j;
 
 // ReSharper disable once InconsistentNaming
 internal sealed class Neo4jDriverFactory
 {
     public static IDriver BuildDriver(Neo4jConfig config, ILogger logger)
     {
-        return GraphDatabase.Driver(config.Uri,
+        Uri uri = new(config.Uri);
+        return GraphDatabase.Driver(uri,
             AuthTokens.Basic(config.Username, config.Password),
             x => x.WithLogger(new Logger(logger))
         );

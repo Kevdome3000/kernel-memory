@@ -1,6 +1,9 @@
 ﻿
 
 // ReSharper disable once CheckNamespace
+using Microsoft.Extensions.DependencyInjection;
+
+// ReSharper disable once CheckNamespace
 namespace Microsoft.KernelMemory;
 
 /// <summary>
@@ -13,6 +16,7 @@ public static class KernelMemoryBuilderExtensions
     /// </summary>
     /// <param name="builder">The IKernelMemoryBuilder instance.</param>
     /// <param name="configuration">The application configuration.</param>
+    // ReSharper disable once InconsistentNaming
     public static IKernelMemoryBuilder WithNeo4j(
         this IKernelMemoryBuilder builder,
         Neo4jConfig configuration)
