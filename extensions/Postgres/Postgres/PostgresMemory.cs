@@ -88,11 +88,11 @@ public sealed class PostgresMemory : IMemoryDb, IDisposable, IAsyncDisposable
     public async Task<IEnumerable<string>> GetIndexesAsync(
         CancellationToken cancellationToken = default)
     {
-        var result = new List<string>();
+        List<string> result = [];
 
         try
         {
-            var tables = _db.GetTablesAsync(cancellationToken).ConfigureAwait(false);
+            ConfiguredCancelableAsyncEnumerable<string> tables = _db.GetTablesAsync(cancellationToken).ConfigureAwait(false);
 
             await foreach (string name in tables)
             {
@@ -166,11 +166,11 @@ public sealed class PostgresMemory : IMemoryDb, IDisposable, IAsyncDisposable
     {
         index = NormalizeIndexName(index);
 
-        var (sql, unsafeSqlUserValues) = PrepareSql(filters);
+        (string sql, Dictionary<string, object> unsafeSqlUserValues) = PrepareSql(filters);
 
         Embedding textEmbedding = await _embeddingGenerator.GenerateEmbeddingAsync(text, cancellationToken).ConfigureAwait(false);
 
-        var records = _db.GetSimilarAsync(
+        ConfiguredCancelableAsyncEnumerable<(PostgresMemoryRecord record, double similarity)> records = _db.GetSimilarAsync(
                 index,
                 new Vector(textEmbedding.Data),
                 minRelevance,
@@ -198,9 +198,9 @@ public sealed class PostgresMemory : IMemoryDb, IDisposable, IAsyncDisposable
     {
         index = NormalizeIndexName(index);
 
-        var (sql, unsafeSqlUserValues) = PrepareSql(filters);
+        (string sql, Dictionary<string, object> unsafeSqlUserValues) = PrepareSql(filters);
 
-        var records = _db.GetListAsync(
+        ConfiguredCancelableAsyncEnumerable<PostgresMemoryRecord> records = _db.GetListAsync(
                 index,
                 sql,
                 unsafeSqlUserValues,
@@ -278,10 +278,10 @@ public sealed class PostgresMemory : IMemoryDb, IDisposable, IAsyncDisposable
     }
 
 
-    private (string sql, Dictionary<string, object> unsafeSqlUserValues) PrepareSql(
+    private static (string sql, Dictionary<string, object> unsafeSqlUserValues) PrepareSql(
         ICollection<MemoryFilter>? filters = null)
     {
-        var sql = "";
+        string sql = "";
         Dictionary<string, object> unsafeSqlUserValues = [];
 
         if (filters is not { Count: > 0 })
@@ -289,12 +289,12 @@ public sealed class PostgresMemory : IMemoryDb, IDisposable, IAsyncDisposable
             return (sql, unsafeSqlUserValues);
         }
 
-        var tagCounter = 0;
-        var orConditions = new List<string>();
+        int tagCounter = 0;
+        List<string> orConditions = [];
 
         foreach (MemoryFilter filter in filters.Where(f => !f.IsEmpty()))
         {
-            var andSql = new StringBuilder();
+            StringBuilder andSql = new();
             andSql.AppendLineNix("(");
 
             if (filter is PostgresMemoryFilter)
@@ -310,7 +310,7 @@ public sealed class PostgresMemory : IMemoryDb, IDisposable, IAsyncDisposable
 
             if (requiredTags.Count > 0)
             {
-                var safeSqlPlaceholder = $"@placeholder{tagCounter++}";
+                string safeSqlPlaceholder = $"@placeholder{tagCounter++}";
                 safeSqlPlaceholders.Add(safeSqlPlaceholder);
                 unsafeSqlUserValues[safeSqlPlaceholder] = requiredTags;
 

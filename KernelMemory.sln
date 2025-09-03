@@ -226,6 +226,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "testapps", "testapps", "{AE
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "213-onnx", "examples\213-onnx\213-onnx.csproj", "{E7ECB0D7-A4AA-4529-B191-3FDFE8674784}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo4j", "extensions\Neo4j\Neo4j.csproj", "{CF834D18-60B9-4A79-8454-36B790121705}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -535,6 +537,10 @@ Global
 		{E7ECB0D7-A4AA-4529-B191-3FDFE8674784}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E7ECB0D7-A4AA-4529-B191-3FDFE8674784}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E7ECB0D7-A4AA-4529-B191-3FDFE8674784}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CF834D18-60B9-4A79-8454-36B790121705}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CF834D18-60B9-4A79-8454-36B790121705}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CF834D18-60B9-4A79-8454-36B790121705}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CF834D18-60B9-4A79-8454-36B790121705}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -636,6 +642,7 @@ Global
 		{CCA96699-483E-4B2A-95DF-25F0C98E3BB6} = {AEF463F6-F813-498C-830A-3B4CED6DC4A7}
 		{AEF463F6-F813-498C-830A-3B4CED6DC4A7} = {5E7DD43D-B5E7-4827-B57D-447E5B428589}
 		{E7ECB0D7-A4AA-4529-B191-3FDFE8674784} = {0A43C65C-6007-4BB4-B3FE-8D439FC91841}
+		{CF834D18-60B9-4A79-8454-36B790121705} = {155DA079-E267-49AF-973A-D1D44681970F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {CC136C62-115C-41D1-B414-F9473EFF6EA8}
