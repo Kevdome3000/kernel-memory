@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <AssemblyName>Microsoft.Neo4j.UnitTests</AssemblyName>
+        <RootNamespace>Microsoft.Neo4j.UnitTests</RootNamespace>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+    
+    <ItemGroup>
+        <PackageReference Include="Microsoft.NET.Test.Sdk"/>
+        <PackageReference Include="xunit.assert"/>
+        <PackageReference Include="xunit.extensibility.core"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Using Include="Xunit"/>
+        <Using Include="Xunit.Abstractions"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\..\service\tests\TestHelpers\TestHelpers.csproj" />
+      <ProjectReference Include="..\..\Neo4j\Neo4j.csproj" />
+    </ItemGroup>
+
+</Project>
