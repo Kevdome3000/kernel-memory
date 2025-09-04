@@ -6,10 +6,11 @@ using Microsoft.KernelMemory.AI;
 using Microsoft.KernelMemory.Diagnostics;
 using Microsoft.KernelMemory.MemoryStorage;
 using Microsoft.KernelMemory.Models;
+using Microsoft.KernelMemory.Neoo4j;
 using Neo4j.Driver;
 
 // ReSharper disable once CheckNamespace
-namespace Microsoft.KernelMemory.Neoo4j;
+namespace Microsoft.KernelMemory.Neo4j;
 
 /// <summary>
 ///     Basic vector db implementation, designed for tests and demos only.
