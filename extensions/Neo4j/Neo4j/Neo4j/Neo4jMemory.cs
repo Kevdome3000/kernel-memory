@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
@@ -8,6 +9,8 @@ using Microsoft.KernelMemory.MemoryStorage;
 using Microsoft.KernelMemory.Models;
 using Microsoft.KernelMemory.Neoo4j;
 using Neo4j.Driver;
+
+// ReSharper disable InconsistentNaming
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.KernelMemory.Neo4j;
@@ -23,6 +26,8 @@ public sealed class Neo4jMemory : IMemoryDb, IDisposable, IAsyncDisposable
     private readonly IDriver _driver;
     private readonly ITextEmbeddingGenerator _embeddingGenerator;
     private readonly ILogger<Neo4jMemory> _log;
+    private readonly Neo4jConfig _config;
+    private readonly ConcurrentDictionary<string, int> _indexDimensions = new();
 
 
     /// <summary>
@@ -36,6 +41,7 @@ public sealed class Neo4jMemory : IMemoryDb, IDisposable, IAsyncDisposable
         ITextEmbeddingGenerator embeddingGenerator,
         ILogger<Neo4jMemory>? log = null)
     {
+        _config = config ?? throw new ArgumentNullException(nameof(config));
         _embeddingGenerator = embeddingGenerator;
 
         if (_embeddingGenerator == null)
@@ -52,58 +58,100 @@ public sealed class Neo4jMemory : IMemoryDb, IDisposable, IAsyncDisposable
 
 
     /// <inheritdoc />
-    public Task CreateIndexAsync(string index, int vectorSize, CancellationToken cancellationToken = default)
+    public async Task CreateIndexAsync(string index, int vectorSize, CancellationToken cancellationToken = default)
     {
-        index = NormalizeIndexName(index);
-        string label = LabelForIndex(index);
-        string propertyKey = PropertyKeyForIndex(index);
+        string normalizedIndex = NormalizeIndexName(index);
+        string indexName = ApplyIndexNamePrefix(normalizedIndex);
+        string label = LabelForIndex(normalizedIndex);
+        string propertyKey = PropertyKeyForIndex(normalizedIndex);
 
-        // Create a new index in Neo4j
-        return _driver.ExecutableQuery($$"""
-                                         CREATE VECTOR INDEX `{{index}}` IF NOT EXISTS
-                                             FOR (m:{{label}}) ON (m.{{propertyKey}})
-                                             OPTIONS { indexConfig: {
-                                                 `vector.dimensions`: $vectorSize,
-                                                 `vector.similarity_function`: 'cosine'
-                                                 }
-                                             }
-                                         """
-            )
-            .WithParameters(new { vectorSize })
-            .ExecuteAsync(cancellationToken);
+        try
+        {
+            // 1. Create uniqueness constraint on id per label
+            await _driver.ExecutableQuery($"""
+                                           CREATE CONSTRAINT IF NOT EXISTS FOR (n:{label}) REQUIRE n.id IS UNIQUE
+                                           """)
+                .ExecuteAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            // 2. Create vector index if not exists
+            await _driver.ExecutableQuery($$"""
+                                            CREATE VECTOR INDEX `{{indexName}}` IF NOT EXISTS
+                                                FOR (m:{{label}}) ON (m.{{propertyKey}})
+                                                OPTIONS { indexConfig: {
+                                                    `vector.dimensions`: $vectorSize,
+                                                    `vector.similarity_function`: 'cosine'
+                                                    }
+                                                }
+                                            """)
+                .WithParameters(new { vectorSize })
+                .ExecuteAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            // 3. Cache vector dimension for validation
+            _indexDimensions[normalizedIndex] = vectorSize;
+        }
+        catch (Exception ex)
+        {
+            _log.LogError(ex, "Failed to create index {Index}", index);
+            throw new Neo4jException($"Failed to create index '{index}'", ex);
+        }
     }
 
 
     /// <inheritdoc />
     public async Task<IEnumerable<string>> GetIndexesAsync(CancellationToken cancellationToken = default)
     {
-        EagerResult<IReadOnlyList<IRecord>>? response = await _driver.ExecutableQuery("SHOW VECTOR INDEXES YIELD name")
-            .ExecuteAsync(cancellationToken)
-            .ConfigureAwait(false);
+        try
+        {
+            EagerResult<IReadOnlyList<IRecord>>? response = await _driver.ExecutableQuery("SHOW VECTOR INDEXES YIELD name")
+                .ExecuteAsync(cancellationToken)
+                .ConfigureAwait(false);
 
-        IEnumerable<string> vectorIndexes = response.Result.ToList().Select(x => x["name"].As<string>());
-        return vectorIndexes;
+            IEnumerable<string> allIndexes = response.Result.Select(x => x["name"].As<string>());
+
+            // Filter by IndexNamePrefix if configured
+            if (string.IsNullOrEmpty(_config.IndexNamePrefix))
+            {
+                return allIndexes.ToList();
+            }
+
+#pragma warning disable CA1310
+            allIndexes = allIndexes.Where(name => name.StartsWith(_config.IndexNamePrefix));
+#pragma warning restore CA1310
+            // Remove prefix to return normalized names
+            allIndexes = allIndexes.Select(name => name[_config.IndexNamePrefix.Length..]);
+
+            return allIndexes.ToList();
+        }
+        catch (Exception ex)
+        {
+            _log.LogError(ex, "Failed to get indexes");
+            throw new Neo4jException("Failed to get indexes", ex);
+        }
     }
 
 
     /// <inheritdoc />
-    public Task DeleteIndexAsync(string index, CancellationToken cancellationToken = default)
+    public async Task DeleteIndexAsync(string index, CancellationToken cancellationToken = default)
     {
-        index = NormalizeIndexName(index);
-        string label = LabelForIndex(index);
-        string propertyKey = PropertyKeyForIndex(index);
-        // Create a new index in Neo4j
-        return _driver.ExecutableQuery($$"""
-                                         CREATE VECTOR INDEX `{{index}}` IF NOT EXISTS
-                                             FOR (c:{{label}}) ON (c.{{propertyKey}})
-                                             OPTIONS { indexConfig: {
-                                                 `vector.dimensions`: $vectorSize,
-                                                 `vector.similarity_function`: 'cosine'
-                                                 }
-                                             }
-                                         """
-            )
-            .ExecuteAsync(cancellationToken);
+        string normalizedIndex = NormalizeIndexName(index);
+        string indexName = ApplyIndexNamePrefix(normalizedIndex);
+
+        try
+        {
+            await _driver.ExecutableQuery($"DROP INDEX `{indexName}` IF EXISTS")
+                .ExecuteAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            // Remove from dimension cache
+            _indexDimensions.TryRemove(normalizedIndex, out _);
+        }
+        catch (Exception ex)
+        {
+            _log.LogError(ex, "Failed to delete index {Index}", index);
+            throw new Neo4jException($"Failed to delete index '{index}'", ex);
+        }
     }
 
 
@@ -113,31 +161,64 @@ public sealed class Neo4jMemory : IMemoryDb, IDisposable, IAsyncDisposable
         MemoryRecord record,
         CancellationToken cancellationToken = default)
     {
-        index = NormalizeIndexName(index);
-        string label = LabelForIndex(index);
-        string propertyKey = PropertyKeyForIndex(index);
+        string normalizedIndex = NormalizeIndexName(index);
+        string label = LabelForIndex(normalizedIndex);
+        string propertyKey = PropertyKeyForIndex(normalizedIndex);
 
-        EagerResult<IReadOnlyList<IRecord>>? response = await _driver
-            .ExecutableQuery($$"""
-                                   MERGE (m:Memory:{{label}} {id: $recordId})
-                                   SET m += $payload
-                                   WITH m
-                                   CALL db.create.setNodeVectorProperty(m, $propertyKey, $vector)
-                                   RETURN m.id as recordId
-                               """)
-            .WithParameters(new
+        // Validate vector dimensions if cached
+        if (_indexDimensions.TryGetValue(normalizedIndex, out int expectedDimensions))
+        {
+            if (record.Vector.Length != expectedDimensions)
             {
-                recordId = record.Id,
-                payload = record.Payload,
-                propertyKey,
-                vector = record.Vector.Data.ToArray()
-            })
-            .ExecuteAsync(cancellationToken)
-            .ConfigureAwait(false);
+                string message = $"Vector dimension mismatch for index '{index}': expected {expectedDimensions}, got {record.Vector.Length}";
 
-        string? recordId = response.Result.Single()["recordId"].As<string>();
+                if (_config.StrictVectorSizeValidation)
+                {
+                    throw new Neo4jException(message);
+                }
+                _log.LogWarning(message);
+            }
+        }
 
-        return recordId;
+        try
+        {
+            // Convert tags to the format Neo4j expects: map<string, list<string>>
+            Dictionary<string, List<string>> tagsMap = new();
+
+            foreach (KeyValuePair<string, List<string?>> tag in record.Tags)
+            {
+                tagsMap[tag.Key] = tag.Value.Where(v => v != null).Cast<string>().ToList();
+            }
+
+            EagerResult<IReadOnlyList<IRecord>>? response = await _driver.ExecutableQuery($$"""
+                                                                                            MERGE (n:Memory:{{label}} {id: $recordId})
+                                                                                            SET n.payload = $payload,
+                                                                                                n.tags = $tags
+                                                                                            WITH n
+                                                                                            CALL db.create.setNodeVectorProperty(n, $propertyKey, $vector)
+                                                                                            RETURN n.id as recordId
+                                                                                            """)
+                .WithParameters(new
+                {
+                    recordId = record.Id,
+                    payload = record.Payload,
+                    tags = tagsMap,
+                    propertyKey,
+                    vector = record.Vector.Data.ToArray()
+                })
+                .ExecuteAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            return response.Result.Single()["recordId"].As<string>();
+        }
+        catch (Exception ex)
+        {
+            _log.LogError(ex,
+                "Failed to upsert record {RecordId} in index {Index}",
+                record.Id,
+                index);
+            throw new Neo4jException($"Failed to upsert record '{record.Id}' in index '{index}'", ex);
+        }
     }
 
 
@@ -156,43 +237,75 @@ public sealed class Neo4jMemory : IMemoryDb, IDisposable, IAsyncDisposable
             limit = int.MaxValue;
         }
 
-        index = NormalizeIndexName(index);
-        string propertyKey = PropertyKeyForIndex(index);
+        string normalizedIndex = NormalizeIndexName(index);
+        string indexName = ApplyIndexNamePrefix(normalizedIndex);
+        string propertyKey = PropertyKeyForIndex(normalizedIndex);
 
-        Embedding vector = await _embeddingGenerator.GenerateEmbeddingAsync(text, cancellationToken)
-            .ConfigureAwait(false);
+        List<(MemoryRecord, double)> results;
 
-        EagerResult<IReadOnlyList<IRecord>>? queryResult = await _driver
-            .ExecutableQuery("""
-                                 CALL db.index.vector.queryNodes($indexName, $topK, $vector)
-                                 YIELD node, score
-                                 RETURN score, node.id as recordId, properties(node) as payload, node[$propertyKey] as vector
-                             """)
-            .WithParameters(new
-            {
-                indexName = index,
-                topK = limit,
-                propertyKey,
-                vector = vector.Data.ToArray()
-            })
-            .ExecuteAsync(cancellationToken)
-            .ConfigureAwait(false);
-
-        List<(MemoryRecord, double)> memories = queryResult.Result.Select(memory => (
-                    new MemoryRecord
-                    {
-                        Id = memory["recordId"].As<string>(),
-                        Payload = memory["payload"].As<Dictionary<string, object>>(),
-                        Vector = memory["vector"].As<List<float>>().ToArray()
-                    },
-                    memory["score"].As<double>()
-                )
-            )
-            .ToList();
-
-        foreach ((MemoryRecord, double) memory in memories)
+        try
         {
-            yield return memory;
+            // Generate embedding
+            Embedding vector = await _embeddingGenerator.GenerateEmbeddingAsync(text, cancellationToken)
+                .ConfigureAwait(false);
+
+            // Build filter clause
+            (string whereClause, Dictionary<string, object> parameters) = BuildWhereClause(filters, "node");
+
+            // Build projection based on withEmbeddings
+            string vectorProjection = withEmbeddings
+                ? $", node.{propertyKey} as vector"
+                : "";
+
+            // Prepare parameters
+            Dictionary<string, object> queryParams = new(parameters)
+            {
+                ["indexName"] = indexName,
+                ["topK"] = limit,
+                ["vector"] = vector.Data.ToArray(),
+                ["minRelevance"] = minRelevance
+            };
+
+            string cypher = $"""
+                             CALL db.index.vector.queryNodes($indexName, $topK, $vector)
+                             YIELD node, score
+                             {whereClause}
+                             AND score >= $minRelevance
+                             RETURN score, node.id as recordId, node.payload as payload, node.tags as tags{vectorProjection}
+                             ORDER BY score DESC
+                             """;
+
+            EagerResult<IReadOnlyList<IRecord>>? response = await _driver.ExecutableQuery(cypher)
+                .WithParameters(queryParams)
+                .ExecuteAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            results = response.Result.Select(record =>
+                {
+                    MemoryRecord memoryRecord = new()
+                    {
+                        Id = record["recordId"].As<string>(),
+                        Payload = record["payload"].As<Dictionary<string, object>>() ?? new Dictionary<string, object>(),
+                        Tags = ConvertTagsFromNeo4j(record["tags"].As<Dictionary<string, List<string>>>()),
+                        Vector = withEmbeddings && record.ContainsKey("vector")
+                            ? new Embedding(record["vector"].As<List<float>>().ToArray())
+                            : new Embedding()
+                    };
+
+                    double score = record["score"].As<double>();
+                    return (memoryRecord, score);
+                })
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            _log.LogError(ex, "Failed to get similar records for index {Index}", index);
+            throw new Neo4jException($"Failed to get similar records for index '{index}'", ex);
+        }
+
+        foreach ((MemoryRecord, double) result in results)
+        {
+            yield return result;
         }
     }
 
@@ -210,21 +323,88 @@ public sealed class Neo4jMemory : IMemoryDb, IDisposable, IAsyncDisposable
             limit = int.MaxValue;
         }
 
-        index = NormalizeIndexName(index);
+        string normalizedIndex = NormalizeIndexName(index);
+        string label = LabelForIndex(normalizedIndex);
+        string propertyKey = PropertyKeyForIndex(normalizedIndex);
 
-        // Get similar records from Neo4j
-        await Task.Delay(0, cancellationToken).ConfigureAwait(false);
+        List<MemoryRecord> results;
 
-        yield return new MemoryRecord();
+        try
+        {
+            // Build filter clause
+            (string whereClause, Dictionary<string, object> parameters) = BuildWhereClause(filters);
+
+            // Build projection based on withEmbeddings
+            string vectorProjection = withEmbeddings
+                ? $", n.{propertyKey} as vector"
+                : "";
+
+            // Prepare parameters
+            Dictionary<string, object> queryParams = new(parameters)
+            {
+                ["limit"] = limit
+            };
+
+            string cypher = $"""
+                             MATCH (n:Memory:{label})
+                             {whereClause}
+                             RETURN n.id as recordId, n.payload as payload, n.tags as tags{vectorProjection}
+                             LIMIT $limit
+                             """;
+
+            EagerResult<IReadOnlyList<IRecord>>? response = await _driver.ExecutableQuery(cypher)
+                .WithParameters(queryParams)
+                .ExecuteAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            results = response.Result.Select(record => new MemoryRecord
+                {
+                    Id = record["recordId"].As<string>(),
+                    Payload = record["payload"].As<Dictionary<string, object>>() ?? new Dictionary<string, object>(),
+                    Tags = ConvertTagsFromNeo4j(record["tags"].As<Dictionary<string, List<string>>>()),
+                    Vector = withEmbeddings && record.ContainsKey("vector")
+                        ? new Embedding(record["vector"].As<List<float>>().ToArray())
+                        : new Embedding()
+                })
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            _log.LogError(ex, "Failed to get records for index {Index}", index);
+            throw new Neo4jException($"Failed to get records for index '{index}'", ex);
+        }
+
+        foreach (MemoryRecord result in results)
+        {
+            yield return result;
+        }
     }
 
 
     /// <inheritdoc />
-    public Task DeleteAsync(string index, MemoryRecord record, CancellationToken cancellationToken = default)
+    public async Task DeleteAsync(string index, MemoryRecord record, CancellationToken cancellationToken = default)
     {
-        index = NormalizeIndexName(index);
+        string normalizedIndex = NormalizeIndexName(index);
+        string label = LabelForIndex(normalizedIndex);
 
-        return Task.CompletedTask;
+        try
+        {
+            await _driver.ExecutableQuery($$"""
+                                            MATCH (n:Memory:{{label}} {id: $recordId})
+                                            DETACH DELETE n
+                                            """)
+                .WithParameters(new { recordId = record.Id })
+                .ExecuteAsync(cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _log.LogError(ex,
+                "Failed to delete record {RecordId} from index {Index}",
+                record.Id,
+                index);
+            throw new Neo4jException($"Failed to delete record '{record.Id}' from index '{index}'", ex);
+        }
     }
 
 
@@ -235,32 +415,155 @@ public sealed class Neo4jMemory : IMemoryDb, IDisposable, IAsyncDisposable
     private const string ValidSeparator = "-";
 
 
-    private static string NormalizeIndexName(string index)
+    /// <summary>
+    /// Normalizes the index name by replacing invalid characters with a valid separator
+    /// and converting the name to lowercase.
+    /// </summary>
+    /// <param name="index">The index name to normalize.</param>
+    /// <returns>The normalized index name.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if the index name is null or empty.</exception>
+    internal static string NormalizeIndexName(string index)
     {
         if (string.IsNullOrWhiteSpace(index))
         {
             throw new ArgumentNullException(nameof(index), "The index name is empty");
         }
 
-        index = s_replaceIndexNameCharsRegex.Replace(index.Trim().ToUpperInvariant(), ValidSeparator);
+#pragma warning disable CA1308
+        index = s_replaceIndexNameCharsRegex.Replace(index.Trim().ToLowerInvariant(), ValidSeparator);
+#pragma warning restore CA1308
 
         return index.Trim();
     }
 
 
-    private static string LabelForIndex(string index)
+    /// <summary>
+    /// Generates a label for the given index by converting it to uppercase
+    /// and optionally prefixing it with the configured label prefix.
+    /// </summary>
+    /// <param name="index">The index name.</param>
+    /// <returns>The generated label.</returns>
+    internal string LabelForIndex(string index)
     {
-        return index.ToUpperInvariant();
+        string label = index.ToUpperInvariant();
+        return string.IsNullOrEmpty(_config.LabelPrefix)
+            ? label
+            : _config.LabelPrefix + label;
     }
 
 
-    private static string PropertyKeyForIndex(string index)
+    /// <summary>
+    /// Generates a property key for the given index by prefixing it with "vec_"
+    /// and converting it to lowercase.
+    /// </summary>
+    /// <param name="index">The index name.</param>
+    /// <returns>The generated property key.</returns>
+    internal static string PropertyKeyForIndex(string index)
     {
-        return index.ToUpperInvariant() + "Embedding";
+#pragma warning disable CA1308
+        return "vec_" + index.ToLowerInvariant();
+#pragma warning restore CA1308
     }
 
 
-    private static bool TagsMatchFilters(TagCollection tags, ICollection<MemoryFilter>? filters)
+    /// <summary>
+    /// Applies the configured index name prefix to the normalized index name.
+    /// </summary>
+    /// <param name="normalizedIndex">The normalized index name.</param>
+    /// <returns>The index name with the prefix applied.</returns>
+    internal string ApplyIndexNamePrefix(string normalizedIndex)
+    {
+        return string.IsNullOrEmpty(_config.IndexNamePrefix)
+            ? normalizedIndex
+            : _config.IndexNamePrefix + normalizedIndex;
+    }
+
+
+    /// <summary>
+    /// Builds a Cypher WHERE clause and its associated parameters based on the provided filters.
+    /// </summary>
+    /// <param name="filters">The collection of memory filters to apply.</param>
+    /// <param name="nodeAlias">The alias for the node in the Cypher query (default is "n").</param>
+    /// <returns>A tuple containing the WHERE clause and the parameters dictionary.</returns>
+    internal static (string whereClause, Dictionary<string, object> parameters) BuildWhereClause(
+        ICollection<MemoryFilter>? filters,
+        string nodeAlias = "n")
+    {
+        if (filters == null || filters.Count == 0)
+        {
+            return (string.Empty, new Dictionary<string, object>());
+        }
+
+        Dictionary<string, object> parameters = new();
+        List<string> orConditions = [];
+        int paramCounter = 0;
+
+        foreach (MemoryFilter filter in filters.Where(f => !f.IsEmpty()))
+        {
+            List<string> andConditions = [];
+
+            foreach ((string key, List<string?> value) in filter)
+            {
+                List<string> values = value.Where(v => v != null).Cast<string>().ToList();
+
+                if (values.Count <= 0)
+                {
+                    continue;
+                }
+                string paramName = $"filterParam{paramCounter++}";
+                parameters[paramName] = values;
+
+                // ANY(v IN n.tags['key'] WHERE v IN $param)
+                andConditions.Add($"ANY(v IN {nodeAlias}.tags['{key}'] WHERE v IN ${paramName})");
+            }
+
+            if (andConditions.Count > 0)
+            {
+                orConditions.Add($"({string.Join(" AND ", andConditions)})");
+            }
+        }
+
+        string whereClause = orConditions.Count > 0
+            ? " WHERE " + string.Join(" OR ", orConditions)
+            : string.Empty;
+
+        return (whereClause, parameters);
+    }
+
+
+    /// <summary>
+    /// Converts Neo4j tags (a dictionary of string keys and list of string values)
+    /// into a TagCollection object.
+    /// </summary>
+    /// <param name="neo4jTags">The Neo4j tags to convert.</param>
+    /// <returns>A TagCollection object containing the converted tags.</returns>
+    internal static TagCollection ConvertTagsFromNeo4j(Dictionary<string, List<string>>? neo4jTags)
+    {
+        TagCollection tags = new();
+
+        if (neo4jTags == null)
+        {
+            return tags;
+        }
+
+        foreach (KeyValuePair<string, List<string>> kvp in neo4jTags)
+        {
+            foreach (string value in kvp.Value)
+            {
+                tags.Add(kvp.Key, value);
+            }
+        }
+        return tags;
+    }
+
+
+    /// <summary>
+    /// Checks if the given tags match any of the provided filters.
+    /// </summary>
+    /// <param name="tags">The tags to check.</param>
+    /// <param name="filters">The collection of memory filters to match against.</param>
+    /// <returns>True if the tags match any filter, otherwise false.</returns>
+    internal static bool TagsMatchFilters(TagCollection tags, ICollection<MemoryFilter>? filters)
     {
         if (filters == null || filters.Count == 0)
         {

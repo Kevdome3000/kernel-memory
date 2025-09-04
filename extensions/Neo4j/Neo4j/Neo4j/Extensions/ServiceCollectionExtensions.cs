@@ -1,5 +1,6 @@
 ﻿using Microsoft.KernelMemory;
 using Microsoft.KernelMemory.MemoryStorage;
+using Microsoft.KernelMemory.Neo4j;
 using Microsoft.KernelMemory.Neoo4j;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 

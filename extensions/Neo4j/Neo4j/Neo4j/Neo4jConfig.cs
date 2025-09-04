@@ -22,4 +22,19 @@ public class Neo4jConfig
     ///     Password for authenticating username with Neo4j.
     /// </summary>
     public string Password { get; set; } = string.Empty;
+
+    /// <summary>
+    ///     Optional prefix for index names (e.g., "km_" → "km_myindex")
+    /// </summary>
+    public string? IndexNamePrefix { get; set; }
+
+    /// <summary>
+    ///     Optional prefix for node labels (e.g., "KM_" → "KM_MyIndex")
+    /// </summary>
+    public string? LabelPrefix { get; set; }
+
+    /// <summary>
+    ///     Whether to throw exception on vector dimension mismatch (default: false = warning only)
+    /// </summary>
+    public bool StrictVectorSizeValidation { get; set; } = false;
 }
