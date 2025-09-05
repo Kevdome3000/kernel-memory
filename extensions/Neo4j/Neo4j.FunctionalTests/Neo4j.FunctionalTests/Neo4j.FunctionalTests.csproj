@@ -1,0 +1,43 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <AssemblyName>Microsoft.Neo4j.FunctionalTests</AssemblyName>
+        <RootNamespace>Microsoft.Neo4j.FunctionalTests</RootNamespace>
+        <TargetFramework>net9.0</TargetFramework>
+        <RollForward>LatestMajor</RollForward>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <NoWarn>$(NoWarn);KMEXP03;</NoWarn>
+        <LangVersion>default</LangVersion>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Using Include="Xunit"/>
+        <Using Include="Xunit.Abstractions"/>
+        <Using Include="Microsoft.KernelMemory.Neo4j"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.NET.Test.Sdk"/>
+        <PackageReference Include="Xunit.DependencyInjection"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\..\service\tests\Core.FunctionalTests\Core.FunctionalTests.csproj"/>
+        <ProjectReference Include="..\..\..\..\service\tests\TestHelpers\TestHelpers.csproj"/>
+        <ProjectReference Include="..\..\Neo4j\Neo4j.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Remove="appsettings.json"/>
+        <Content Include="appsettings.json">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </Content>
+
+        <None Remove="appsettings.Development.json" Condition="Exists('appsettings.Development.json')"/>
+        <Content Include="appsettings.Development.json" Condition="Exists('appsettings.Development.json')">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
+
+</Project>
