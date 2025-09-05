@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.KernelMemory.Models;
-using Microsoft.KernelMemory.Neo4j;
 
 namespace Microsoft.Neo4j.UnitTests;
 
@@ -13,14 +12,14 @@ public class FilterTranslationTests
     public void ItHandlesNullAndEmptyFilters()
     {
         // Arrange & Act - null filters
-        var (whereClause1, parameters1) = Neo4jMemory.BuildWhereClause(null);
+        (string whereClause1, Dictionary<string, object> parameters1) = Neo4jMemory.BuildWhereClause(null);
 
         // Assert
         Assert.Equal(string.Empty, whereClause1);
         Assert.Empty(parameters1);
 
         // Arrange & Act - empty filters
-        var (whereClause2, parameters2) = Neo4jMemory.BuildWhereClause(new List<MemoryFilter>());
+        (string whereClause2, Dictionary<string, object> parameters2) = Neo4jMemory.BuildWhereClause(new List<MemoryFilter>());
 
         // Assert
         Assert.Equal(string.Empty, whereClause2);
@@ -39,7 +38,7 @@ public class FilterTranslationTests
         var filters = new List<MemoryFilter> { filter };
 
         // Act
-        var (whereClause, parameters) = Neo4jMemory.BuildWhereClause(filters);
+        (string whereClause, Dictionary<string, object> parameters) = Neo4jMemory.BuildWhereClause(filters);
 
         // Assert
         Assert.Equal(" WHERE (ANY(v IN n.tags['user'] WHERE v IN $filterParam0))", whereClause);
@@ -63,7 +62,7 @@ public class FilterTranslationTests
         var filters = new List<MemoryFilter> { filter };
 
         // Act
-        var (whereClause, parameters) = Neo4jMemory.BuildWhereClause(filters);
+        (string whereClause, Dictionary<string, object> parameters) = Neo4jMemory.BuildWhereClause(filters);
 
         // Assert
         Assert.Equal(" WHERE (ANY(v IN n.tags['user'] WHERE v IN $filterParam0))", whereClause);
@@ -88,7 +87,7 @@ public class FilterTranslationTests
         var filters = new List<MemoryFilter> { filter };
 
         // Act
-        var (whereClause, parameters) = Neo4jMemory.BuildWhereClause(filters);
+        (string whereClause, Dictionary<string, object> parameters) = Neo4jMemory.BuildWhereClause(filters);
 
         // Assert
         Assert.Contains("WHERE", whereClause);
@@ -116,7 +115,7 @@ public class FilterTranslationTests
         var filters = new List<MemoryFilter> { filter1, filter2 };
 
         // Act
-        var (whereClause, parameters) = Neo4jMemory.BuildWhereClause(filters);
+        (string whereClause, Dictionary<string, object> parameters) = Neo4jMemory.BuildWhereClause(filters);
 
         // Assert
         Assert.Contains("WHERE", whereClause);
@@ -144,7 +143,7 @@ public class FilterTranslationTests
         var filters = new List<MemoryFilter> { filter1, filter2 };
 
         // Act
-        var (whereClause, parameters) = Neo4jMemory.BuildWhereClause(filters);
+        (string whereClause, Dictionary<string, object> parameters) = Neo4jMemory.BuildWhereClause(filters);
 
         // Assert
         Assert.Contains("WHERE", whereClause);
@@ -171,7 +170,7 @@ public class FilterTranslationTests
         var filters = new List<MemoryFilter> { filter };
 
         // Act
-        var (whereClause, parameters) = Neo4jMemory.BuildWhereClause(filters, "node");
+        (string whereClause, Dictionary<string, object> parameters) = Neo4jMemory.BuildWhereClause(filters, "node");
 
         // Assert
         Assert.Contains("ANY(v IN node.tags['user'] WHERE v IN $filterParam0)", whereClause);
@@ -191,7 +190,7 @@ public class FilterTranslationTests
         var filters = new List<MemoryFilter> { emptyFilter, validFilter };
 
         // Act
-        var (whereClause, parameters) = Neo4jMemory.BuildWhereClause(filters);
+        (string whereClause, Dictionary<string, object> parameters) = Neo4jMemory.BuildWhereClause(filters);
 
         // Assert
         Assert.Equal(" WHERE (ANY(v IN n.tags['user'] WHERE v IN $filterParam0))", whereClause);
@@ -212,7 +211,7 @@ public class FilterTranslationTests
         var filters = new List<MemoryFilter> { filter };
 
         // Act
-        var (whereClause, parameters) = Neo4jMemory.BuildWhereClause(filters);
+        (string whereClause, Dictionary<string, object> parameters) = Neo4jMemory.BuildWhereClause(filters);
 
         // Assert
         Assert.Equal(" WHERE (ANY(v IN n.tags['user'] WHERE v IN $filterParam0))", whereClause);

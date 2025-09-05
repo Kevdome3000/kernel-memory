@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.KernelMemory.Models;
-using Microsoft.KernelMemory.Neo4j;
 
 namespace Microsoft.Neo4j.UnitTests;
 

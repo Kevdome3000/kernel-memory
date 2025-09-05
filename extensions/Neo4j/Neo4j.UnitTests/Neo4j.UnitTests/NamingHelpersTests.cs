@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.KernelMemory;
-using Microsoft.KernelMemory.Neo4j;
 
 namespace Microsoft.Neo4j.UnitTests;
 
@@ -108,7 +107,7 @@ public class NamingHelpersTests
     {
         // Arrange
         var config = new Neo4jConfig();
-        var memory = new Neo4jMemory(config, null!, null!);
+        var memory = new Neo4jMemory(config, null!);
 
         // Act & Assert
         Assert.Equal("MYINDEX", memory.LabelForIndex("MyIndex"));
@@ -124,7 +123,7 @@ public class NamingHelpersTests
     {
         // Arrange
         var config = new Neo4jConfig { LabelPrefix = "KM_" };
-        var memory = new Neo4jMemory(config, null!, null!);
+        var memory = new Neo4jMemory(config, null!);
 
         // Act & Assert
         Assert.Equal("KM_MYINDEX", memory.LabelForIndex("MyIndex"));
@@ -139,7 +138,7 @@ public class NamingHelpersTests
     {
         // Arrange
         var config = new Neo4jConfig { LabelPrefix = "" };
-        var memory = new Neo4jMemory(config, null!, null!);
+        var memory = new Neo4jMemory(config, null!);
 
         // Act & Assert
         Assert.Equal("MYINDEX", memory.LabelForIndex("MyIndex"));
@@ -154,7 +153,7 @@ public class NamingHelpersTests
     {
         // Arrange
         var config = new Neo4jConfig { LabelPrefix = null };
-        var memory = new Neo4jMemory(config, null!, null!);
+        var memory = new Neo4jMemory(config, null!);
 
         // Act & Assert
         Assert.Equal("MYINDEX", memory.LabelForIndex("MyIndex"));
@@ -169,7 +168,7 @@ public class NamingHelpersTests
     {
         // Arrange
         var config = new Neo4jConfig();
-        var memory = new Neo4jMemory(config, null!, null!);
+        var memory = new Neo4jMemory(config, null!);
 
         // Act & Assert
         Assert.Equal("myindex", memory.ApplyIndexNamePrefix("myindex"));
@@ -184,7 +183,7 @@ public class NamingHelpersTests
     {
         // Arrange
         var config = new Neo4jConfig { IndexNamePrefix = "km_" };
-        var memory = new Neo4jMemory(config, null!, null!);
+        var memory = new Neo4jMemory(config, null!);
 
         // Act & Assert
         Assert.Equal("km_myindex", memory.ApplyIndexNamePrefix("myindex"));
@@ -199,7 +198,7 @@ public class NamingHelpersTests
     {
         // Arrange
         var config = new Neo4jConfig { IndexNamePrefix = "" };
-        var memory = new Neo4jMemory(config, null!, null!);
+        var memory = new Neo4jMemory(config, null!);
 
         // Act & Assert
         Assert.Equal("myindex", memory.ApplyIndexNamePrefix("myindex"));
@@ -214,7 +213,7 @@ public class NamingHelpersTests
     {
         // Arrange
         var config = new Neo4jConfig { IndexNamePrefix = null };
-        var memory = new Neo4jMemory(config, null!, null!);
+        var memory = new Neo4jMemory(config, null!);
 
         // Act & Assert
         Assert.Equal("myindex", memory.ApplyIndexNamePrefix("myindex"));
@@ -233,7 +232,7 @@ public class NamingHelpersTests
             LabelPrefix = "KM_",
             IndexNamePrefix = "km_"
         };
-        var memory = new Neo4jMemory(config, null!, null!);
+        var memory = new Neo4jMemory(config, null!);
         const string originalIndex = "My Complex/Index Name";
 
         // Act
