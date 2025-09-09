@@ -14,7 +14,7 @@ public class Neo4jSpecificTests : BaseFunctionalTestCase
 
     public Neo4jSpecificTests(IConfiguration cfg, ITestOutputHelper output) : base(cfg, output)
     {
-        var neo4jConfig = cfg.GetSection("KernelMemory:Services:Neo4j").Get<Neo4jConfig>() ?? new Neo4jConfig();
+        Neo4jConfig neo4jConfig = cfg.GetSection("KernelMemory:Services:Neo4j").Get<Neo4jConfig>() ?? new Neo4jConfig();
 
         _memory = new KernelMemoryBuilder()
             .WithSearchClientConfig(new SearchClientConfig { EmptyAnswer = NotFound })
@@ -48,7 +48,7 @@ public class Neo4jSpecificTests : BaseFunctionalTestCase
         }
 
         // Act - Search for content
-        var searchResult = await _memory.AskAsync("What is the test content?", indexName);
+        MemoryAnswer searchResult = await _memory.AskAsync("What is the test content?", indexName);
 
         // Assert
         Assert.NotEqual(NotFound, searchResult.Result);
@@ -90,12 +90,12 @@ public class Neo4jSpecificTests : BaseFunctionalTestCase
         }
 
         // Act - Search with category filter
-        var animalResult = await _memory.AskAsync(
+        MemoryAnswer animalResult = await _memory.AskAsync(
             "What is this about?",
             filter: MemoryFilters.ByTag("category", "animals"),
             index: indexName);
 
-        var vehicleResult = await _memory.AskAsync(
+        MemoryAnswer vehicleResult = await _memory.AskAsync(
             "What is this about?",
             filter: MemoryFilters.ByTag("category", "vehicles"),
             index: indexName);
@@ -138,7 +138,7 @@ public class Neo4jSpecificTests : BaseFunctionalTestCase
         }
 
         // Act - Search using the same complex index name
-        var searchResult = await _memory.AskAsync("What is being tested?", complexIndexName);
+        MemoryAnswer searchResult = await _memory.AskAsync("What is being tested?", complexIndexName);
 
         // Assert
         Assert.NotEqual(NotFound, searchResult.Result);
@@ -187,7 +187,7 @@ public class Neo4jSpecificTests : BaseFunctionalTestCase
         }
 
         // Act - Search with OR filters (science OR technology)
-        var scienceOrTechResult = await _memory.AskAsync(
+        MemoryAnswer scienceOrTechResult = await _memory.AskAsync(
             "What topics are covered?",
             filters:
             [
@@ -197,14 +197,14 @@ public class Neo4jSpecificTests : BaseFunctionalTestCase
             index: indexName);
 
         // Act - Search with single filter that should exclude art
-        var artOnlyResult = await _memory.AskAsync(
+        MemoryAnswer artOnlyResult = await _memory.AskAsync(
             "What topics are covered?",
             filter: MemoryFilters.ByTag("category", "art"),
             index: indexName);
 
         // Assert
         // Science OR Technology should include both but not art
-        var scienceTechResponse = scienceOrTechResult.Result;
+        string scienceTechResponse = scienceOrTechResult.Result;
         Assert.True(
             scienceTechResponse.Contains("quantum", StringComparison.OrdinalIgnoreCase) || scienceTechResponse.Contains("software", StringComparison.OrdinalIgnoreCase),
             "Should contain science or technology content");
@@ -252,8 +252,8 @@ public class Neo4jSpecificTests : BaseFunctionalTestCase
         }
 
         // Act - Verify indexes exist by searching
-        var result1 = await _memory.AskAsync("What content is here?", indexName1);
-        var result2 = await _memory.AskAsync("What content is here?", indexName2);
+        MemoryAnswer result1 = await _memory.AskAsync("What content is here?", indexName1);
+        MemoryAnswer result2 = await _memory.AskAsync("What content is here?", indexName2);
 
         // Assert - Both indexes should work
         Assert.NotEqual(NotFound, result1.Result);
@@ -265,13 +265,13 @@ public class Neo4jSpecificTests : BaseFunctionalTestCase
         await _memory.DeleteIndexAsync(indexName1);
 
         // Act - Try to search deleted index (should return not found)
-        var deletedIndexResult = await _memory.AskAsync("What content is here?", indexName1);
+        MemoryAnswer deletedIndexResult = await _memory.AskAsync("What content is here?", indexName1);
 
         // Assert - Deleted index should return not found
         Assert.Equal(NotFound, deletedIndexResult.Result);
 
         // Act - Verify other index still works
-        var stillWorkingResult = await _memory.AskAsync("What content is here?", indexName2);
+        MemoryAnswer stillWorkingResult = await _memory.AskAsync("What content is here?", indexName2);
         Assert.NotEqual(NotFound, stillWorkingResult.Result);
 
         // Cleanup
@@ -289,7 +289,7 @@ public class Neo4jSpecificTests : BaseFunctionalTestCase
         const string documentId = "large-doc-test";
 
         // Create a large document with repeated content
-        var largeContent = string.Join(" ",
+        string largeContent = string.Join(" ",
             Enumerable.Repeat(
                 "This is a large document with lots of content to test Neo4j handling of substantial text. " + "It contains information about various topics including science, technology, and research. " + "The document is designed to test the chunking and storage capabilities of the Neo4j connector.",
                 50)); // Repeat 50 times to create substantial content
@@ -309,7 +309,7 @@ public class Neo4jSpecificTests : BaseFunctionalTestCase
         }
 
         // Act - Search for content
-        var searchResult = await _memory.AskAsync("What topics are covered in this large document?", indexName);
+        MemoryAnswer searchResult = await _memory.AskAsync("What topics are covered in this large document?", indexName);
 
         // Assert
         Assert.NotEqual(NotFound, searchResult.Result);

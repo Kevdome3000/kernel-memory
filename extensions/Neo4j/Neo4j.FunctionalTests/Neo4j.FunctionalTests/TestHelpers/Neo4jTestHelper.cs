@@ -71,7 +71,7 @@ internal static class Neo4jTestHelper
         ArgumentNullException.ThrowIfNull(config);
 
         // Get all test methods from the test class
-        var methods = unitTestType.GetMethods(BindingFlags.Public | BindingFlags.Instance)
+        MethodInfo[] methods = unitTestType.GetMethods(BindingFlags.Public | BindingFlags.Instance)
             .Where(m =>
                 m.GetCustomAttribute<FactAttribute>() != null || m.GetCustomAttribute<TheoryAttribute>() != null)
             .ToArray();
@@ -81,18 +81,18 @@ internal static class Neo4jTestHelper
             throw new ArgumentException($"No public test methods found in class '{unitTestType.Name}'.");
         }
 
-        var cleanedIndexes = new List<string>();
+        List<string> cleanedIndexes = [];
 
-        await using var session = driver.AsyncSession();
+        await using IAsyncSession? session = driver.AsyncSession();
 
-        foreach (var method in methods)
+        foreach (MethodInfo method in methods)
         {
-            var indexName = NormalizeIndexName(method.Name);
-            var prefixedIndexName = string.IsNullOrEmpty(config.IndexNamePrefix)
+            string indexName = NormalizeIndexName(method.Name);
+            string prefixedIndexName = string.IsNullOrEmpty(config.IndexNamePrefix)
                 ? indexName
                 : config.IndexNamePrefix + indexName;
 
-            var label = string.IsNullOrEmpty(config.LabelPrefix)
+            string label = string.IsNullOrEmpty(config.LabelPrefix)
                 ? indexName.ToUpperInvariant()
                 : config.LabelPrefix + indexName.ToUpperInvariant();
 
@@ -131,26 +131,21 @@ internal static class Neo4jTestHelper
         ArgumentNullException.ThrowIfNull(driver);
         ArgumentNullException.ThrowIfNull(config);
 
-        await using var session = driver.AsyncSession();
+        await using IAsyncSession? session = driver.AsyncSession();
 
         try
         {
             // Get all vector indexes that match our prefix pattern
-            var indexPrefix = config.IndexNamePrefix ?? "";
-            var labelPrefix = config.LabelPrefix ?? "";
+            string indexPrefix = config.IndexNamePrefix ?? "";
+            string labelPrefix = config.LabelPrefix ?? "";
 
             // Drop all vector indexes with our prefix
-            var indexResult = await session.RunAsync("SHOW VECTOR INDEXES YIELD name");
-            var indexes = await indexResult.ToListAsync();
+            IResultCursor? indexResult = await session.RunAsync("SHOW VECTOR INDEXES YIELD name");
+            List<IRecord>? indexes = await indexResult.ToListAsync();
 
-            foreach (var record in indexes)
+            foreach (string? indexName in indexes.Select(record => record["name"].As<string>()).Where(indexName => indexName.StartsWith(indexPrefix, StringComparison.OrdinalIgnoreCase)))
             {
-                var indexName = record["name"].As<string>();
-
-                if (indexName.StartsWith(indexPrefix, StringComparison.OrdinalIgnoreCase))
-                {
-                    await session.RunAsync($"DROP INDEX `{indexName}` IF EXISTS");
-                }
+                await session.RunAsync($"DROP INDEX `{indexName}` IF EXISTS");
             }
 
             // Delete all nodes with Memory label or our label prefix
@@ -162,18 +157,16 @@ internal static class Neo4jTestHelper
             await session.RunAsync("MATCH (n:Memory) DETACH DELETE n");
 
             // Drop all constraints for our labels
-            var constraintResult = await session.RunAsync("SHOW CONSTRAINTS YIELD name, labelsOrTypes");
-            var constraints = await constraintResult.ToListAsync();
+            IResultCursor? constraintResult = await session.RunAsync("SHOW CONSTRAINTS YIELD name, labelsOrTypes");
+            List<IRecord>? constraints = await constraintResult.ToListAsync();
 
-            foreach (var record in constraints)
+            foreach (string? constraintName in from record in constraints
+                                               let constraintName = record["name"].As<string>()
+                                               let labels = record["labelsOrTypes"].As<List<object>>()
+                                               where Enumerable.Any<object>(labels, l => l.ToString()!.StartsWith(labelPrefix, StringComparison.OrdinalIgnoreCase) || l.ToString()!.Equals("Memory", StringComparison.OrdinalIgnoreCase))
+                                               select constraintName)
             {
-                var constraintName = record["name"].As<string>();
-                var labels = record["labelsOrTypes"].As<List<object>>();
-
-                if (labels.Any(l => l.ToString()!.StartsWith(labelPrefix, StringComparison.OrdinalIgnoreCase) || l.ToString()!.Equals("Memory", StringComparison.OrdinalIgnoreCase)))
-                {
-                    await session.RunAsync($"DROP CONSTRAINT `{constraintName}` IF EXISTS");
-                }
+                await session.RunAsync($"DROP CONSTRAINT `{constraintName}` IF EXISTS");
             }
         }
         catch (Exception ex)
@@ -193,7 +186,7 @@ internal static class Neo4jTestHelper
     {
         ArgumentNullException.ThrowIfNull(driver);
 
-        await using var session = driver.AsyncSession();
+        await using IAsyncSession? session = driver.AsyncSession();
 
         try
         {
@@ -216,8 +209,8 @@ internal static class Neo4jTestHelper
     /// <returns>Unique index name</returns>
     public static string CreateUniqueTestIndexName(string baseIndexName, string testMethodName)
     {
-        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        var uniqueSuffix = $"{testMethodName}-{timestamp}";
+        long timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        string uniqueSuffix = $"{testMethodName}-{timestamp}";
         return NormalizeIndexName($"{baseIndexName}-{uniqueSuffix}");
     }
 
@@ -232,7 +225,7 @@ internal static class Neo4jTestHelper
     {
         ArgumentNullException.ThrowIfNull(operation);
 
-        var stopwatch = Stopwatch.StartNew();
+        Stopwatch stopwatch = Stopwatch.StartNew();
 
         try
         {
@@ -258,11 +251,11 @@ internal static class Neo4jTestHelper
     {
         ArgumentNullException.ThrowIfNull(operation);
 
-        var stopwatch = Stopwatch.StartNew();
+        Stopwatch stopwatch = Stopwatch.StartNew();
 
         try
         {
-            var result = await operation();
+            T result = await operation();
             return (result, stopwatch.ElapsedMilliseconds);
         }
         finally
@@ -283,13 +276,13 @@ internal static class Neo4jTestHelper
     {
         ArgumentNullException.ThrowIfNull(driver);
 
-        var stopwatch = Stopwatch.StartNew();
+        Stopwatch stopwatch = Stopwatch.StartNew();
 
         while (stopwatch.ElapsedMilliseconds < maxWaitTimeMs)
         {
             try
             {
-                await using var session = driver.AsyncSession();
+                await using IAsyncSession? session = driver.AsyncSession();
                 await session.RunAsync("RETURN 1");
                 return true;
             }

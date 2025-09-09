@@ -14,7 +14,7 @@ public class AdditionalFilteringTests : BaseFunctionalTestCase
 
     public AdditionalFilteringTests(IConfiguration cfg, ITestOutputHelper output) : base(cfg, output)
     {
-        var neo4jConfig = cfg.GetSection("KernelMemory:Services:Neo4j").Get<Neo4jConfig>() ?? new Neo4jConfig();
+        Neo4jConfig neo4jConfig = cfg.GetSection("KernelMemory:Services:Neo4j").Get<Neo4jConfig>() ?? new Neo4jConfig();
 
         _memory = new KernelMemoryBuilder()
             .WithSearchClientConfig(new SearchClientConfig { EmptyAnswer = NotFound })
@@ -36,7 +36,7 @@ public class AdditionalFilteringTests : BaseFunctionalTestCase
         await _memory.ImportTextAsync("red is a great color", "2", new TagCollection { { "user", "flash" } });
 
         // Act + Assert - See only memory about Green color
-        var answer = await _memory.AskAsync(Q, filter: MemoryFilters.ByDocument("1"));
+        MemoryAnswer answer = await _memory.AskAsync(Q, filter: MemoryFilters.ByDocument("1"));
         Assert.Contains("green", answer.Result, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("red", answer.Result, StringComparison.OrdinalIgnoreCase);
 
@@ -106,7 +106,7 @@ public class AdditionalFilteringTests : BaseFunctionalTestCase
             new TagCollection { { "language", "javascript" }, { "category", "web" }, { "category", "frontend" } });
 
         // Act + Assert - Filter by single category value (should match multiple docs)
-        var answer = await _memory.AskAsync(Q, filter: MemoryFilters.ByTag("category", "data"));
+        MemoryAnswer answer = await _memory.AskAsync(Q, filter: MemoryFilters.ByTag("category", "data"));
         Assert.Contains("Python", answer.Result, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("Java", answer.Result, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("JavaScript", answer.Result, StringComparison.OrdinalIgnoreCase);
@@ -159,7 +159,7 @@ public class AdditionalFilteringTests : BaseFunctionalTestCase
             });
 
         // Act + Assert - Filter by reserved document ID tag
-        var answer = await _memory.AskAsync(Q, filter: MemoryFilters.ByTag(Constants.ReservedDocumentIdTag, "neo4j-doc"));
+        MemoryAnswer answer = await _memory.AskAsync(Q, filter: MemoryFilters.ByTag(Constants.ReservedDocumentIdTag, "neo4j-doc"));
         Assert.Contains("Neo4j", answer.Result, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("PostgreSQL", answer.Result, StringComparison.OrdinalIgnoreCase);
 

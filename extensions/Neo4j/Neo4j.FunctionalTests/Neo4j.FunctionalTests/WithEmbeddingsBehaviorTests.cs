@@ -4,11 +4,12 @@ using Microsoft.KernelMemory;
 using Microsoft.KernelMemory.MemoryStorage;
 using Microsoft.KernelMemory.Models;
 using Microsoft.KM.TestHelpers;
+using Microsoft.Neo4j.FunctionalTests.TestHelpers;
 using Neo4j.Driver;
 
-namespace Microsoft.Neo4j.UnitTests;
+namespace Microsoft.Neo4j.FunctionalTests;
 
-public class WithEmbeddingsBehaviorTests : BaseUnitTestCase
+public sealed class WithEmbeddingsBehaviorTests : BaseUnitTestCase, IAsyncDisposable
 {
     private readonly Neo4jConfig _config;
     private readonly FakeEmbeddingGenerator _embeddingGenerator;
@@ -30,13 +31,13 @@ public class WithEmbeddingsBehaviorTests : BaseUnitTestCase
         _embeddingGenerator.Mock("test query", [0.1f, 0.2f, 0.3f]);
         _embeddingGenerator.Mock("sample text", [0.4f, 0.5f, 0.6f]);
 
-        _driver = GraphDatabase.Driver(new Uri(_config.Uri), AuthTokens.Basic(_config.Username, _config.Password));
+        _driver = Neo4jTestHelper.CreateTestDriver(_config);
         _memory = new Neo4jMemory(_config, _embeddingGenerator);
     }
 
 
     [Fact]
-    [Trait("Category", "UnitTest")]
+    [Trait("Category", "FunctionalTest")]
     [Trait("Category", "Neo4j")]
     public async Task ItDefaultsToWithEmbeddingsFalse()
     {
@@ -71,14 +72,13 @@ public class WithEmbeddingsBehaviorTests : BaseUnitTestCase
         }
         finally
         {
-            // Cleanup
-            await CleanupIndexAsync(indexName);
+            // Note: Comprehensive cleanup handled by DisposeAsync using Neo4jTestHelper
         }
     }
 
 
     [Fact]
-    [Trait("Category", "UnitTest")]
+    [Trait("Category", "FunctionalTest")]
     [Trait("Category", "Neo4j")]
     public async Task ItReturnsVectorWhenWithEmbeddingsTrue()
     {
@@ -114,14 +114,13 @@ public class WithEmbeddingsBehaviorTests : BaseUnitTestCase
         }
         finally
         {
-            // Cleanup
-            await CleanupIndexAsync(indexName);
+            // Note: Comprehensive cleanup handled by DisposeAsync using Neo4jTestHelper
         }
     }
 
 
     [Fact]
-    [Trait("Category", "UnitTest")]
+    [Trait("Category", "FunctionalTest")]
     [Trait("Category", "Neo4j")]
     public async Task ItOmitsVectorWhenWithEmbeddingsFalseExplicit()
     {
@@ -161,14 +160,13 @@ public class WithEmbeddingsBehaviorTests : BaseUnitTestCase
         }
         finally
         {
-            // Cleanup
-            await CleanupIndexAsync(indexName);
+            // Note: Comprehensive cleanup handled by DisposeAsync using Neo4jTestHelper
         }
     }
 
 
     [Fact]
-    [Trait("Category", "UnitTest")]
+    [Trait("Category", "FunctionalTest")]
     [Trait("Category", "Neo4j")]
     public async Task ItHandlesWithEmbeddingsInGetListAsync()
     {
@@ -221,14 +219,13 @@ public class WithEmbeddingsBehaviorTests : BaseUnitTestCase
         }
         finally
         {
-            // Cleanup
-            await CleanupIndexAsync(indexName);
+            // Note: Comprehensive cleanup handled by DisposeAsync using Neo4jTestHelper
         }
     }
 
 
     [Fact]
-    [Trait("Category", "UnitTest")]
+    [Trait("Category", "FunctionalTest")]
     [Trait("Category", "Neo4j")]
     public async Task ItPreservesPayloadAndTagsRegardlessOfWithEmbeddings()
     {
@@ -280,12 +277,12 @@ public class WithEmbeddingsBehaviorTests : BaseUnitTestCase
             Assert.Equal("Test Document", recordWithoutEmbeddings.Payload["title"].ToString());
             Assert.Equal("Test Document", recordWithEmbeddings.Payload["title"].ToString());
 
-            if(int.TryParse(recordWithoutEmbeddings.Payload["number"].ToString(), result: out int numberWithoutEmbeddings))
+            if (int.TryParse(recordWithoutEmbeddings.Payload["number"].ToString(), out int numberWithoutEmbeddings))
             {
                 Assert.Equal(42, numberWithoutEmbeddings);
             }
 
-            if(int.TryParse(recordWithEmbeddings.Payload["number"].ToString(), result: out int numberWithEmbeddings))
+            if (int.TryParse(recordWithEmbeddings.Payload["number"].ToString(), out int numberWithEmbeddings))
             {
                 Assert.Equal(42, numberWithEmbeddings);
             }
@@ -300,21 +297,27 @@ public class WithEmbeddingsBehaviorTests : BaseUnitTestCase
         }
         finally
         {
-            // Cleanup
-            await CleanupIndexAsync(indexName);
+            // Note: Comprehensive cleanup handled by DisposeAsync using Neo4jTestHelper
         }
     }
 
 
-    private async Task CleanupIndexAsync(string indexName)
+    public async ValueTask DisposeAsync()
     {
         try
         {
-            await _memory.DeleteIndexAsync(indexName);
+            // Use Neo4jTestHelper for comprehensive cleanup
+            await _driver.CleanupTestDataAsync(typeof(WithEmbeddingsBehaviorTests), _config);
         }
-        catch
+        catch (Exception ex)
         {
-            // Ignore cleanup errors
+            // Log but don't fail disposal
+            Console.WriteLine($"Warning: Failed to cleanup test data: {ex.Message}");
+        }
+        finally
+        {
+            _driver.Dispose();
+            await _memory.DisposeAsync();
         }
     }
 
@@ -323,8 +326,8 @@ public class WithEmbeddingsBehaviorTests : BaseUnitTestCase
     {
         if (disposing)
         {
-            _driver?.Dispose();
-            _memory?.Dispose();
+            _driver.Dispose();
+            _memory.Dispose();
         }
         base.Dispose(disposing);
     }

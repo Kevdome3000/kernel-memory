@@ -16,7 +16,7 @@ public class DefaultTests : BaseFunctionalTestCase
     {
         Assert.False(string.IsNullOrEmpty(OpenAiConfig.APIKey));
 
-        var neo4jConfig = cfg.GetSection("KernelMemory:Services:Neo4j").Get<Neo4jConfig>() ?? new Neo4jConfig();
+        Neo4jConfig neo4jConfig = cfg.GetSection("KernelMemory:Services:Neo4j").Get<Neo4jConfig>() ?? new Neo4jConfig();
 
         _memory = new KernelMemoryBuilder()
             .With(new KernelMemoryConfig { DefaultIndexName = "default4tests" })

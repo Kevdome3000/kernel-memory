@@ -12,7 +12,7 @@ public class Startup
 {
     public void ConfigureHost(IHostBuilder hostBuilder)
     {
-        var config = new ConfigurationBuilder()
+        IConfigurationRoot config = new ConfigurationBuilder()
             .AddJsonFile("appsettings.json")
             .AddJsonFile("appsettings.development.json", true)
             .AddJsonFile("appsettings.Development.json", true)
