@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Microsoft.KernelMemory.Diagnostics;
 using Neo4j.Driver;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 using Neo4jLogger = Neo4j.Driver.ILogger;
@@ -9,8 +10,16 @@ namespace Microsoft.KernelMemory.Neoo4j;
 // ReSharper disable once InconsistentNaming
 internal sealed class Neo4jDriverFactory
 {
-    public static IDriver BuildDriver(Neo4jConfig config, ILogger logger)
+    public static IDriver BuildDriver(Neo4jConfig config, ILoggerFactory? loggerFactory = null)
     {
+        ILoggerFactory factory = loggerFactory ?? DefaultLogger.Factory;
+        ILogger<Neo4jDriverFactory> logger = factory.CreateLogger<Neo4jDriverFactory>();
+
+        // Log configuration (with secret masking)
+        logger.LogInformation("Connecting to Neo4j at {Uri} with database {Database}",
+            config.Uri,
+            config.DatabaseName);
+
         Uri uri = new(config.Uri);
         return GraphDatabase.Driver(uri,
             AuthTokens.Basic(config.Username, config.Password),

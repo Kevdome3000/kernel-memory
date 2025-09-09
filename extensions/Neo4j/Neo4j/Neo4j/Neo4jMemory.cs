@@ -1,4 +1,6 @@
 ﻿using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
@@ -22,7 +24,8 @@ namespace Microsoft.KernelMemory.Neo4j;
 ///     When searching, uses brute force comparing against all stored records.
 /// </summary>
 // ReSharper disable once InconsistentNaming
-public sealed class Neo4jMemory : IMemoryDb, IDisposable, IAsyncDisposable
+[SuppressMessage("Style", "IDE1006:Naming Styles")]
+public sealed class Neo4jMemory : IMemoryDb, IMemoryDbUpsertBatch, IDisposable, IAsyncDisposable
 {
 
     private readonly IDriver _driver;
@@ -38,18 +41,104 @@ public sealed class Neo4jMemory : IMemoryDb, IDisposable, IAsyncDisposable
     /// <param name="config">Neo4j connection settings</param>
     /// <param name="embeddingGenerator">Text embedding generator</param>
     /// <param name="log">Application logger</param>
+    /// <param name="loggerFactory">Logger factory for creating loggers</param>
     public Neo4jMemory(
         Neo4jConfig config,
         ITextEmbeddingGenerator embeddingGenerator,
-        ILogger<Neo4jMemory>? log = null)
+        ILogger<Neo4jMemory>? log = null,
+        ILoggerFactory? loggerFactory = null)
     {
         _config = config ?? throw new ArgumentNullException(nameof(config));
         _embeddingGenerator = embeddingGenerator ?? throw new ArgumentNullException(nameof(embeddingGenerator));
-        _log = log ?? DefaultLogger<Neo4jMemory>.Instance;
 
-        _driver = Neo4jDriverFactory.BuildDriver(config, _log);
+        ILoggerFactory factory = loggerFactory ?? DefaultLogger.Factory;
+        _log = log ?? factory.CreateLogger<Neo4jMemory>();
 
-        Console.WriteLine($"Neo4jMemory created for {config.Uri}");
+        _driver = Neo4jDriverFactory.BuildDriver(config, factory);
+
+        _log.LogInformation("Neo4jMemory created for {Uri}", config.Uri);
+
+        // Perform feature detection if enabled
+        if (config.FeatureDetectionOnStartup)
+        {
+            Task.Run(async () =>
+            {
+                try
+                {
+                    await PerformFeatureDetectionAsync().ConfigureAwait(false);
+                }
+                catch (Neo4jException ex)
+                {
+                    _log.LogWarning(ex, "Feature detection failed during startup");
+                }
+            });
+        }
+    }
+
+
+    /// <summary>
+    /// Performs feature detection to verify Neo4j capabilities required for vector operations
+    /// </summary>
+    private async Task PerformFeatureDetectionAsync()
+    {
+        const string versionQuery = "CALL dbms.components() YIELD name, versions, edition RETURN name, versions[0] as version, edition";
+
+        try
+        {
+            _log.LogDebug("[DEBUG_LOG] Starting feature detection");
+
+            // Check Neo4j version
+            _log.LogDebug("[DEBUG_LOG] Executing version query: {Query}", versionQuery);
+
+            EagerResult<IReadOnlyList<IRecord>>? versionResult = await _driver.ExecutableQuery(versionQuery)
+                .WithConfig(new QueryConfig(database: _config.DatabaseName))
+                .ExecuteAsync()
+                .ConfigureAwait(false);
+
+            IRecord? first = versionResult.Result[0];
+
+            string? neo4jVersion = first?["version"]?.As<string>();
+            _log.LogInformation("Detected Neo4j version: {Version}", neo4jVersion ?? "Unknown");
+
+            // Check for vector index support
+            string proceduresQuery = "SHOW PROCEDURES YIELD name WHERE name CONTAINS 'vector' RETURN name";
+            _log.LogDebug("[DEBUG_LOG] Executing procedures query: {Query}", proceduresQuery);
+
+            EagerResult<IReadOnlyList<IRecord>>? proceduresResult = await _driver.ExecutableQuery(proceduresQuery)
+                .WithConfig(new QueryConfig(database: _config.DatabaseName))
+                .ExecuteAsync()
+                .ConfigureAwait(false);
+
+            List<string> vectorProcedures = proceduresResult.Result.Select(r => r["name"].As<string>()).ToList();
+
+            bool hasVectorIndexSupport = vectorProcedures.Any(p => p.Contains("db.index.vector", StringComparison.OrdinalIgnoreCase));
+            bool hasSetVectorProperty = vectorProcedures.Any(p => p.Contains("db.create.setNodeVectorProperty", StringComparison.OrdinalIgnoreCase));
+
+            if (!hasVectorIndexSupport)
+            {
+                _log.LogWarning("Neo4j vector index procedures not found. Ensure you're using Neo4j 5.x+ with vector index support enabled");
+            }
+
+            if (!hasSetVectorProperty)
+            {
+                _log.LogWarning("db.create.setNodeVectorProperty procedure not found. Vector operations may fail. Ensure Neo4j version 5.x+ with APOC or native vector support");
+            }
+
+            if (hasVectorIndexSupport && hasSetVectorProperty)
+            {
+                _log.LogInformation("Feature detection completed successfully. All required vector capabilities are available");
+            }
+            else
+            {
+                _log.LogWarning("Feature detection found missing capabilities. Please upgrade to Neo4j 5.x+ with vector index support");
+            }
+        }
+        catch (Exception ex)
+        {
+            _log.LogError(ex, "Feature detection failed. This may indicate connectivity issues or insufficient permissions");
+
+            throw new Neo4jException("Feature detection failed. This may indicate connectivity issues or insufficient permissions", ex);
+        }
     }
 
 
@@ -63,18 +152,24 @@ public sealed class Neo4jMemory : IMemoryDb, IDisposable, IAsyncDisposable
 
         try
         {
+            Stopwatch stopwatch = Stopwatch.StartNew();
+
             // Create uniqueness constraint
 #pragma warning disable CA1308
-            await _driver.ExecutableQuery($@"
+            string constraintQuery = $@"
                 CREATE CONSTRAINT constraint_{label.ToLowerInvariant()}_id IF NOT EXISTS
-                FOR (n:{label}) REQUIRE n.id IS UNIQUE")
+                FOR (n:{label}) REQUIRE n.id IS UNIQUE";
 #pragma warning restore CA1308
+
+            _log.LogDebug("[DEBUG_LOG] Executing constraint query: {Query}", constraintQuery);
+
+            await _driver.ExecutableQuery(constraintQuery)
                 .WithConfig(new QueryConfig(database: _config.DatabaseName))
                 .ExecuteAsync(cancellationToken)
                 .ConfigureAwait(false);
 
             // Create vector index
-            await _driver.ExecutableQuery($@"
+            string indexQuery = $@"
                 CREATE VECTOR INDEX `{indexName}` IF NOT EXISTS
                 FOR (m:{label}) ON (m.{propertyKey})
                 OPTIONS {{
@@ -82,7 +177,13 @@ public sealed class Neo4jMemory : IMemoryDb, IDisposable, IAsyncDisposable
                         `vector.dimensions`: $vectorSize,
                         `vector.similarity_function`: 'cosine'
                     }}
-                }}")
+                }}";
+
+            _log.LogDebug("[DEBUG_LOG] Executing index query: {Query} with parameters: vectorSize={VectorSize}",
+                indexQuery,
+                vectorSize);
+
+            await _driver.ExecutableQuery(indexQuery)
                 .WithParameters(new { vectorSize })
                 .WithConfig(new QueryConfig(database: _config.DatabaseName))
                 .ExecuteAsync(cancellationToken)
@@ -91,7 +192,11 @@ public sealed class Neo4jMemory : IMemoryDb, IDisposable, IAsyncDisposable
             // Cache vector dimension for validation
             _indexDimensions[normalizedIndex] = vectorSize;
 
-            _log.LogInformation("Created index {IndexName} with vector size {VectorSize}", indexName, vectorSize);
+            stopwatch.Stop();
+            _log.LogInformation("Created index {IndexName} with vector size {VectorSize} in {ElapsedMs}ms",
+                indexName,
+                vectorSize,
+                stopwatch.ElapsedMilliseconds);
         }
         catch (Exception ex)
         {
@@ -106,15 +211,24 @@ public sealed class Neo4jMemory : IMemoryDb, IDisposable, IAsyncDisposable
     {
         try
         {
-            EagerResult<IReadOnlyList<IRecord>>? response = await _driver.ExecutableQuery("SHOW VECTOR INDEXES YIELD name")
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            const string query = "SHOW VECTOR INDEXES YIELD name";
+
+            _log.LogDebug("[DEBUG_LOG] Executing get indexes query: {Query}", query);
+
+            EagerResult<IReadOnlyList<IRecord>>? response = await _driver.ExecutableQuery(query)
                 .ExecuteAsync(cancellationToken)
                 .ConfigureAwait(false);
 
-            IEnumerable<string> allIndexes = response.Result.Select(x => x["name"].As<string>());
+            IEnumerable<string> allIndexes = response.Result.Select(x => x["name"].As<string>()).ToList();
 
             // Filter by IndexNamePrefix if configured
             if (string.IsNullOrEmpty(_config.IndexNamePrefix))
             {
+                stopwatch.Stop();
+                _log.LogDebug("[DEBUG_LOG] Retrieved {Count} indexes in {ElapsedMs}ms",
+                    allIndexes.Count(),
+                    stopwatch.ElapsedMilliseconds);
                 return allIndexes.ToList();
             }
 
@@ -124,12 +238,19 @@ public sealed class Neo4jMemory : IMemoryDb, IDisposable, IAsyncDisposable
             // Remove prefix to return normalized names
             allIndexes = allIndexes.Select(name => name[_config.IndexNamePrefix.Length..]);
 
-            return allIndexes.ToList();
+            List<string> result = allIndexes.ToList();
+            stopwatch.Stop();
+            _log.LogDebug("[DEBUG_LOG] Retrieved {Count} filtered indexes (prefix: {Prefix}) in {ElapsedMs}ms",
+                result.Count,
+                _config.IndexNamePrefix,
+                stopwatch.ElapsedMilliseconds);
+
+            return result;
         }
         catch (Exception ex)
         {
-            _log.LogError(ex, "Failed to get indexes");
-            throw new Neo4jException("Failed to get indexes", ex);
+            _log.LogError(ex, "Failed to get indexes from Neo4j database");
+            throw new Neo4jException("Failed to retrieve vector indexes from Neo4j", ex);
         }
     }
 
@@ -218,6 +339,117 @@ public sealed class Neo4jMemory : IMemoryDb, IDisposable, IAsyncDisposable
                 record.Id,
                 index);
             throw new Neo4jException($"Failed to upsert record '{record.Id}' in index '{index}'", ex);
+        }
+    }
+
+
+    /// <inheritdoc />
+    public async IAsyncEnumerable<string> UpsertBatchAsync(
+        string index,
+        IEnumerable<MemoryRecord> records,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        List<MemoryRecord> recordList = records.ToList();
+
+        if (recordList.Count == 0)
+        {
+            yield break;
+        }
+
+        string normalizedIndex = NormalizeIndexName(index);
+        string label = LabelForIndex(normalizedIndex);
+        string propertyKey = PropertyKeyForIndex(normalizedIndex);
+
+        _log.LogDebug("[DEBUG_LOG] Upserting batch of {Count} records to index {Index}",
+            recordList.Count,
+            index);
+
+        // Validate vector dimensions if cached
+        if (_indexDimensions.TryGetValue(normalizedIndex, out int expectedDimensions))
+        {
+            foreach (string message in from record in recordList
+                                       where record.Vector.Length != expectedDimensions
+                                       select $"Vector dimension mismatch for index '{index}': expected {expectedDimensions}, got {record.Vector.Length}")
+            {
+                if (_config.StrictVectorSizeValidation)
+                {
+                    throw new Neo4jException(message);
+                }
+
+                _log.LogWarning(message);
+            }
+        }
+
+        EagerResult<IReadOnlyList<IRecord>>? result;
+
+        try
+        {
+            Stopwatch stopwatch = Stopwatch.StartNew();
+
+            // Prepare batch data for UNWIND
+            List<object> batchRows = recordList.Select(record =>
+                {
+                    // Convert tags to the format Neo4j expects
+                    List<string> flattenedTags = record.Tags.Pairs
+                        .Select(tag => $"{tag.Key}{Constants.ReservedEqualsChar}{tag.Value}")
+                        .ToList();
+
+                    string payloadJson = JsonSerializer.Serialize(record.Payload, s_jsonOptions);
+
+                    return new
+                    {
+                        id = record.Id,
+                        payload = payloadJson,
+                        tags = flattenedTags.ToArray(),
+                        vector = record.Vector.Data.ToArray()
+                    };
+                })
+                .Cast<object>()
+                .ToList();
+
+            // Use UNWIND for batch processing as specified in TODO
+            string cypher = $@"
+                UNWIND $rows AS row
+                MERGE (n:Memory:{label} {{id: row.id}})
+                SET n.payload = row.payload,
+                    n.tags = row.tags
+                WITH n, row
+                CALL db.create.setNodeVectorProperty(n, $propertyKey, row.vector)
+                RETURN n.id AS id";
+
+            _log.LogDebug("[DEBUG_LOG] Executing batch upsert query: {Query} with {Count} rows",
+                cypher,
+                batchRows.Count);
+
+            result = await _driver.ExecutableQuery(cypher)
+                .WithParameters(new
+                {
+                    rows = batchRows,
+                    propertyKey
+                })
+                .WithConfig(new QueryConfig(database: _config.DatabaseName))
+                .ExecuteAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            stopwatch.Stop();
+            _log.LogInformation("Batch upserted {Count} records to index {Index} in {ElapsedMs}ms",
+                recordList.Count,
+                index,
+                stopwatch.ElapsedMilliseconds);
+        }
+        catch (Exception ex)
+        {
+            _log.LogError(ex,
+                "Failed to batch upsert {Count} records to index {Index}",
+                recordList.Count,
+                index);
+            throw new Neo4jException($"Failed to batch upsert {recordList.Count} records to index '{index}'", ex);
+        }
+
+        // Yield the record IDs outside of try/catch
+        foreach (IRecord record in result.Result)
+        {
+            yield return record["id"].As<string>();
         }
     }
 

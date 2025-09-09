@@ -1,8 +1,8 @@
-﻿using Microsoft.KernelMemory;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.KernelMemory;
+using Microsoft.KernelMemory.AI;
 using Microsoft.KernelMemory.MemoryStorage;
 using Microsoft.KernelMemory.Neo4j;
-using Microsoft.KernelMemory.Neoo4j;
-using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection;
@@ -16,14 +16,25 @@ public static class ServiceCollectionExtensions
     ///     Inject Neo4j as the default implementation of IMemoryDb
     /// </summary>
     // ReSharper disable once InconsistentNaming
-    public static IServiceCollection AddNeo4jAsVectorDb(this IServiceCollection services, Neo4jConfig neo4JConfig)
+    public static IServiceCollection AddNeo4jAsMemoryDb(this IServiceCollection services, Neo4jConfig neo4JConfig)
     {
         ArgumentNullException.ThrowIfNull(neo4JConfig);
 
-        services.AddSingleton(sp => Neo4jDriverFactory.BuildDriver(neo4JConfig, sp.GetRequiredService<ILogger>()));
+        // Validate configuration on startup
+        neo4JConfig.Validate();
 
-        return services
-            .AddSingleton(neo4JConfig)
-            .AddSingleton<IMemoryDb, Neo4jMemory>();
+        services.AddSingleton<IMemoryDb>(serviceProvider =>
+        {
+            ILoggerFactory? loggerFactory = serviceProvider.GetService<ILoggerFactory>();
+            ILogger<Neo4jMemory>? logger = loggerFactory?.CreateLogger<Neo4jMemory>();
+            ITextEmbeddingGenerator embeddingGenerator = serviceProvider.GetRequiredService<ITextEmbeddingGenerator>();
+
+            return new Neo4jMemory(neo4JConfig,
+                embeddingGenerator,
+                logger,
+                loggerFactory);
+        });
+
+        return services.AddSingleton(neo4JConfig);
     }
 }

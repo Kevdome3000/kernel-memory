@@ -17,11 +17,11 @@ public static class KernelMemoryBuilderExtensions
     /// <param name="builder">The IKernelMemoryBuilder instance.</param>
     /// <param name="configuration">The application configuration.</param>
     // ReSharper disable once InconsistentNaming
-    public static IKernelMemoryBuilder WithNeo4j(
+    public static IKernelMemoryBuilder WithNeo4jMemoryDb(
         this IKernelMemoryBuilder builder,
         Neo4jConfig configuration)
     {
-        builder.Services.AddNeo4jAsVectorDb(configuration);
+        builder.Services.AddNeo4jAsMemoryDb(configuration);
 
         return builder;
     }
