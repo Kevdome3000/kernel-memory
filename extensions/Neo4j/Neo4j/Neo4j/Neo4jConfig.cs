@@ -12,6 +12,8 @@ public class Neo4jConfig
     public string Uri { get; set; } = "neo4j://localhost:7687";
 #pragma warning restore CA1056
 
+    public string DatabaseName { get; set; } = "neo4j";
+
     /// <summary>
     ///     Username required to connect to Neo4j.
     ///     Default is "neo4j"

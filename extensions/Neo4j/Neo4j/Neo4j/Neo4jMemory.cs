@@ -1,6 +1,8 @@
 ﻿using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using Microsoft.KernelMemory.AI;
@@ -42,13 +44,7 @@ public sealed class Neo4jMemory : IMemoryDb, IDisposable, IAsyncDisposable
         ILogger<Neo4jMemory>? log = null)
     {
         _config = config ?? throw new ArgumentNullException(nameof(config));
-        _embeddingGenerator = embeddingGenerator;
-
-        if (_embeddingGenerator == null)
-        {
-            throw new Neo4jException("Embedding generator not configured");
-        }
-
+        _embeddingGenerator = embeddingGenerator ?? throw new ArgumentNullException(nameof(embeddingGenerator));
         _log = log ?? DefaultLogger<Neo4jMemory>.Instance;
 
         _driver = Neo4jDriverFactory.BuildDriver(config, _log);
@@ -67,29 +63,35 @@ public sealed class Neo4jMemory : IMemoryDb, IDisposable, IAsyncDisposable
 
         try
         {
-            // 1. Create uniqueness constraint on id per label
-            await _driver.ExecutableQuery($"""
-                                           CREATE CONSTRAINT IF NOT EXISTS FOR (n:{label}) REQUIRE n.id IS UNIQUE
-                                           """)
+            // Create uniqueness constraint
+#pragma warning disable CA1308
+            await _driver.ExecutableQuery($@"
+                CREATE CONSTRAINT constraint_{label.ToLowerInvariant()}_id IF NOT EXISTS
+                FOR (n:{label}) REQUIRE n.id IS UNIQUE")
+#pragma warning restore CA1308
+                .WithConfig(new QueryConfig(database: _config.DatabaseName))
                 .ExecuteAsync(cancellationToken)
                 .ConfigureAwait(false);
 
-            // 2. Create vector index if not exists
-            await _driver.ExecutableQuery($$"""
-                                            CREATE VECTOR INDEX `{{indexName}}` IF NOT EXISTS
-                                                FOR (m:{{label}}) ON (m.{{propertyKey}})
-                                                OPTIONS { indexConfig: {
-                                                    `vector.dimensions`: $vectorSize,
-                                                    `vector.similarity_function`: 'cosine'
-                                                    }
-                                                }
-                                            """)
+            // Create vector index
+            await _driver.ExecutableQuery($@"
+                CREATE VECTOR INDEX `{indexName}` IF NOT EXISTS
+                FOR (m:{label}) ON (m.{propertyKey})
+                OPTIONS {{
+                    indexConfig: {{
+                        `vector.dimensions`: $vectorSize,
+                        `vector.similarity_function`: 'cosine'
+                    }}
+                }}")
                 .WithParameters(new { vectorSize })
+                .WithConfig(new QueryConfig(database: _config.DatabaseName))
                 .ExecuteAsync(cancellationToken)
                 .ConfigureAwait(false);
 
-            // 3. Cache vector dimension for validation
+            // Cache vector dimension for validation
             _indexDimensions[normalizedIndex] = vectorSize;
+
+            _log.LogInformation("Created index {IndexName} with vector size {VectorSize}", indexName, vectorSize);
         }
         catch (Exception ex)
         {
@@ -182,34 +184,32 @@ public sealed class Neo4jMemory : IMemoryDb, IDisposable, IAsyncDisposable
 
         try
         {
-            // Convert tags to the format Neo4j expects: map<string, list<string>>
-            Dictionary<string, List<string>> tagsMap = new();
+            // Convert tags to the format Neo4j expects
+            List<string> flattenedTags = record.Tags.Pairs
+                .Select(tag => $"{tag.Key}{Constants.ReservedEqualsChar}{tag.Value}")
+                .ToList();
 
-            foreach (KeyValuePair<string, List<string?>> tag in record.Tags)
-            {
-                tagsMap[tag.Key] = tag.Value.Where(v => v != null).Cast<string>().ToList();
-            }
+            string payloadJson = JsonSerializer.Serialize(record.Payload, s_jsonOptions);
 
-            EagerResult<IReadOnlyList<IRecord>>? response = await _driver.ExecutableQuery($$"""
-                                                                                            MERGE (n:Memory:{{label}} {id: $recordId})
-                                                                                            SET n.payload = $payload,
-                                                                                                n.tags = $tags
-                                                                                            WITH n
-                                                                                            CALL db.create.setNodeVectorProperty(n, $propertyKey, $vector)
-                                                                                            RETURN n.id as recordId
-                                                                                            """)
+            // Use ExecutableQuery for single operations (recommended approach)
+            EagerResult<IReadOnlyList<IRecord>>? result = await _driver.ExecutableQuery($@"
+            MERGE (n:Memory:{label} {{id: $recordId}})
+            SET n.payload = $payload,
+                n.tags = $tags,
+                n.{propertyKey} = $vector
+            RETURN n.id as recordId")
                 .WithParameters(new
                 {
                     recordId = record.Id,
-                    payload = record.Payload,
-                    tags = tagsMap,
-                    propertyKey,
+                    payload = payloadJson, // Driver handles Dictionary<string, object> automatically
+                    tags = flattenedTags.ToArray(),
                     vector = record.Vector.Data.ToArray()
                 })
+                .WithConfig(new QueryConfig(database: _config.DatabaseName)) // Always specify database
                 .ExecuteAsync(cancellationToken)
                 .ConfigureAwait(false);
 
-            return response.Result.Single()["recordId"].As<string>();
+            return result.Result.Single()["recordId"].As<string>();
         }
         catch (Exception ex)
         {
@@ -239,15 +239,15 @@ public sealed class Neo4jMemory : IMemoryDb, IDisposable, IAsyncDisposable
 
         string normalizedIndex = NormalizeIndexName(index);
         string indexName = ApplyIndexNamePrefix(normalizedIndex);
+        string label = LabelForIndex(normalizedIndex);
         string propertyKey = PropertyKeyForIndex(normalizedIndex);
 
-        List<(MemoryRecord, double)> results;
+        EagerResult<IReadOnlyList<IRecord>>? result;
 
         try
         {
             // Generate embedding
-            Embedding vector = await _embeddingGenerator.GenerateEmbeddingAsync(text, cancellationToken)
-                .ConfigureAwait(false);
+            Embedding vector = await _embeddingGenerator.GenerateEmbeddingAsync(text, cancellationToken).ConfigureAwait(false);
 
             // Build filter clause
             (string whereClause, Dictionary<string, object> parameters) = BuildWhereClause(filters, "node");
@@ -266,36 +266,22 @@ public sealed class Neo4jMemory : IMemoryDb, IDisposable, IAsyncDisposable
                 ["minRelevance"] = minRelevance
             };
 
-            string cypher = $"""
-                             CALL db.index.vector.queryNodes($indexName, $topK, $vector)
-                             YIELD node, score
-                             {whereClause}
-                             AND score >= $minRelevance
-                             RETURN score, node.id as recordId, node.payload as payload, node.tags as tags{vectorProjection}
-                             ORDER BY score DESC
-                             """;
+            string cypher = $@"
+            CALL db.index.vector.queryNodes($indexName, $topK, $vector)
+            YIELD node, score
+            WHERE node:Memory:{label}
+            {whereClause.Replace(" WHERE ", " AND ", StringComparison.Ordinal)}
+            AND score >= $minRelevance
+            RETURN score, node.id as recordId, node.payload as payload, node.tags as tags{vectorProjection}
+            ORDER BY score DESC";
 
-            EagerResult<IReadOnlyList<IRecord>>? response = await _driver.ExecutableQuery(cypher)
+            result = await _driver.ExecutableQuery(cypher)
                 .WithParameters(queryParams)
+                .WithConfig(new QueryConfig(
+                    database: _config.DatabaseName,
+                    routing: RoutingControl.Readers)) // Use read routing for better performance
                 .ExecuteAsync(cancellationToken)
                 .ConfigureAwait(false);
-
-            results = response.Result.Select(record =>
-                {
-                    MemoryRecord memoryRecord = new()
-                    {
-                        Id = record["recordId"].As<string>(),
-                        Payload = record["payload"].As<Dictionary<string, object>>() ?? new Dictionary<string, object>(),
-                        Tags = ConvertTagsFromNeo4j(record["tags"].As<Dictionary<string, List<string>>>()),
-                        Vector = withEmbeddings && record.ContainsKey("vector")
-                            ? new Embedding(record["vector"].As<List<float>>().ToArray())
-                            : new Embedding()
-                    };
-
-                    double score = record["score"].As<double>();
-                    return (memoryRecord, score);
-                })
-                .ToList();
         }
         catch (Exception ex)
         {
@@ -303,9 +289,26 @@ public sealed class Neo4jMemory : IMemoryDb, IDisposable, IAsyncDisposable
             throw new Neo4jException($"Failed to get similar records for index '{index}'", ex);
         }
 
-        foreach ((MemoryRecord, double) result in results)
+        foreach (IRecord record in result.Result)
         {
-            yield return result;
+            string? payloadJson = record["payload"].As<string>();
+            Dictionary<string, object> payload = string.IsNullOrEmpty(payloadJson)
+                ? new Dictionary<string, object>()
+                : JsonSerializer.Deserialize<Dictionary<string, object>>(payloadJson, s_jsonOptions)
+                ?? new Dictionary<string, object>();
+
+            MemoryRecord memoryRecord = new()
+            {
+                Id = record["recordId"].As<string>(),
+                Payload = payload,
+                Tags = ConvertTagsFromNeo4j(record["tags"].As<List<string>>()), // Now expects List<string>
+                Vector = withEmbeddings && record.ContainsKey("vector")
+                    ? new Embedding(record["vector"].As<List<float>>().ToArray())
+                    : new Embedding()
+            };
+
+            double score = record["score"].As<double>();
+            yield return (memoryRecord, score);
         }
     }
 
@@ -327,7 +330,7 @@ public sealed class Neo4jMemory : IMemoryDb, IDisposable, IAsyncDisposable
         string label = LabelForIndex(normalizedIndex);
         string propertyKey = PropertyKeyForIndex(normalizedIndex);
 
-        List<MemoryRecord> results;
+        EagerResult<IReadOnlyList<IRecord>>? result;
 
         try
         {
@@ -345,28 +348,19 @@ public sealed class Neo4jMemory : IMemoryDb, IDisposable, IAsyncDisposable
                 ["limit"] = limit
             };
 
-            string cypher = $"""
-                             MATCH (n:Memory:{label})
-                             {whereClause}
-                             RETURN n.id as recordId, n.payload as payload, n.tags as tags{vectorProjection}
-                             LIMIT $limit
-                             """;
+            string cypher = $@"
+            MATCH (n:Memory:{label})
+            {whereClause}
+            RETURN n.id as recordId, n.payload as payload, n.tags as tags{vectorProjection}
+            LIMIT $limit";
 
-            EagerResult<IReadOnlyList<IRecord>>? response = await _driver.ExecutableQuery(cypher)
+            result = await _driver.ExecutableQuery(cypher)
                 .WithParameters(queryParams)
+                .WithConfig(new QueryConfig(
+                    database: _config.DatabaseName,
+                    routing: RoutingControl.Readers))
                 .ExecuteAsync(cancellationToken)
                 .ConfigureAwait(false);
-
-            results = response.Result.Select(record => new MemoryRecord
-                {
-                    Id = record["recordId"].As<string>(),
-                    Payload = record["payload"].As<Dictionary<string, object>>() ?? new Dictionary<string, object>(),
-                    Tags = ConvertTagsFromNeo4j(record["tags"].As<Dictionary<string, List<string>>>()),
-                    Vector = withEmbeddings && record.ContainsKey("vector")
-                        ? new Embedding(record["vector"].As<List<float>>().ToArray())
-                        : new Embedding()
-                })
-                .ToList();
         }
         catch (Exception ex)
         {
@@ -374,9 +368,23 @@ public sealed class Neo4jMemory : IMemoryDb, IDisposable, IAsyncDisposable
             throw new Neo4jException($"Failed to get records for index '{index}'", ex);
         }
 
-        foreach (MemoryRecord result in results)
+        foreach (MemoryRecord? memoryRecord in from record in result.Result
+                                               let payloadJson = record["payload"].As<string>()
+                                               let payload = string.IsNullOrEmpty(payloadJson)
+                                                   ? new Dictionary<string, object>()
+                                                   : JsonSerializer.Deserialize<Dictionary<string, object>>(payloadJson, s_jsonOptions)
+                                                   ?? new Dictionary<string, object>()
+                                               select new MemoryRecord
+                                               {
+                                                   Id = record["recordId"].As<string>(),
+                                                   Payload = payload,
+                                                   Tags = ConvertTagsFromNeo4j(record["tags"].As<List<string>>()), // Now expects List<string>
+                                                   Vector = withEmbeddings && record.ContainsKey("vector")
+                                                       ? new Embedding(record["vector"].As<List<float>>().ToArray())
+                                                       : new Embedding()
+                                               })
         {
-            yield return result;
+            yield return memoryRecord;
         }
     }
 
@@ -411,8 +419,18 @@ public sealed class Neo4jMemory : IMemoryDb, IDisposable, IAsyncDisposable
     #region private ================================================================================
 
     // Note: normalize "_" to "-" for consistency with other DBs
-    private static readonly Regex s_replaceIndexNameCharsRegex = new(@"[\s|\\|/|.|_|:]", RegexOptions.Compiled);
-    private const string ValidSeparator = "-";
+    private static readonly Regex s_replaceIndexNameCharsRegex = new(@"[\s|\\|/|.|\-|:]");
+    private const string ValidSeparator = "_";
+
+    private static readonly JsonSerializerOptions s_jsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented = false,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        PropertyNameCaseInsensitive = true,
+        AllowTrailingCommas = true,
+        ReadCommentHandling = JsonCommentHandling.Skip
+    };
 
 
     /// <summary>
@@ -445,7 +463,9 @@ public sealed class Neo4jMemory : IMemoryDb, IDisposable, IAsyncDisposable
     /// <returns>The generated label.</returns>
     internal string LabelForIndex(string index)
     {
-        string label = index.ToUpperInvariant();
+        // Replace hyphens with underscores for Neo4j label compatibility
+        string safe = index.Replace('-', '_');
+        string label = safe.ToUpperInvariant();
         return string.IsNullOrEmpty(_config.LabelPrefix)
             ? label
             : _config.LabelPrefix + label;
@@ -460,8 +480,10 @@ public sealed class Neo4jMemory : IMemoryDb, IDisposable, IAsyncDisposable
     /// <returns>The generated property key.</returns>
     internal static string PropertyKeyForIndex(string index)
     {
+        // Replace hyphens with underscores for Neo4j property key compatibility
+        string safe = index.Replace('-', '_');
 #pragma warning disable CA1308
-        return "vec_" + index.ToLowerInvariant();
+        return "vec_" + safe.ToLowerInvariant();
 #pragma warning restore CA1308
     }
 
@@ -502,19 +524,25 @@ public sealed class Neo4jMemory : IMemoryDb, IDisposable, IAsyncDisposable
         {
             List<string> andConditions = [];
 
-            foreach ((string key, List<string?> value) in filter)
+            foreach ((string key, List<string?> values) in filter)
             {
-                List<string> values = value.Where(v => v != null).Cast<string>().ToList();
+                List<string> cleanValues = values.Where(v => !string.IsNullOrEmpty(v)).Cast<string>().ToList();
 
-                if (values.Count <= 0)
+                if (cleanValues.Count == 0)
                 {
                     continue;
                 }
-                string paramName = $"filterParam{paramCounter++}";
-                parameters[paramName] = values;
 
-                // ANY(v IN n.tags['key'] WHERE v IN $param)
-                andConditions.Add($"ANY(v IN {nodeAlias}.tags['{key}'] WHERE v IN ${paramName})");
+                // Create flattened tag patterns to search for (same as Postgres implementation)
+                List<string> tagPatterns = cleanValues
+                    .Select(value => $"{key}{Constants.ReservedEqualsChar}{value}")
+                    .ToList();
+
+                string paramName = $"filterParam{paramCounter++}";
+                parameters[paramName] = tagPatterns;
+
+                // Check if any of the flattened tag patterns exist in the tags array
+                andConditions.Add($"ANY(tagPattern IN ${paramName} WHERE tagPattern IN {nodeAlias}.tags)");
             }
 
             if (andConditions.Count > 0)
@@ -537,22 +565,30 @@ public sealed class Neo4jMemory : IMemoryDb, IDisposable, IAsyncDisposable
     /// </summary>
     /// <param name="neo4jTags">The Neo4j tags to convert.</param>
     /// <returns>A TagCollection object containing the converted tags.</returns>
-    internal static TagCollection ConvertTagsFromNeo4j(Dictionary<string, List<string>>? neo4jTags)
+    internal static TagCollection ConvertTagsFromNeo4j(List<string>? neo4jTags)
     {
         TagCollection tags = new();
 
-        if (neo4jTags == null)
+        if (neo4jTags == null || neo4jTags.Count == 0)
         {
             return tags;
         }
 
-        foreach (KeyValuePair<string, List<string>> kvp in neo4jTags)
+        foreach (string flattenedTag in neo4jTags)
         {
-            foreach (string value in kvp.Value)
+            // Split on the reserved equals character (same as Postgres implementation)
+            string[] keyValue = flattenedTag.Split(Constants.ReservedEqualsChar, 2);
+            string key = keyValue[0];
+            string? value = keyValue.Length == 1
+                ? null
+                : keyValue[1];
+
+            if (!string.IsNullOrEmpty(key))
             {
-                tags.Add(kvp.Key, value);
+                tags.Add(key, value);
             }
         }
+
         return tags;
     }
 
