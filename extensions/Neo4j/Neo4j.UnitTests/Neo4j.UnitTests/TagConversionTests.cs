@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Microsoft.All rights reserved.
 
+using Microsoft.KernelMemory;
 using Microsoft.KernelMemory.Models;
 
 namespace Microsoft.Neo4j.UnitTests;
@@ -12,7 +13,7 @@ public class TagConversionTests
     public void ItHandlesNullNeo4jTags()
     {
         // Arrange & Act
-        var result = Neo4jMemory.ConvertTagsFromNeo4j(null);
+        TagCollection result = Neo4jMemory.ConvertTagsFromNeo4j(null);
 
         // Assert
         Assert.NotNull(result);
@@ -26,10 +27,10 @@ public class TagConversionTests
     public void ItHandlesEmptyNeo4jTags()
     {
         // Arrange
-        var neo4jTags = new Dictionary<string, List<string>>();
+        List<string> neo4jTags = [];
 
         // Act
-        var result = Neo4jMemory.ConvertTagsFromNeo4j(neo4jTags);
+        TagCollection result = Neo4jMemory.ConvertTagsFromNeo4j(neo4jTags);
 
         // Assert
         Assert.NotNull(result);
@@ -43,13 +44,17 @@ public class TagConversionTests
     public void ItConvertsSingleKeyWithSingleValue()
     {
         // Arrange
-        var neo4jTags = new Dictionary<string, List<string>>
+        Dictionary<string, List<string>> neo4jTags = new()
         {
-            { "user", new List<string> { "admin" } }
+            { "user", ["admin"] }
         };
 
+        List<string> flattenedTags = neo4jTags
+            .Select(tag => $"{tag.Key}{Constants.ReservedEqualsChar}{tag.Value}")
+            .ToList();
+
         // Act
-        var result = Neo4jMemory.ConvertTagsFromNeo4j(neo4jTags);
+        TagCollection result = Neo4jMemory.ConvertTagsFromNeo4j(flattenedTags);
 
         // Assert
         Assert.NotNull(result);
@@ -66,13 +71,17 @@ public class TagConversionTests
     public void ItConvertsSingleKeyWithMultipleValues()
     {
         // Arrange
-        var neo4jTags = new Dictionary<string, List<string>>
+        Dictionary<string, List<string>> neo4jTags = new()
         {
-            { "user", new List<string> { "admin", "owner", "editor" } }
+            { "user", ["admin", "owner", "editor"] }
         };
 
+        List<string> flattenedTags = neo4jTags
+            .Select(tag => $"{tag.Key}{Constants.ReservedEqualsChar}{tag.Value}")
+            .ToList();
+
         // Act
-        var result = Neo4jMemory.ConvertTagsFromNeo4j(neo4jTags);
+        TagCollection result = Neo4jMemory.ConvertTagsFromNeo4j(flattenedTags);
 
         // Assert
         Assert.NotNull(result);
@@ -91,15 +100,19 @@ public class TagConversionTests
     public void ItConvertsMultipleKeysWithMultipleValues()
     {
         // Arrange
-        var neo4jTags = new Dictionary<string, List<string>>
+        Dictionary<string, List<string>> neo4jTags = new()
         {
-            { "user", new List<string> { "admin", "owner" } },
-            { "type", new List<string> { "news", "article" } },
-            { "category", new List<string> { "tech" } }
+            { "user", ["admin", "owner"] },
+            { "type", ["news", "article"] },
+            { "category", ["tech"] }
         };
 
+        List<string> flattenedTags = neo4jTags
+            .Select(tag => $"{tag.Key}{Constants.ReservedEqualsChar}{tag.Value}")
+            .ToList();
+
         // Act
-        var result = Neo4jMemory.ConvertTagsFromNeo4j(neo4jTags);
+        TagCollection result = Neo4jMemory.ConvertTagsFromNeo4j(flattenedTags);
 
         // Assert
         Assert.NotNull(result);
@@ -127,15 +140,19 @@ public class TagConversionTests
     public void ItHandlesEmptyValueLists()
     {
         // Arrange
-        var neo4jTags = new Dictionary<string, List<string>>
+        Dictionary<string, List<string>> neo4jTags = new()
         {
-            { "user", new List<string> { "admin" } },
-            { "empty", new List<string>() },
-            { "type", new List<string> { "news" } }
+            { "user", ["admin"] },
+            { "empty", [] },
+            { "type", ["news"] }
         };
 
+        List<string> flattenedTags = neo4jTags
+            .Select(tag => $"{tag.Key}{Constants.ReservedEqualsChar}{tag.Value}")
+            .ToList();
+
         // Act
-        var result = Neo4jMemory.ConvertTagsFromNeo4j(neo4jTags);
+        TagCollection result = Neo4jMemory.ConvertTagsFromNeo4j(flattenedTags);
 
         // Assert
         Assert.NotNull(result);
@@ -152,7 +169,7 @@ public class TagConversionTests
     public void TagsMatchFiltersHandlesNullAndEmptyFilters()
     {
         // Arrange
-        var tags = new TagCollection();
+        TagCollection tags = new();
         tags.Add("user", "admin");
 
         // Act & Assert - null filters
@@ -169,13 +186,13 @@ public class TagConversionTests
     public void TagsMatchFiltersHandlesSingleFilterMatch()
     {
         // Arrange
-        var tags = new TagCollection();
+        TagCollection tags = new();
         tags.Add("user", "admin");
         tags.Add("type", "news");
 
-        var filter = new MemoryFilter();
+        MemoryFilter filter = new();
         filter.Add("user", "admin");
-        var filters = new List<MemoryFilter> { filter };
+        List<MemoryFilter> filters = [filter];
 
         // Act & Assert
         Assert.True(Neo4jMemory.TagsMatchFilters(tags, filters));
@@ -188,13 +205,13 @@ public class TagConversionTests
     public void TagsMatchFiltersHandlesSingleFilterNoMatch()
     {
         // Arrange
-        var tags = new TagCollection();
+        TagCollection tags = new();
         tags.Add("user", "admin");
         tags.Add("type", "news");
 
-        var filter = new MemoryFilter();
+        MemoryFilter filter = new();
         filter.Add("user", "owner");
-        var filters = new List<MemoryFilter> { filter };
+        List<MemoryFilter> filters = [filter];
 
         // Act & Assert
         Assert.False(Neo4jMemory.TagsMatchFilters(tags, filters));
@@ -207,23 +224,23 @@ public class TagConversionTests
     public void TagsMatchFiltersHandlesMultipleKeyAndLogic()
     {
         // Arrange
-        var tags = new TagCollection();
+        TagCollection tags = new();
         tags.Add("user", "admin");
         tags.Add("type", "news");
 
-        var filter = new MemoryFilter();
+        MemoryFilter filter = new();
         filter.Add("user", "admin");
         filter.Add("type", "news");
-        var filters = new List<MemoryFilter> { filter };
+        List<MemoryFilter> filters = [filter];
 
         // Act & Assert - both conditions match
         Assert.True(Neo4jMemory.TagsMatchFilters(tags, filters));
 
         // Arrange - one condition doesn't match
-        var filter2 = new MemoryFilter();
+        MemoryFilter filter2 = new();
         filter2.Add("user", "admin");
         filter2.Add("type", "article");
-        var filters2 = new List<MemoryFilter> { filter2 };
+        List<MemoryFilter> filters2 = [filter2];
 
         // Act & Assert - should fail because of AND logic
         Assert.False(Neo4jMemory.TagsMatchFilters(tags, filters2));
@@ -236,17 +253,17 @@ public class TagConversionTests
     public void TagsMatchFiltersHandlesMultipleFiltersOrLogic()
     {
         // Arrange
-        var tags = new TagCollection();
+        TagCollection tags = new();
         tags.Add("user", "admin");
         tags.Add("type", "news");
 
-        var filter1 = new MemoryFilter();
+        MemoryFilter filter1 = new();
         filter1.Add("user", "owner"); // doesn't match
 
-        var filter2 = new MemoryFilter();
+        MemoryFilter filter2 = new();
         filter2.Add("user", "admin"); // matches
 
-        var filters = new List<MemoryFilter> { filter1, filter2 };
+        List<MemoryFilter> filters = [filter1, filter2];
 
         // Act & Assert - should pass because of OR logic
         Assert.True(Neo4jMemory.TagsMatchFilters(tags, filters));
@@ -259,14 +276,14 @@ public class TagConversionTests
     public void TagsMatchFiltersHandlesMultipleValuesInTags()
     {
         // Arrange
-        var tags = new TagCollection();
+        TagCollection tags = new();
         tags.Add("user", "admin");
         tags.Add("user", "owner");
         tags.Add("type", "news");
 
-        var filter = new MemoryFilter();
+        MemoryFilter filter = new();
         filter.Add("user", "owner");
-        var filters = new List<MemoryFilter> { filter };
+        List<MemoryFilter> filters = [filter];
 
         // Act & Assert - should match one of the user values
         Assert.True(Neo4jMemory.TagsMatchFilters(tags, filters));
@@ -279,12 +296,12 @@ public class TagConversionTests
     public void TagsMatchFiltersHandlesMissingKeys()
     {
         // Arrange
-        var tags = new TagCollection();
+        TagCollection tags = new();
         tags.Add("user", "admin");
 
-        var filter = new MemoryFilter();
+        MemoryFilter filter = new();
         filter.Add("category", "tech"); // key doesn't exist in tags
-        var filters = new List<MemoryFilter> { filter };
+        List<MemoryFilter> filters = [filter];
 
         // Act & Assert
         Assert.False(Neo4jMemory.TagsMatchFilters(tags, filters));

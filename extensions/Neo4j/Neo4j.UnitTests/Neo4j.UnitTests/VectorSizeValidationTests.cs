@@ -19,7 +19,7 @@ public class VectorSizeValidationTests : BaseUnitTestCase
     public VectorSizeValidationTests(ITestOutputHelper output) : base(output)
     {
         _embeddingGenerator = new FakeEmbeddingGenerator();
-        _embeddingGenerator.Mock("test query", new[] { 0.1f, 0.2f, 0.3f });
+        _embeddingGenerator.Mock("test query", [0.1f, 0.2f, 0.3f]);
     }
 
 

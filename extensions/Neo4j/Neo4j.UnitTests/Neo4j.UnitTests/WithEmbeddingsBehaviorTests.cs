@@ -22,14 +22,15 @@ public class WithEmbeddingsBehaviorTests : BaseUnitTestCase
         {
             Uri = "neo4j://localhost:7687",
             Username = "neo4j",
-            Password = "password"
+            Password = "test_password",
+            DatabaseName = "neo4j"
         };
 
         _embeddingGenerator = new FakeEmbeddingGenerator();
-        _embeddingGenerator.Mock("test query", new[] { 0.1f, 0.2f, 0.3f });
-        _embeddingGenerator.Mock("sample text", new[] { 0.4f, 0.5f, 0.6f });
+        _embeddingGenerator.Mock("test query", [0.1f, 0.2f, 0.3f]);
+        _embeddingGenerator.Mock("sample text", [0.4f, 0.5f, 0.6f]);
 
-        _driver = GraphDatabase.Driver(_config.Uri, AuthTokens.Basic(_config.Username, _config.Password));
+        _driver = GraphDatabase.Driver(new Uri(_config.Uri), AuthTokens.Basic(_config.Username, _config.Password));
         _memory = new Neo4jMemory(_config, _embeddingGenerator);
     }
 
@@ -40,10 +41,10 @@ public class WithEmbeddingsBehaviorTests : BaseUnitTestCase
     public async Task ItDefaultsToWithEmbeddingsFalse()
     {
         // Arrange
-        const string indexName = "test-embeddings-default";
-        const string recordId = "test-record-1";
-        var testVector = new[] { 0.1f, 0.2f, 0.3f };
-        var record = new MemoryRecord
+        const string indexName = "test_embeddings_default";
+        const string recordId = "test_record_1";
+        float[] testVector = [0.1f, 0.2f, 0.3f];
+        MemoryRecord record = new()
         {
             Id = recordId,
             Vector = testVector,
@@ -53,17 +54,12 @@ public class WithEmbeddingsBehaviorTests : BaseUnitTestCase
 
         try
         {
-            // Act - Create index and upsert record
+            // Act _ Create index and upsert record
             await _memory.CreateIndexAsync(indexName, testVector.Length);
             await _memory.UpsertAsync(indexName, record);
 
-            // Act - Get similar records without specifying withEmbeddings (should default to false)
-            var results = new List<(MemoryRecord, double)>();
-
-            await foreach (var result in _memory.GetSimilarListAsync(indexName, "test query"))
-            {
-                results.Add(result);
-            }
+            // Act _ Get similar records without specifying withEmbeddings (should default to false)
+            List<(MemoryRecord, double)> results = await _memory.GetSimilarListAsync(indexName, "test query").ToListAsync();
 
             // Assert
             Assert.Single(results);
@@ -87,10 +83,10 @@ public class WithEmbeddingsBehaviorTests : BaseUnitTestCase
     public async Task ItReturnsVectorWhenWithEmbeddingsTrue()
     {
         // Arrange
-        const string indexName = "test-embeddings-true";
-        const string recordId = "test-record-2";
-        var testVector = new[] { 0.4f, 0.5f, 0.6f };
-        var record = new MemoryRecord
+        const string indexName = "test_embeddings_true";
+        const string recordId = "test_record_2";
+        float[] testVector = [0.4f, 0.5f, 0.6f];
+        MemoryRecord record = new()
         {
             Id = recordId,
             Vector = testVector,
@@ -100,17 +96,12 @@ public class WithEmbeddingsBehaviorTests : BaseUnitTestCase
 
         try
         {
-            // Act - Create index and upsert record
+            // Act _ Create index and upsert record
             await _memory.CreateIndexAsync(indexName, testVector.Length);
             await _memory.UpsertAsync(indexName, record);
 
-            // Act - Get similar records with withEmbeddings=true
-            var results = new List<(MemoryRecord, double)>();
-
-            await foreach (var result in _memory.GetSimilarListAsync(indexName, "sample text", withEmbeddings: true))
-            {
-                results.Add(result);
-            }
+            // Act _ Get similar records with withEmbeddings=true
+            List<(MemoryRecord, double)> results = await _memory.GetSimilarListAsync(indexName, "sample text", withEmbeddings: true).ToListAsync();
 
             // Assert
             Assert.Single(results);
@@ -135,10 +126,10 @@ public class WithEmbeddingsBehaviorTests : BaseUnitTestCase
     public async Task ItOmitsVectorWhenWithEmbeddingsFalseExplicit()
     {
         // Arrange
-        const string indexName = "test-embeddings-false";
-        const string recordId = "test-record-3";
-        var testVector = new[] { 0.7f, 0.8f, 0.9f };
-        var record = new MemoryRecord
+        const string indexName = "test_embeddings_false";
+        const string recordId = "test_record_3";
+        float[] testVector = [0.7f, 0.8f, 0.9f];
+        MemoryRecord record = new()
         {
             Id = recordId,
             Vector = testVector,
@@ -148,14 +139,14 @@ public class WithEmbeddingsBehaviorTests : BaseUnitTestCase
 
         try
         {
-            // Act - Create index and upsert record
+            // Act _ Create index and upsert record
             await _memory.CreateIndexAsync(indexName, testVector.Length);
             await _memory.UpsertAsync(indexName, record);
 
-            // Act - Get similar records with withEmbeddings=false explicitly
-            var results = new List<(MemoryRecord, double)>();
+            // Act _ Get similar records with withEmbeddings=false explicitly
+            List<(MemoryRecord, double)> results = [];
 
-            await foreach (var result in _memory.GetSimilarListAsync(indexName, "test query", withEmbeddings: false))
+            await foreach ((MemoryRecord, double) result in _memory.GetSimilarListAsync(indexName, "test query", withEmbeddings: false))
             {
                 results.Add(result);
             }
@@ -182,10 +173,10 @@ public class WithEmbeddingsBehaviorTests : BaseUnitTestCase
     public async Task ItHandlesWithEmbeddingsInGetListAsync()
     {
         // Arrange
-        const string indexName = "test-getlist-embeddings";
-        const string recordId = "test-record-4";
-        var testVector = new[] { 0.1f, 0.3f, 0.5f };
-        var record = new MemoryRecord
+        const string indexName = "test_getlist_embeddings";
+        const string recordId = "test_record_4";
+        float[] testVector = [0.1f, 0.3f, 0.5f];
+        MemoryRecord record = new()
         {
             Id = recordId,
             Vector = testVector,
@@ -195,35 +186,35 @@ public class WithEmbeddingsBehaviorTests : BaseUnitTestCase
 
         try
         {
-            // Act - Create index and upsert record
+            // Act _ Create index and upsert record
             await _memory.CreateIndexAsync(indexName, testVector.Length);
             await _memory.UpsertAsync(indexName, record);
 
-            // Act - Get list without embeddings (default)
-            var resultsWithoutEmbeddings = new List<MemoryRecord>();
+            // Act _ Get list without embeddings (default)
+            List<MemoryRecord> resultsWithoutEmbeddings = [];
 
-            await foreach (var result in _memory.GetListAsync(indexName))
+            await foreach (MemoryRecord result in _memory.GetListAsync(indexName))
             {
                 resultsWithoutEmbeddings.Add(result);
             }
 
-            // Act - Get list with embeddings
-            var resultsWithEmbeddings = new List<MemoryRecord>();
+            // Act _ Get list with embeddings
+            List<MemoryRecord> resultsWithEmbeddings = [];
 
-            await foreach (var result in _memory.GetListAsync(indexName, withEmbeddings: true))
+            await foreach (MemoryRecord result in _memory.GetListAsync(indexName, withEmbeddings: true))
             {
                 resultsWithEmbeddings.Add(result);
             }
 
-            // Assert - Without embeddings
+            // Assert _ Without embeddings
             Assert.Single(resultsWithoutEmbeddings);
-            var recordWithoutEmbeddings = resultsWithoutEmbeddings[0];
+            MemoryRecord recordWithoutEmbeddings = resultsWithoutEmbeddings[0];
             Assert.Equal(recordId, recordWithoutEmbeddings.Id);
             Assert.True(recordWithoutEmbeddings.Vector.Data.IsEmpty); // Vector should be empty
 
-            // Assert - With embeddings
+            // Assert _ With embeddings
             Assert.Single(resultsWithEmbeddings);
-            var recordWithEmbeddings = resultsWithEmbeddings[0];
+            MemoryRecord recordWithEmbeddings = resultsWithEmbeddings[0];
             Assert.Equal(recordId, recordWithEmbeddings.Id);
             Assert.False(recordWithEmbeddings.Vector.Data.IsEmpty); // Vector should be present
             Assert.Equal(testVector.Length, recordWithEmbeddings.Vector.Data.Length);
@@ -242,22 +233,22 @@ public class WithEmbeddingsBehaviorTests : BaseUnitTestCase
     public async Task ItPreservesPayloadAndTagsRegardlessOfWithEmbeddings()
     {
         // Arrange
-        const string indexName = "test-preserve-data";
-        const string recordId = "test-record-5";
-        var testVector = new[] { 0.2f, 0.4f, 0.6f };
-        var payload = new Dictionary<string, object>
+        const string indexName = "test_preserve_data";
+        const string recordId = "test_record_5";
+        float[] testVector = [0.2f, 0.4f, 0.6f];
+        Dictionary<string, object> payload = new()
         {
             { "title", "Test Document" },
             { "content", "This is test content" },
             { "number", 42 }
         };
-        var tags = new TagCollection
+        TagCollection tags = new()
         {
             { "category", "test" },
             { "type", "document" },
             { "priority", "high" }
         };
-        var record = new MemoryRecord
+        MemoryRecord record = new()
         {
             Id = recordId,
             Vector = testVector,
@@ -267,39 +258,37 @@ public class WithEmbeddingsBehaviorTests : BaseUnitTestCase
 
         try
         {
-            // Act - Create index and upsert record
+            // Act _ Create index and upsert record
             await _memory.CreateIndexAsync(indexName, testVector.Length);
             await _memory.UpsertAsync(indexName, record);
 
-            // Act - Get records with and without embeddings
-            var resultsWithoutEmbeddings = new List<(MemoryRecord, double)>();
+            // Act _ Get records with and without embeddings
+            List<(MemoryRecord, double)> resultsWithoutEmbeddings = await _memory.GetSimilarListAsync(indexName, "test query", withEmbeddings: false).ToListAsync();
 
-            await foreach (var result in _memory.GetSimilarListAsync(indexName, "test query", withEmbeddings: false))
-            {
-                resultsWithoutEmbeddings.Add(result);
-            }
+            List<(MemoryRecord, double)> resultsWithEmbeddings = await _memory.GetSimilarListAsync(indexName, "test query", withEmbeddings: true).ToListAsync();
 
-            var resultsWithEmbeddings = new List<(MemoryRecord, double)>();
-
-            await foreach (var result in _memory.GetSimilarListAsync(indexName, "test query", withEmbeddings: true))
-            {
-                resultsWithEmbeddings.Add(result);
-            }
-
-            // Assert - Both should have same payload and tags
+            // Assert _ Both should have same payload and tags
             Assert.Single(resultsWithoutEmbeddings);
             Assert.Single(resultsWithEmbeddings);
 
-            var recordWithoutEmbeddings = resultsWithoutEmbeddings[0].Item1;
-            var recordWithEmbeddings = resultsWithEmbeddings[0].Item1;
+            MemoryRecord recordWithoutEmbeddings = resultsWithoutEmbeddings[0].Item1;
+            MemoryRecord recordWithEmbeddings = resultsWithEmbeddings[0].Item1;
 
             // Verify payload preservation
             Assert.Equal(payload.Count, recordWithoutEmbeddings.Payload.Count);
             Assert.Equal(payload.Count, recordWithEmbeddings.Payload.Count);
-            Assert.Equal("Test Document", recordWithoutEmbeddings.Payload["title"]);
-            Assert.Equal("Test Document", recordWithEmbeddings.Payload["title"]);
-            Assert.Equal(42, recordWithoutEmbeddings.Payload["number"]);
-            Assert.Equal(42, recordWithEmbeddings.Payload["number"]);
+            Assert.Equal("Test Document", recordWithoutEmbeddings.Payload["title"].ToString());
+            Assert.Equal("Test Document", recordWithEmbeddings.Payload["title"].ToString());
+
+            if(int.TryParse(recordWithoutEmbeddings.Payload["number"].ToString(), result: out int numberWithoutEmbeddings))
+            {
+                Assert.Equal(42, numberWithoutEmbeddings);
+            }
+
+            if(int.TryParse(recordWithEmbeddings.Payload["number"].ToString(), result: out int numberWithEmbeddings))
+            {
+                Assert.Equal(42, numberWithEmbeddings);
+            }
 
             // Verify tags preservation
             Assert.Equal(tags.Count, recordWithoutEmbeddings.Tags.Count);

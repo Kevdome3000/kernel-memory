@@ -34,7 +34,7 @@ public class ComplexFilterLogicTests : BaseUnitTestCase
         var filters = new List<MemoryFilter> { filter1, filter2 };
 
         // Act
-        var (whereClause, parameters) = Neo4jMemory.BuildWhereClause(filters);
+        (var whereClause, var parameters) = Neo4jMemory.BuildWhereClause(filters);
 
         // Assert
         Assert.Contains("WHERE", whereClause);
@@ -78,7 +78,7 @@ public class ComplexFilterLogicTests : BaseUnitTestCase
         var filters = new List<MemoryFilter> { filter };
 
         // Act
-        var (whereClause, parameters) = Neo4jMemory.BuildWhereClause(filters);
+        (var whereClause, var parameters) = Neo4jMemory.BuildWhereClause(filters);
 
         // Assert
         Assert.Contains("WHERE", whereClause);
@@ -124,7 +124,7 @@ public class ComplexFilterLogicTests : BaseUnitTestCase
         var filters = new List<MemoryFilter> { filter1, filter2, filter3 };
 
         // Act
-        var (whereClause, parameters) = Neo4jMemory.BuildWhereClause(filters);
+        (var whereClause, var parameters) = Neo4jMemory.BuildWhereClause(filters);
 
         // Assert
         Assert.Contains("WHERE", whereClause);
@@ -165,7 +165,7 @@ public class ComplexFilterLogicTests : BaseUnitTestCase
         var filters = new List<MemoryFilter> { filter1, filter2 };
 
         // Act
-        var (whereClause, parameters) = Neo4jMemory.BuildWhereClause(filters);
+        (var whereClause, var parameters) = Neo4jMemory.BuildWhereClause(filters);
 
         // Assert
         Assert.Contains("WHERE", whereClause);
@@ -201,7 +201,7 @@ public class ComplexFilterLogicTests : BaseUnitTestCase
         var filters = new List<MemoryFilter> { filter1, filter2 };
 
         // Act
-        var (whereClause, parameters) = Neo4jMemory.BuildWhereClause(filters);
+        (var whereClause, var parameters) = Neo4jMemory.BuildWhereClause(filters);
 
         // Assert
         Assert.Contains("WHERE", whereClause);
@@ -236,7 +236,7 @@ public class ComplexFilterLogicTests : BaseUnitTestCase
         }
 
         // Act
-        var (whereClause, parameters) = Neo4jMemory.BuildWhereClause(filters);
+        (var whereClause, var parameters) = Neo4jMemory.BuildWhereClause(filters);
 
         // Assert
         Assert.Contains("WHERE", whereClause);
@@ -271,7 +271,7 @@ public class ComplexFilterLogicTests : BaseUnitTestCase
         var filters = new List<MemoryFilter> { filter };
 
         // Act
-        var (whereClause, parameters) = Neo4jMemory.BuildWhereClause(filters);
+        (var whereClause, var parameters) = Neo4jMemory.BuildWhereClause(filters);
 
         // Assert
         Assert.Contains("WHERE", whereClause);
@@ -309,7 +309,7 @@ public class ComplexFilterLogicTests : BaseUnitTestCase
         var filters = new List<MemoryFilter> { filter1, filter2 };
 
         // Act
-        var (whereClause, parameters) = Neo4jMemory.BuildWhereClause(filters);
+        (var whereClause, var parameters) = Neo4jMemory.BuildWhereClause(filters);
 
         // Assert
         Assert.Contains("WHERE", whereClause);
@@ -344,7 +344,7 @@ public class ComplexFilterLogicTests : BaseUnitTestCase
         var filters = new List<MemoryFilter> { filter1, filter2 };
 
         // Act
-        var (whereClause, parameters) = Neo4jMemory.BuildWhereClause(filters, "customNode");
+        (var whereClause, var parameters) = Neo4jMemory.BuildWhereClause(filters, "customNode");
 
         // Assert
         Assert.Contains("WHERE", whereClause);
@@ -374,7 +374,7 @@ public class ComplexFilterLogicTests : BaseUnitTestCase
         var filters = new List<MemoryFilter> { filter1, filter2 };
 
         // Act
-        var (whereClause, parameters) = Neo4jMemory.BuildWhereClause(filters);
+        (var whereClause, var parameters) = Neo4jMemory.BuildWhereClause(filters);
 
         // Assert - Verify complete Cypher structure
         Assert.StartsWith(" WHERE ", whereClause);

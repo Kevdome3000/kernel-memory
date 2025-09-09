@@ -32,7 +32,7 @@ internal static class Neo4jTestHelper
     public static IDriver CreateTestDriver(Neo4jConfig config)
     {
         ArgumentNullException.ThrowIfNull(config);
-        return GraphDatabase.Driver(config.Uri, AuthTokens.Basic(config.Username, config.Password));
+        return GraphDatabase.Driver(new Uri(config.Uri), AuthTokens.Basic(config.Username, config.Password));
     }
 
 

@@ -24,7 +24,7 @@ public class DefaultTests : BaseFunctionalTestCase
             .WithOpenAI(OpenAiConfig)
             // .WithAzureOpenAITextGeneration(this.AzureOpenAITextConfiguration)
             // .WithAzureOpenAITextEmbeddingGeneration(this.AzureOpenAIEmbeddingConfiguration)
-            .WithNeo4j(neo4jConfig)
+            .WithNeo4jMemoryDb(neo4jConfig)
             .Build<MemoryServerless>();
     }
 

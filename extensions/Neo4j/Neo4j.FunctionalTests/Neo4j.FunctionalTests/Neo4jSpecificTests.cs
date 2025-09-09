@@ -19,7 +19,7 @@ public class Neo4jSpecificTests : BaseFunctionalTestCase
         _memory = new KernelMemoryBuilder()
             .WithSearchClientConfig(new SearchClientConfig { EmptyAnswer = NotFound })
             .WithOpenAI(OpenAiConfig)
-            .WithNeo4j(neo4jConfig)
+            .WithNeo4jMemoryDb(neo4jConfig)
             .Build<MemoryServerless>();
     }
 

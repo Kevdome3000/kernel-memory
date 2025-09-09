@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft.All rights reserved.
 
 using Microsoft.KernelMemory;
+using Microsoft.KM.TestHelpers;
 
 namespace Microsoft.Neo4j.UnitTests;
 
@@ -14,7 +15,7 @@ public class NamingHelpersTests
         // Act & Assert
         Assert.Equal("myindex", Neo4jMemory.NormalizeIndexName("MyIndex"));
         Assert.Equal("simple", Neo4jMemory.NormalizeIndexName("simple"));
-        Assert.Equal("test-index", Neo4jMemory.NormalizeIndexName("test_index"));
+        Assert.Equal("test_index", Neo4jMemory.NormalizeIndexName("test_index"));
     }
 
 
@@ -24,12 +25,12 @@ public class NamingHelpersTests
     public void NormalizeIndexNameReplacesInvalidCharacters()
     {
         // Act & Assert
-        Assert.Equal("my-index", Neo4jMemory.NormalizeIndexName("my index"));
-        Assert.Equal("my-index", Neo4jMemory.NormalizeIndexName("my\\index"));
-        Assert.Equal("my-index", Neo4jMemory.NormalizeIndexName("my/index"));
-        Assert.Equal("my-index", Neo4jMemory.NormalizeIndexName("my.index"));
-        Assert.Equal("my-index", Neo4jMemory.NormalizeIndexName("my_index"));
-        Assert.Equal("my-index", Neo4jMemory.NormalizeIndexName("my:index"));
+        Assert.Equal("my_index", Neo4jMemory.NormalizeIndexName("my index"));
+        Assert.Equal("my_index", Neo4jMemory.NormalizeIndexName("my\\index"));
+        Assert.Equal("my_index", Neo4jMemory.NormalizeIndexName("my/index"));
+        Assert.Equal("my_index", Neo4jMemory.NormalizeIndexName("my.index"));
+        Assert.Equal("my_index", Neo4jMemory.NormalizeIndexName("my_index"));
+        Assert.Equal("my_index", Neo4jMemory.NormalizeIndexName("my:index"));
     }
 
 
@@ -39,9 +40,9 @@ public class NamingHelpersTests
     public void NormalizeIndexNameHandlesMultipleInvalidCharacters()
     {
         // Act & Assert
-        Assert.Equal("my-complex-index-name", Neo4jMemory.NormalizeIndexName("my complex\\index/name"));
-        Assert.Equal("test-with-many-chars", Neo4jMemory.NormalizeIndexName("test with.many_chars"));
-        Assert.Equal("mixed-separators", Neo4jMemory.NormalizeIndexName("mixed\\separators/and.underscores_here"));
+        Assert.Equal("my_complex_index_name", Neo4jMemory.NormalizeIndexName("my complex\\index/name"));
+        Assert.Equal("test_with_many_chars", Neo4jMemory.NormalizeIndexName("test with.many_chars"));
+        Assert.Equal("mixed_separators_and_underscores_here", Neo4jMemory.NormalizeIndexName("mixed\\separators/and.underscores_here"));
     }
 
 
@@ -51,9 +52,9 @@ public class NamingHelpersTests
     public void NormalizeIndexNameHandlesEdgeCases()
     {
         // Act & Assert
-        Assert.Equal("leading-and-trailing", Neo4jMemory.NormalizeIndexName("  leading and trailing  "));
-        Assert.Equal("multiple-spaces", Neo4jMemory.NormalizeIndexName("multiple   spaces"));
-        Assert.Equal("consecutive-separators", Neo4jMemory.NormalizeIndexName("consecutive___separators"));
+        Assert.Equal("leading_and_trailing", Neo4jMemory.NormalizeIndexName("  leading and trailing  "));
+        Assert.Equal("multiple_spaces", Neo4jMemory.NormalizeIndexName("multiple   spaces"));
+        Assert.Equal("consecutive_separators", Neo4jMemory.NormalizeIndexName("consecutive___separators"));
     }
 
 
@@ -78,7 +79,7 @@ public class NamingHelpersTests
         Assert.Equal("vec_myindex", Neo4jMemory.PropertyKeyForIndex("MyIndex"));
         Assert.Equal("vec_simple", Neo4jMemory.PropertyKeyForIndex("simple"));
         Assert.Equal("vec_test_index", Neo4jMemory.PropertyKeyForIndex("Test_Index"));
-        Assert.Equal("vec_complex-name", Neo4jMemory.PropertyKeyForIndex("Complex-Name"));
+        Assert.Equal("vec_complex_name", Neo4jMemory.PropertyKeyForIndex("Complex_Name"));
     }
 
 
@@ -107,7 +108,7 @@ public class NamingHelpersTests
     {
         // Arrange
         var config = new Neo4jConfig();
-        var memory = new Neo4jMemory(config, null!);
+        var memory = new Neo4jMemory(config, new FakeEmbeddingGenerator());
 
         // Act & Assert
         Assert.Equal("MYINDEX", memory.LabelForIndex("MyIndex"));
@@ -123,7 +124,7 @@ public class NamingHelpersTests
     {
         // Arrange
         var config = new Neo4jConfig { LabelPrefix = "KM_" };
-        var memory = new Neo4jMemory(config, null!);
+        var memory = new Neo4jMemory(config, new FakeEmbeddingGenerator());
 
         // Act & Assert
         Assert.Equal("KM_MYINDEX", memory.LabelForIndex("MyIndex"));
@@ -138,7 +139,7 @@ public class NamingHelpersTests
     {
         // Arrange
         var config = new Neo4jConfig { LabelPrefix = "" };
-        var memory = new Neo4jMemory(config, null!);
+        var memory = new Neo4jMemory(config, new FakeEmbeddingGenerator());
 
         // Act & Assert
         Assert.Equal("MYINDEX", memory.LabelForIndex("MyIndex"));
@@ -153,7 +154,7 @@ public class NamingHelpersTests
     {
         // Arrange
         var config = new Neo4jConfig { LabelPrefix = null };
-        var memory = new Neo4jMemory(config, null!);
+        var memory = new Neo4jMemory(config, new FakeEmbeddingGenerator());
 
         // Act & Assert
         Assert.Equal("MYINDEX", memory.LabelForIndex("MyIndex"));
@@ -168,11 +169,11 @@ public class NamingHelpersTests
     {
         // Arrange
         var config = new Neo4jConfig();
-        var memory = new Neo4jMemory(config, null!);
+        var memory = new Neo4jMemory(config, new FakeEmbeddingGenerator());
 
         // Act & Assert
         Assert.Equal("myindex", memory.ApplyIndexNamePrefix("myindex"));
-        Assert.Equal("test-index", memory.ApplyIndexNamePrefix("test-index"));
+        Assert.Equal("test_index", memory.ApplyIndexNamePrefix("test_index"));
     }
 
 
@@ -183,11 +184,11 @@ public class NamingHelpersTests
     {
         // Arrange
         var config = new Neo4jConfig { IndexNamePrefix = "km_" };
-        var memory = new Neo4jMemory(config, null!);
+        var memory = new Neo4jMemory(config, new FakeEmbeddingGenerator());
 
         // Act & Assert
         Assert.Equal("km_myindex", memory.ApplyIndexNamePrefix("myindex"));
-        Assert.Equal("km_test-index", memory.ApplyIndexNamePrefix("test-index"));
+        Assert.Equal("km_test_index", memory.ApplyIndexNamePrefix("test_index"));
     }
 
 
@@ -198,11 +199,11 @@ public class NamingHelpersTests
     {
         // Arrange
         var config = new Neo4jConfig { IndexNamePrefix = "" };
-        var memory = new Neo4jMemory(config, null!);
+        var memory = new Neo4jMemory(config, new FakeEmbeddingGenerator());
 
         // Act & Assert
         Assert.Equal("myindex", memory.ApplyIndexNamePrefix("myindex"));
-        Assert.Equal("test-index", memory.ApplyIndexNamePrefix("test-index"));
+        Assert.Equal("test_index", memory.ApplyIndexNamePrefix("test_index"));
     }
 
 
@@ -213,11 +214,11 @@ public class NamingHelpersTests
     {
         // Arrange
         var config = new Neo4jConfig { IndexNamePrefix = null };
-        var memory = new Neo4jMemory(config, null!);
+        var memory = new Neo4jMemory(config, new FakeEmbeddingGenerator());
 
         // Act & Assert
         Assert.Equal("myindex", memory.ApplyIndexNamePrefix("myindex"));
-        Assert.Equal("test-index", memory.ApplyIndexNamePrefix("test-index"));
+        Assert.Equal("test_index", memory.ApplyIndexNamePrefix("test_index"));
     }
 
 
@@ -232,7 +233,7 @@ public class NamingHelpersTests
             LabelPrefix = "KM_",
             IndexNamePrefix = "km_"
         };
-        var memory = new Neo4jMemory(config, null!);
+        var memory = new Neo4jMemory(config, new FakeEmbeddingGenerator());
         const string originalIndex = "My Complex/Index Name";
 
         // Act
@@ -242,9 +243,9 @@ public class NamingHelpersTests
         string propertyKey = Neo4jMemory.PropertyKeyForIndex(normalized);
 
         // Assert
-        Assert.Equal("my-complex-index-name", normalized);
-        Assert.Equal("km_my-complex-index-name", withPrefix);
-        Assert.Equal("KM_MY-COMPLEX-INDEX-NAME", label);
-        Assert.Equal("vec_my-complex-index-name", propertyKey);
+        Assert.Equal("my_complex_index_name", normalized);
+        Assert.Equal("km_my_complex_index_name", withPrefix);
+        Assert.Equal("KM_MY_COMPLEX_INDEX_NAME", label);
+        Assert.Equal("vec_my_complex_index_name", propertyKey);
     }
 }

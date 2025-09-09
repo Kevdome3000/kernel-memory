@@ -21,7 +21,7 @@ public class AdditionalFilteringTests : BaseFunctionalTestCase
             //.WithOpenAI(this.OpenAiConfig)
             .WithAzureOpenAITextGeneration(AzureOpenAITextConfiguration)
             .WithAzureOpenAITextEmbeddingGeneration(AzureOpenAIEmbeddingConfiguration)
-            .WithNeo4j(neo4jConfig)
+            .WithNeo4jMemoryDb(neo4jConfig)
             .Build<MemoryServerless>();
     }
 
