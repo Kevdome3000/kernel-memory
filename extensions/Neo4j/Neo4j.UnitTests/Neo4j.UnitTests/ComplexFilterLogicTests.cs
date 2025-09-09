@@ -41,7 +41,7 @@ public class ComplexFilterLogicTests : BaseUnitTestCase
         Assert.Contains(" OR ", whereClause);
         Assert.Contains(" AND ", whereClause);
 
-        // Should have 4 parameters (2 for each filter)
+        // Should have 4 parameters (one for each key in each filter)
         Assert.Equal(4, parameters.Count);
 
         // Verify OR structure
@@ -54,11 +54,12 @@ public class ComplexFilterLogicTests : BaseUnitTestCase
         Assert.True(parameters.ContainsKey("filterParam2"));
         Assert.True(parameters.ContainsKey("filterParam3"));
 
-        // Verify parameter values
-        Assert.Contains("admin", (List<string>)parameters["filterParam0"]);
-        Assert.Contains("news", (List<string>)parameters["filterParam1"]);
-        Assert.Contains("editor", (List<string>)parameters["filterParam2"]);
-        Assert.Contains("tech", (List<string>)parameters["filterParam3"]);
+        // Verify parameter values contain flattened tag patterns
+        // Each parameter contains a list with one flattened tag pattern
+        Assert.Contains("user:admin", (List<string>)parameters["filterParam0"]);
+        Assert.Contains("type:news", (List<string>)parameters["filterParam1"]);
+        Assert.Contains("user:editor", (List<string>)parameters["filterParam2"]);
+        Assert.Contains("category:tech", (List<string>)parameters["filterParam3"]);
     }
 
 
@@ -86,20 +87,20 @@ public class ComplexFilterLogicTests : BaseUnitTestCase
         Assert.Equal(2, parameters.Count); // One for user values, one for status values
 
         // Verify ANY pattern in Cypher
-        Assert.Contains("ANY(v IN n.tags['user'] WHERE v IN $filterParam0)", whereClause);
-        Assert.Contains("ANY(v IN n.tags['status'] WHERE v IN $filterParam1)", whereClause);
+        Assert.Contains("ANY(tagPattern IN $filterParam0 WHERE tagPattern IN n.tags)", whereClause);
+        Assert.Contains("ANY(tagPattern IN $filterParam1 WHERE tagPattern IN n.tags)", whereClause);
 
-        // Verify parameter values contain all multi-values
+        // Verify parameter values contain all multi-values with flattened tag patterns
         var userValues = (List<string>)parameters["filterParam0"];
         Assert.Equal(3, userValues.Count);
-        Assert.Contains("admin", userValues);
-        Assert.Contains("editor", userValues);
-        Assert.Contains("owner", userValues);
+        Assert.Contains("user:admin", userValues);
+        Assert.Contains("user:editor", userValues);
+        Assert.Contains("user:owner", userValues);
 
         var statusValues = (List<string>)parameters["filterParam1"];
         Assert.Equal(2, statusValues.Count);
-        Assert.Contains("active", statusValues);
-        Assert.Contains("pending", statusValues);
+        Assert.Contains("status:active", statusValues);
+        Assert.Contains("status:pending", statusValues);
     }
 
 
@@ -136,14 +137,14 @@ public class ComplexFilterLogicTests : BaseUnitTestCase
         // Should have 6 parameters (2 for each filter)
         Assert.Equal(6, parameters.Count);
 
-        // Verify all departments are represented
+        // Verify all departments are represented with flattened tag patterns
         var allValues = parameters.Values.SelectMany(v => (List<string>)v).ToList();
-        Assert.Contains("engineering", allValues);
-        Assert.Contains("marketing", allValues);
-        Assert.Contains("sales", allValues);
-        Assert.Contains("senior", allValues);
-        Assert.Contains("junior", allValues);
-        Assert.Contains("manager", allValues);
+        Assert.Contains("department:engineering", allValues);
+        Assert.Contains("department:marketing", allValues);
+        Assert.Contains("department:sales", allValues);
+        Assert.Contains("level:senior", allValues);
+        Assert.Contains("level:junior", allValues);
+        Assert.Contains("role:manager", allValues);
     }
 
 
@@ -173,14 +174,14 @@ public class ComplexFilterLogicTests : BaseUnitTestCase
         Assert.Contains(" AND ", whereClause);
         Assert.Equal(4, parameters.Count);
 
-        // Verify multi-value handling
+        // Verify multi-value handling with flattened tag patterns
         var priorityValues = parameters.Values
             .Cast<List<string>>()
-            .FirstOrDefault(v => v.Contains("high"));
+            .FirstOrDefault(v => v.Contains("priority:high"));
         Assert.NotNull(priorityValues);
         Assert.Equal(2, priorityValues.Count);
-        Assert.Contains("high", priorityValues);
-        Assert.Contains("critical", priorityValues);
+        Assert.Contains("priority:high", priorityValues);
+        Assert.Contains("priority:critical", priorityValues);
     }
 
 
@@ -208,14 +209,14 @@ public class ComplexFilterLogicTests : BaseUnitTestCase
         Assert.Contains(" OR ", whereClause);
         Assert.Equal(4, parameters.Count);
 
-        // Verify reserved tag is treated like any other tag
-        Assert.Contains($"n.tags['{Constants.ReservedDocumentIdTag}']", whereClause);
+        // Verify reserved tag is treated like any other tag with flattened patterns
+        Assert.Contains("ANY(tagPattern IN $filterParam", whereClause);
 
         var allValues = parameters.Values.SelectMany(v => (List<string>)v).ToList();
-        Assert.Contains("doc1", allValues);
-        Assert.Contains("doc2", allValues);
-        Assert.Contains("important", allValues);
-        Assert.Contains("urgent", allValues);
+        Assert.Contains($"{Constants.ReservedDocumentIdTag}:doc1", allValues);
+        Assert.Contains($"{Constants.ReservedDocumentIdTag}:doc2", allValues);
+        Assert.Contains("type:important", allValues);
+        Assert.Contains("category:urgent", allValues);
     }
 
 
@@ -277,18 +278,16 @@ public class ComplexFilterLogicTests : BaseUnitTestCase
         Assert.Contains("WHERE", whereClause);
         Assert.Equal(4, parameters.Count);
 
-        // Verify special characters are preserved in parameters
+        // Verify special characters are preserved in parameters with flattened patterns
         var allValues = parameters.Values.SelectMany(v => (List<string>)v).ToList();
-        Assert.Contains("/home/user/documents", allValues);
-        Assert.Contains("SELECT * FROM table WHERE id = 'test'", allValues);
-        Assert.Contains(@"^\d{3}-\d{2}-\d{4}$", allValues);
-        Assert.Contains("测试数据", allValues);
+        Assert.Contains("path:/home/user/documents", allValues);
+        Assert.Contains("query:SELECT * FROM table WHERE id = 'test'", allValues);
+        Assert.Contains(@"regex:^\d{3}-\d{2}-\d{4}$", allValues);
+        Assert.Contains("unicode:测试数据", allValues);
 
         // Verify Cypher structure is not broken by special characters
-        Assert.Contains("ANY(v IN n.tags['path'] WHERE v IN $filterParam", whereClause);
-        Assert.Contains("ANY(v IN n.tags['query'] WHERE v IN $filterParam", whereClause);
-        Assert.Contains("ANY(v IN n.tags['regex'] WHERE v IN $filterParam", whereClause);
-        Assert.Contains("ANY(v IN n.tags['unicode'] WHERE v IN $filterParam", whereClause);
+        Assert.Contains("ANY(tagPattern IN $filterParam", whereClause);
+        Assert.Contains("WHERE tagPattern IN n.tags", whereClause);
     }
 
 
@@ -315,16 +314,16 @@ public class ComplexFilterLogicTests : BaseUnitTestCase
         Assert.Contains("WHERE", whereClause);
         Assert.Equal(2, parameters.Count);
 
-        // Verify null values are filtered out
+        // Verify null values are filtered out and values are flattened
         var validValues = (List<string>)parameters["filterParam0"];
         Assert.Equal(2, validValues.Count);
-        Assert.Contains("value1", validValues);
-        Assert.Contains("value2", validValues);
+        Assert.Contains("valid:value1", validValues);
+        Assert.Contains("valid:value2", validValues);
         Assert.DoesNotContain(null, validValues);
 
         var anotherValues = (List<string>)parameters["filterParam1"];
         Assert.Single(anotherValues);
-        Assert.Contains("value3", anotherValues);
+        Assert.Contains("another:value3", anotherValues);
     }
 
 
@@ -348,10 +347,13 @@ public class ComplexFilterLogicTests : BaseUnitTestCase
 
         // Assert
         Assert.Contains("WHERE", whereClause);
-        Assert.Contains("customNode.tags['user']", whereClause);
-        Assert.Contains("customNode.tags['role']", whereClause);
+        Assert.Contains("customNode.tags", whereClause);
         Assert.DoesNotContain("n.tags", whereClause);
         Assert.Equal(3, parameters.Count);
+
+        // Verify the custom node alias is used in the Cypher pattern
+        Assert.Contains("ANY(tagPattern IN $filterParam", whereClause);
+        Assert.Contains("WHERE tagPattern IN customNode.tags", whereClause);
     }
 
 

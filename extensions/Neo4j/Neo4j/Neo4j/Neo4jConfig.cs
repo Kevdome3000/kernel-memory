@@ -92,7 +92,7 @@ public class Neo4jConfig
     /// <summary>
     ///     Whether to perform feature detection on startup. Default is true.
     /// </summary>
-    public bool FeatureDetectionOnStartup { get; init; } = true;
+    public bool FeatureDetectionOnStartup { get; init; } = false;
 
     /// <summary>
     ///     Maximum batch size for batch upsert operations. Default is 1000.

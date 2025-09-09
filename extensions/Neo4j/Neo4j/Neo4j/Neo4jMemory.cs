@@ -683,6 +683,9 @@ public sealed class Neo4jMemory : IMemoryDb, IMemoryDbUpsertBatch, IDisposable, 
         index = s_replaceIndexNameCharsRegex.Replace(index.Trim().ToLowerInvariant(), ValidSeparator);
 #pragma warning restore CA1308
 
+        // Use regex to collapse consecutive underscores
+        index = Regex.Replace(index, "_+", "_");
+
         return index.Trim();
     }
 

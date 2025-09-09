@@ -50,7 +50,7 @@ public class TagConversionTests
         };
 
         List<string> flattenedTags = neo4jTags
-            .Select(tag => $"{tag.Key}{Constants.ReservedEqualsChar}{tag.Value}")
+            .SelectMany(tag => tag.Value.Select(value => $"{tag.Key}{Constants.ReservedEqualsChar}{value}"))
             .ToList();
 
         // Act
@@ -77,7 +77,7 @@ public class TagConversionTests
         };
 
         List<string> flattenedTags = neo4jTags
-            .Select(tag => $"{tag.Key}{Constants.ReservedEqualsChar}{tag.Value}")
+            .SelectMany(tag => tag.Value.Select(value => $"{tag.Key}{Constants.ReservedEqualsChar}{value}"))
             .ToList();
 
         // Act
@@ -108,7 +108,7 @@ public class TagConversionTests
         };
 
         List<string> flattenedTags = neo4jTags
-            .Select(tag => $"{tag.Key}{Constants.ReservedEqualsChar}{tag.Value}")
+            .SelectMany(tag => tag.Value.Select(value => $"{tag.Key}{Constants.ReservedEqualsChar}{value}"))
             .ToList();
 
         // Act
@@ -148,7 +148,8 @@ public class TagConversionTests
         };
 
         List<string> flattenedTags = neo4jTags
-            .Select(tag => $"{tag.Key}{Constants.ReservedEqualsChar}{tag.Value}")
+            .Where(tag => tag.Value.Count > 0) // Filter out empty lists
+            .SelectMany(tag => tag.Value.Select(value => $"{tag.Key}{Constants.ReservedEqualsChar}{value}"))
             .ToList();
 
         // Act

@@ -41,12 +41,12 @@ public class FilterTranslationTests
         (string whereClause, Dictionary<string, object> parameters) = Neo4jMemory.BuildWhereClause(filters);
 
         // Assert
-        Assert.Equal(" WHERE (ANY(v IN n.tags['user'] WHERE v IN $filterParam0))", whereClause);
+        Assert.Equal(" WHERE (ANY(tagPattern IN $filterParam0 WHERE tagPattern IN n.tags))", whereClause);
         Assert.Single(parameters);
         Assert.True(parameters.ContainsKey("filterParam0"));
         var paramValues = (List<string>)parameters["filterParam0"];
         Assert.Single(paramValues);
-        Assert.Equal("admin", paramValues[0]);
+        Assert.Equal("user:admin", paramValues[0]);
     }
 
 
@@ -65,13 +65,13 @@ public class FilterTranslationTests
         (string whereClause, Dictionary<string, object> parameters) = Neo4jMemory.BuildWhereClause(filters);
 
         // Assert
-        Assert.Equal(" WHERE (ANY(v IN n.tags['user'] WHERE v IN $filterParam0))", whereClause);
+        Assert.Equal(" WHERE (ANY(tagPattern IN $filterParam0 WHERE tagPattern IN n.tags))", whereClause);
         Assert.Single(parameters);
         Assert.True(parameters.ContainsKey("filterParam0"));
         var paramValues = (List<string>)parameters["filterParam0"];
         Assert.Equal(2, paramValues.Count);
-        Assert.Contains("admin", paramValues);
-        Assert.Contains("owner", paramValues);
+        Assert.Contains("user:admin", paramValues);
+        Assert.Contains("user:owner", paramValues);
     }
 
 
@@ -91,8 +91,8 @@ public class FilterTranslationTests
 
         // Assert
         Assert.Contains("WHERE", whereClause);
-        Assert.Contains("ANY(v IN n.tags['user'] WHERE v IN $filterParam0)", whereClause);
-        Assert.Contains("ANY(v IN n.tags['type'] WHERE v IN $filterParam1)", whereClause);
+        Assert.Contains("ANY(tagPattern IN $filterParam0 WHERE tagPattern IN n.tags)", whereClause);
+        Assert.Contains("ANY(tagPattern IN $filterParam1 WHERE tagPattern IN n.tags)", whereClause);
         Assert.Contains(" AND ", whereClause);
         Assert.Equal(2, parameters.Count);
         Assert.True(parameters.ContainsKey("filterParam0"));
@@ -119,8 +119,8 @@ public class FilterTranslationTests
 
         // Assert
         Assert.Contains("WHERE", whereClause);
-        Assert.Contains("ANY(v IN n.tags['user'] WHERE v IN $filterParam0)", whereClause);
-        Assert.Contains("ANY(v IN n.tags['user'] WHERE v IN $filterParam1)", whereClause);
+        Assert.Contains("ANY(tagPattern IN $filterParam0 WHERE tagPattern IN n.tags)", whereClause);
+        Assert.Contains("ANY(tagPattern IN $filterParam1 WHERE tagPattern IN n.tags)", whereClause);
         Assert.Contains(" OR ", whereClause);
         Assert.Equal(2, parameters.Count);
     }
@@ -173,7 +173,7 @@ public class FilterTranslationTests
         (string whereClause, Dictionary<string, object> parameters) = Neo4jMemory.BuildWhereClause(filters, "node");
 
         // Assert
-        Assert.Contains("ANY(v IN node.tags['user'] WHERE v IN $filterParam0)", whereClause);
+        Assert.Contains("ANY(tagPattern IN $filterParam0 WHERE tagPattern IN node.tags)", whereClause);
         Assert.Single(parameters);
     }
 
@@ -193,7 +193,7 @@ public class FilterTranslationTests
         (string whereClause, Dictionary<string, object> parameters) = Neo4jMemory.BuildWhereClause(filters);
 
         // Assert
-        Assert.Equal(" WHERE (ANY(v IN n.tags['user'] WHERE v IN $filterParam0))", whereClause);
+        Assert.Equal(" WHERE (ANY(tagPattern IN $filterParam0 WHERE tagPattern IN n.tags))", whereClause);
         Assert.Single(parameters);
     }
 
@@ -214,12 +214,12 @@ public class FilterTranslationTests
         (string whereClause, Dictionary<string, object> parameters) = Neo4jMemory.BuildWhereClause(filters);
 
         // Assert
-        Assert.Equal(" WHERE (ANY(v IN n.tags['user'] WHERE v IN $filterParam0))", whereClause);
+        Assert.Equal(" WHERE (ANY(tagPattern IN $filterParam0 WHERE tagPattern IN n.tags))", whereClause);
         Assert.Single(parameters);
         var paramValues = (List<string>)parameters["filterParam0"];
         Assert.Equal(2, paramValues.Count);
-        Assert.Contains("admin", paramValues);
-        Assert.Contains("owner", paramValues);
+        Assert.Contains("user:admin", paramValues);
+        Assert.Contains("user:owner", paramValues);
         Assert.DoesNotContain(null, paramValues);
     }
 }
