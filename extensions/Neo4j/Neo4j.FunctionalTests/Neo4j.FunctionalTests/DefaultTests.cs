@@ -1,22 +1,26 @@
-﻿// Copyright (c) Microsoft.All rights reserved.
-
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.KernelMemory;
 using Microsoft.KM.Core.FunctionalTests.DefaultTestCases;
 using Microsoft.KM.TestHelpers;
+using Microsoft.Neo4j.FunctionalTests.TestHelpers;
+using Neo4j.Driver;
 
 namespace Microsoft.Neo4j.FunctionalTests;
 
 public class DefaultTests : BaseFunctionalTestCase
 {
     private readonly MemoryServerless _memory;
+    private readonly Neo4jConfig _neo4jConfig;
+    private readonly IDriver _driver;
 
 
     public DefaultTests(IConfiguration cfg, ITestOutputHelper output) : base(cfg, output)
     {
         Assert.False(string.IsNullOrEmpty(OpenAiConfig.APIKey));
 
-        Neo4jConfig neo4jConfig = cfg.GetSection("KernelMemory:Services:Neo4j").Get<Neo4jConfig>() ?? new Neo4jConfig();
+        _neo4jConfig = cfg.GetSection("KernelMemory:Services:Neo4j").Get<Neo4jConfig>() ?? new Neo4jConfig();
+
+        _driver = Neo4jTestHelper.CreateTestDriver(_neo4jConfig);
 
         _memory = new KernelMemoryBuilder()
             .With(new KernelMemoryConfig { DefaultIndexName = "default4tests" })
@@ -24,8 +28,8 @@ public class DefaultTests : BaseFunctionalTestCase
             .WithOpenAI(OpenAiConfig)
             // .WithAzureOpenAITextGeneration(this.AzureOpenAITextConfiguration)
             // .WithAzureOpenAITextEmbeddingGeneration(this.AzureOpenAIEmbeddingConfiguration)
-            .WithNeo4jMemoryDb(neo4jConfig)
-            .Build<MemoryServerless>();
+            .WithNeo4jMemoryDb(_neo4jConfig)
+            .Build<MemoryServerless>(KernelMemoryBuilderBuildOptions.WithVolatileAndPersistentData);
     }
 
 
@@ -65,7 +69,7 @@ public class DefaultTests : BaseFunctionalTestCase
     [Trait("Category", "Neo4j")]
     public async Task ItListsIndexes()
     {
-        await IndexListTest.ItListsIndexes(_memory, Log);
+        await IndexListTest.ItListsIndexes(_memory, Log, "_");
     }
 
 
@@ -73,7 +77,7 @@ public class DefaultTests : BaseFunctionalTestCase
     [Trait("Category", "Neo4j")]
     public async Task ItNormalizesIndexNames()
     {
-        await IndexListTest.ItNormalizesIndexNames(_memory, Log);
+        await IndexListTest.ItNormalizesIndexNames(_memory, Log, "_");
     }
 
 
@@ -97,7 +101,7 @@ public class DefaultTests : BaseFunctionalTestCase
     [Trait("Category", "Neo4j")]
     public async Task ItHandlesMissingIndexesConsistently()
     {
-        await MissingIndexTest.ItHandlesMissingIndexesConsistently(_memory, Log);
+        await MissingIndexTest.ItHandlesMissingIndexesConsistently(_memory, Log, "_");
     }
 
 
@@ -122,5 +126,26 @@ public class DefaultTests : BaseFunctionalTestCase
     public async Task ItDownloadsPDFDocs()
     {
         await DocumentUploadTest.ItDownloadsPDFDocs(_memory, Log);
+    }
+
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            try
+            {
+                _driver.PerformFullCleanupAsync(_neo4jConfig).GetAwaiter().GetResult();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Warning: Failed to cleanup test data: {ex.Message}");
+            }
+            finally
+            {
+                _driver.Dispose();
+            }
+        }
+        base.Dispose(disposing);
     }
 }

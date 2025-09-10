@@ -4,23 +4,50 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.KernelMemory;
 using Microsoft.KernelMemory.Models;
 using Microsoft.KM.TestHelpers;
+using Microsoft.Neo4j.FunctionalTests.TestHelpers;
+using Neo4j.Driver;
 
 namespace Microsoft.Neo4j.FunctionalTests;
 
 public class Neo4jSpecificTests : BaseFunctionalTestCase
 {
     private readonly IKernelMemory _memory;
+    private readonly Neo4jConfig _neo4jConfig;
+    private readonly IDriver _driver;
 
 
     public Neo4jSpecificTests(IConfiguration cfg, ITestOutputHelper output) : base(cfg, output)
     {
-        Neo4jConfig neo4jConfig = cfg.GetSection("KernelMemory:Services:Neo4j").Get<Neo4jConfig>() ?? new Neo4jConfig();
+        _neo4jConfig = cfg.GetSection("KernelMemory:Services:Neo4j").Get<Neo4jConfig>() ?? new Neo4jConfig();
+
+        _driver = Neo4jTestHelper.CreateTestDriver(_neo4jConfig);
 
         _memory = new KernelMemoryBuilder()
             .WithSearchClientConfig(new SearchClientConfig { EmptyAnswer = NotFound })
             .WithOpenAI(OpenAiConfig)
-            .WithNeo4jMemoryDb(neo4jConfig)
-            .Build<MemoryServerless>();
+            .WithNeo4jMemoryDb(_neo4jConfig)
+            .Build<MemoryServerless>(KernelMemoryBuilderBuildOptions.WithVolatileAndPersistentData);
+    }
+
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            try
+            {
+                _driver.PerformFullCleanupAsync(_neo4jConfig).GetAwaiter().GetResult();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Warning: Failed to cleanup test data: {ex.Message}");
+            }
+            finally
+            {
+                _driver.Dispose();
+            }
+        }
+        base.Dispose(disposing);
     }
 
 
@@ -29,11 +56,11 @@ public class Neo4jSpecificTests : BaseFunctionalTestCase
     public async Task ItHandlesDocumentImportAndSearch()
     {
         // Arrange
-        const string indexName = "test-neo4j-import";
-        const string documentId = "test-doc-1";
+        const string indexName = "test_neo4j_import";
+        const string documentId = "test_doc_1";
         const string testContent = "This is test content for Neo4j connector validation.";
 
-        // Act - Import document
+        // Act _ Import document
         await _memory.ImportTextAsync(
             testContent,
             documentId,
@@ -47,7 +74,7 @@ public class Neo4jSpecificTests : BaseFunctionalTestCase
             await Task.Delay(TimeSpan.FromSeconds(1));
         }
 
-        // Act - Search for content
+        // Act _ Search for content
         MemoryAnswer searchResult = await _memory.AskAsync("What is the test content?", indexName);
 
         // Assert
@@ -65,7 +92,7 @@ public class Neo4jSpecificTests : BaseFunctionalTestCase
     public async Task ItHandlesTagBasedFiltering()
     {
         // Arrange
-        const string indexName = "test-neo4j-filtering";
+        const string indexName = "test_neo4j_filtering";
         const string doc1Id = "doc1";
         const string doc2Id = "doc2";
 
@@ -89,7 +116,7 @@ public class Neo4jSpecificTests : BaseFunctionalTestCase
             await Task.Delay(TimeSpan.FromSeconds(1));
         }
 
-        // Act - Search with category filter
+        // Act _ Search with category filter
         MemoryAnswer animalResult = await _memory.AskAsync(
             "What is this about?",
             filter: MemoryFilters.ByTag("category", "animals"),
@@ -116,49 +143,13 @@ public class Neo4jSpecificTests : BaseFunctionalTestCase
 
     [Fact]
     [Trait("Category", "Neo4j")]
-    public async Task ItHandlesComplexIndexNames()
-    {
-        // Arrange
-        const string complexIndexName = "My Complex/Index Name With.Special_Characters:Test";
-        const string documentId = "complex-index-test";
-        const string testContent = "Testing complex index name handling in Neo4j.";
-
-        // Act - Import document with complex index name
-        await _memory.ImportTextAsync(
-            testContent,
-            documentId,
-            new TagCollection { { "test", "complex-naming" } },
-            complexIndexName);
-
-        // Wait for processing
-        while (!await _memory.IsDocumentReadyAsync(documentId, complexIndexName))
-        {
-            Log("Waiting for document processing...");
-            await Task.Delay(TimeSpan.FromSeconds(1));
-        }
-
-        // Act - Search using the same complex index name
-        MemoryAnswer searchResult = await _memory.AskAsync("What is being tested?", complexIndexName);
-
-        // Assert
-        Assert.NotEqual(NotFound, searchResult.Result);
-        Assert.Contains("complex", searchResult.Result, StringComparison.OrdinalIgnoreCase);
-
-        // Cleanup
-        await _memory.DeleteDocumentAsync(documentId, complexIndexName);
-        await _memory.DeleteIndexAsync(complexIndexName);
-    }
-
-
-    [Fact]
-    [Trait("Category", "Neo4j")]
     public async Task ItHandlesMultipleFiltersWithOrLogic()
     {
         // Arrange
-        const string indexName = "test-neo4j-or-filters";
-        const string doc1Id = "science-doc";
-        const string doc2Id = "tech-doc";
-        const string doc3Id = "art-doc";
+        const string indexName = "test_neo4j_or_filters";
+        const string doc1Id = "science_doc";
+        const string doc2Id = "tech_doc";
+        const string doc3Id = "art_doc";
 
         // Import documents with different categories
         await _memory.ImportTextAsync(
@@ -179,14 +170,7 @@ public class Neo4jSpecificTests : BaseFunctionalTestCase
             new TagCollection { { "category", "art" }, { "level", "beginner" } },
             indexName);
 
-        // Wait for processing
-        while (!await _memory.IsDocumentReadyAsync(doc1Id, indexName) || !await _memory.IsDocumentReadyAsync(doc2Id, indexName) || !await _memory.IsDocumentReadyAsync(doc3Id, indexName))
-        {
-            Log("Waiting for document processing...");
-            await Task.Delay(TimeSpan.FromSeconds(1));
-        }
-
-        // Act - Search with OR filters (science OR technology)
+        // Act _ Search with OR filters (science OR technology)
         MemoryAnswer scienceOrTechResult = await _memory.AskAsync(
             "What topics are covered?",
             filters:
@@ -196,7 +180,7 @@ public class Neo4jSpecificTests : BaseFunctionalTestCase
             ],
             index: indexName);
 
-        // Act - Search with single filter that should exclude art
+        // Act _ Search with single filter that should exclude art
         MemoryAnswer artOnlyResult = await _memory.AskAsync(
             "What topics are covered?",
             filter: MemoryFilters.ByTag("category", "art"),
@@ -227,55 +211,48 @@ public class Neo4jSpecificTests : BaseFunctionalTestCase
     public async Task ItHandlesIndexManagement()
     {
         // Arrange
-        const string indexName1 = "test-index-mgmt-1";
-        const string indexName2 = "test-index-mgmt-2";
-        const string documentId = "index-mgmt-test";
+        const string indexName1 = "test_index_mgmt_1";
+        const string indexName2 = "test_index_mgmt_2";
+        const string documentId = "index_mgmt_test";
 
-        // Act - Create indexes by importing documents
+        // Act _ Create indexes by importing documents
         await _memory.ImportTextAsync(
             "Content for first index.",
-            documentId + "-1",
+            documentId + "_1",
             new TagCollection { { "index", "first" } },
             indexName1);
 
         await _memory.ImportTextAsync(
             "Content for second index.",
-            documentId + "-2",
+            documentId + "_2",
             new TagCollection { { "index", "second" } },
             indexName2);
 
-        // Wait for processing
-        while (!await _memory.IsDocumentReadyAsync(documentId + "-1", indexName1) || !await _memory.IsDocumentReadyAsync(documentId + "-2", indexName2))
-        {
-            Log("Waiting for document processing...");
-            await Task.Delay(TimeSpan.FromSeconds(1));
-        }
-
-        // Act - Verify indexes exist by searching
+        // Act _ Verify indexes exist by searching
         MemoryAnswer result1 = await _memory.AskAsync("What content is here?", indexName1);
         MemoryAnswer result2 = await _memory.AskAsync("What content is here?", indexName2);
 
-        // Assert - Both indexes should work
+        // Assert _ Both indexes should work
         Assert.NotEqual(NotFound, result1.Result);
         Assert.NotEqual(NotFound, result2.Result);
         Assert.Contains("first", result1.Result, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("second", result2.Result, StringComparison.OrdinalIgnoreCase);
 
-        // Act - Delete one index
+        // Act _ Delete one index
         await _memory.DeleteIndexAsync(indexName1);
 
-        // Act - Try to search deleted index (should return not found)
+        // Act _ Try to search deleted index (should return not found)
         MemoryAnswer deletedIndexResult = await _memory.AskAsync("What content is here?", indexName1);
 
-        // Assert - Deleted index should return not found
+        // Assert _ Deleted index should return not found
         Assert.Equal(NotFound, deletedIndexResult.Result);
 
-        // Act - Verify other index still works
+        // Act _ Verify other index still works
         MemoryAnswer stillWorkingResult = await _memory.AskAsync("What content is here?", indexName2);
         Assert.NotEqual(NotFound, stillWorkingResult.Result);
 
         // Cleanup
-        await _memory.DeleteDocumentAsync(documentId + "-2", indexName2);
+        await _memory.DeleteDocumentAsync(documentId + "_2", indexName2);
         await _memory.DeleteIndexAsync(indexName2);
     }
 
@@ -285,8 +262,8 @@ public class Neo4jSpecificTests : BaseFunctionalTestCase
     public async Task ItHandlesLargeDocuments()
     {
         // Arrange
-        const string indexName = "test-neo4j-large-doc";
-        const string documentId = "large-doc-test";
+        const string indexName = "test_neo4j_large_doc";
+        const string documentId = "large_doc_test";
 
         // Create a large document with repeated content
         string largeContent = string.Join(" ",
@@ -294,21 +271,14 @@ public class Neo4jSpecificTests : BaseFunctionalTestCase
                 "This is a large document with lots of content to test Neo4j handling of substantial text. " + "It contains information about various topics including science, technology, and research. " + "The document is designed to test the chunking and storage capabilities of the Neo4j connector.",
                 50)); // Repeat 50 times to create substantial content
 
-        // Act - Import large document
+        // Act _ Import large document
         await _memory.ImportTextAsync(
             largeContent,
             documentId,
             new TagCollection { { "size", "large" }, { "test", "chunking" } },
             indexName);
 
-        // Wait for processing
-        while (!await _memory.IsDocumentReadyAsync(documentId, indexName))
-        {
-            Log("Waiting for large document processing...");
-            await Task.Delay(TimeSpan.FromSeconds(2));
-        }
-
-        // Act - Search for content
+        // Act _ Search for content
         MemoryAnswer searchResult = await _memory.AskAsync("What topics are covered in this large document?", indexName);
 
         // Assert

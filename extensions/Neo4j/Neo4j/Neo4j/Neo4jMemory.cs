@@ -217,6 +217,7 @@ public sealed class Neo4jMemory : IMemoryDb, IMemoryDbUpsertBatch, IDisposable, 
             _log.LogDebug("[DEBUG_LOG] Executing get indexes query: {Query}", query);
 
             EagerResult<IReadOnlyList<IRecord>>? response = await _driver.ExecutableQuery(query)
+                .WithConfig(new QueryConfig(database: _config.DatabaseName))
                 .ExecuteAsync(cancellationToken)
                 .ConfigureAwait(false);
 
@@ -264,6 +265,7 @@ public sealed class Neo4jMemory : IMemoryDb, IMemoryDbUpsertBatch, IDisposable, 
         try
         {
             await _driver.ExecutableQuery($"DROP INDEX `{indexName}` IF EXISTS")
+                .WithConfig(new QueryConfig(database: _config.DatabaseName))
                 .ExecuteAsync(cancellationToken)
                 .ConfigureAwait(false);
 
@@ -478,11 +480,23 @@ public sealed class Neo4jMemory : IMemoryDb, IMemoryDbUpsertBatch, IDisposable, 
 
         try
         {
+            // Check if the vector index exists; if not, return no results
+            var indexCheck = await _driver.ExecutableQuery("SHOW VECTOR INDEXES YIELD name WHERE name = $name RETURN name")
+                .WithParameters(new { name = indexName })
+                .WithConfig(new QueryConfig(database: _config.DatabaseName, routing: RoutingControl.Readers))
+                .ExecuteAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            if (indexCheck.Result.Count == 0)
+            {
+                yield break;
+            }
+
             // Generate embedding
             Embedding vector = await _embeddingGenerator.GenerateEmbeddingAsync(text, cancellationToken).ConfigureAwait(false);
 
-            // Build filter clause
-            (string whereClause, Dictionary<string, object> parameters) = BuildWhereClause(filters, "node");
+            // Build filter condition (no leading keyword)
+            (string condition, Dictionary<string, object> parameters) = BuildFilterCondition(filters, "node");
 
             // Build projection based on withEmbeddings
             string vectorProjection = withEmbeddings
@@ -498,11 +512,16 @@ public sealed class Neo4jMemory : IMemoryDb, IMemoryDbUpsertBatch, IDisposable, 
                 ["minRelevance"] = minRelevance
             };
 
+            // Integrate filter condition by prefixing a single AND when present
+            string filterAndClause = string.IsNullOrEmpty(condition)
+                ? string.Empty
+                : " AND " + condition;
+
             string cypher = $@"
             CALL db.index.vector.queryNodes($indexName, $topK, $vector)
             YIELD node, score
             WHERE node:Memory:{label}
-            {whereClause.Replace(" WHERE ", " AND ", StringComparison.Ordinal)}
+            {filterAndClause}
             AND score >= $minRelevance
             RETURN score, node.id as recordId, node.payload as payload, node.tags as tags{vectorProjection}
             ORDER BY score DESC";
@@ -634,6 +653,7 @@ public sealed class Neo4jMemory : IMemoryDb, IMemoryDbUpsertBatch, IDisposable, 
                                             DETACH DELETE n
                                             """)
                 .WithParameters(new { recordId = record.Id })
+                .WithConfig(new QueryConfig(database: _config.DatabaseName))
                 .ExecuteAsync(cancellationToken)
                 .ConfigureAwait(false);
         }
@@ -737,12 +757,12 @@ public sealed class Neo4jMemory : IMemoryDb, IMemoryDbUpsertBatch, IDisposable, 
 
 
     /// <summary>
-    /// Builds a Cypher WHERE clause and its associated parameters based on the provided filters.
+    /// Builds a Cypher filter condition (without leading WHERE/AND) and its associated parameters based on the provided filters.
     /// </summary>
     /// <param name="filters">The collection of memory filters to apply.</param>
     /// <param name="nodeAlias">The alias for the node in the Cypher query (default is "n").</param>
-    /// <returns>A tuple containing the WHERE clause and the parameters dictionary.</returns>
-    internal static (string whereClause, Dictionary<string, object> parameters) BuildWhereClause(
+    /// <returns>A tuple containing the condition (no leading keyword) and the parameters dictionary.</returns>
+    internal static (string condition, Dictionary<string, object> parameters) BuildFilterCondition(
         ICollection<MemoryFilter>? filters,
         string nodeAlias = "n")
     {
@@ -786,9 +806,28 @@ public sealed class Neo4jMemory : IMemoryDb, IMemoryDbUpsertBatch, IDisposable, 
             }
         }
 
-        string whereClause = orConditions.Count > 0
-            ? " WHERE " + string.Join(" OR ", orConditions)
+        string condition = orConditions.Count > 0
+            ? string.Join(" OR ", orConditions)
             : string.Empty;
+
+        return (condition, parameters);
+    }
+
+
+    /// <summary>
+    /// Builds a Cypher WHERE clause and its associated parameters based on the provided filters.
+    /// </summary>
+    /// <param name="filters">The collection of memory filters to apply.</param>
+    /// <param name="nodeAlias">The alias for the node in the Cypher query (default is "n").</param>
+    /// <returns>A tuple containing the WHERE clause and the parameters dictionary.</returns>
+    internal static (string whereClause, Dictionary<string, object> parameters) BuildWhereClause(
+        ICollection<MemoryFilter>? filters,
+        string nodeAlias = "n")
+    {
+        (string condition, Dictionary<string, object> parameters) = BuildFilterCondition(filters, nodeAlias);
+        string whereClause = string.IsNullOrEmpty(condition)
+            ? string.Empty
+            : " WHERE " + condition;
 
         return (whereClause, parameters);
     }
