@@ -95,7 +95,7 @@ public abstract class BaseFunctionalTestCase : IDisposable
 
 
     // Find the "Fixtures" directory (inside the project, requires source code)
-    protected string? FindFixturesDir()
+    protected static string? FindFixturesDir()
     {
         // start from the location of the executing assembly, and traverse up max 5 levels
         var path = Path.GetDirectoryName(Path.GetFullPath(Assembly.GetExecutingAssembly().Location));

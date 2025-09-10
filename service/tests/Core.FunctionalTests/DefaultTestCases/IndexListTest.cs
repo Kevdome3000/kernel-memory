@@ -7,11 +7,17 @@ namespace Microsoft.KM.Core.FunctionalTests.DefaultTestCases;
 
 public static class IndexListTest
 {
-    public static async Task ItNormalizesIndexNames(IKernelMemory memory, Action<string> log)
+    private static string NormalizeName(string raw, string sep)
+    {
+        return raw.Replace("-", sep).Replace("_", sep);
+    }
+
+
+    public static async Task ItNormalizesIndexNames(IKernelMemory memory, Action<string> log, string separator = "-")
     {
         // Arrange
-        string indexNameWithDashes = "name-with-dashes";
-        string indexNameWithUnderscores = "name_with_underscore";
+        const string indexNameWithDashes = "name-with-dashes";
+        const string indexNameWithUnderscores = "name_with_underscore";
 
         // Act - Assert no exception occurs
         await memory.ImportTextAsync("something", index: indexNameWithDashes);
@@ -48,14 +54,13 @@ public static class IndexListTest
     }
 
 
-    public static async Task ItListsIndexes(IKernelMemory memory, Action<string> log)
+    public static async Task ItListsIndexes(IKernelMemory memory, Action<string> log, string separator = "-")
     {
         // Arrange
         string indexName1 = Guid.NewGuid().ToString("D");
         string indexName2 = Guid.NewGuid().ToString("D");
         string indexNameWithDashes = "name-with-dashes";
         string indexNameWithUnderscores = "name_with_underscore";
-        string indexNameWithUnderscoresNormalized = "name-with-underscore";
 
         Console.WriteLine("Index 1:" + indexName1);
         Console.WriteLine("Index 2:" + indexName2);
@@ -106,11 +111,24 @@ public static class IndexListTest
         await memory.DeleteIndexAsync(indexNameWithDashes);
         await memory.DeleteIndexAsync(indexNameWithUnderscores);
 
+        // Expected names per backend
+        string expected1 = NormalizeName(indexName1, separator);
+        string expected2 = NormalizeName(indexName2, separator);
+        string expectedDashes = NormalizeName(indexNameWithDashes, separator);
+        string expectedUnderscores = NormalizeName(indexNameWithUnderscores, separator);
+
+        var names = list.Select(x => x.Name).ToList();
+
         // Assert
-        Assert.True(list.Any(x => x.Name == indexName1));
-        Assert.True(list.Any(x => x.Name == indexName2));
-        Assert.True(list.Any(x => x.Name == indexNameWithDashes));
-        Assert.True(list.Any(x => x.Name == indexNameWithUnderscoresNormalized));
-        Assert.False(list.Any(x => x.Name == indexNameWithUnderscores));
+        Assert.Contains(expected1, names);
+        Assert.Contains(expected2, names);
+        Assert.Contains(expectedDashes, names);
+        Assert.Contains(expectedUnderscores, names);
+
+        // Only enforce the "no raw underscore variant" rule when backend uses hyphens
+        if (separator == "-")
+        {
+            Assert.DoesNotContain(indexNameWithUnderscores, names);
+        }
     }
 }

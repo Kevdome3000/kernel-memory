@@ -10,15 +10,22 @@ public static class MissingIndexTest
     private const string NotFound = "INFO NOT FOUND";
 
 
-    public static async Task ItHandlesMissingIndexesConsistently(IKernelMemory memory, Action<string> log)
+    private static string NormalizeName(string raw, string sep)
+    {
+        return raw.Replace("-", sep).Replace("_", sep);
+    }
+
+
+    public static async Task ItHandlesMissingIndexesConsistently(IKernelMemory memory, Action<string> log, string separator = "-")
     {
         // Arrange
         string indexName = Guid.NewGuid().ToString("D");
         await memory.DeleteIndexAsync(indexName);
 
         // Act: verify the index doesn't exist
+        string expectedName = NormalizeName(indexName, separator);
         IEnumerable<IndexDetails> list = await memory.ListIndexesAsync();
-        Assert.False(list.Any(x => x.Name == indexName));
+        Assert.False(list.Any(x => x.Name == expectedName));
 
         // Act: Delete a non-existing index, no exception
         await memory.DeleteIndexAsync(indexName);
@@ -44,7 +51,7 @@ public static class MissingIndexTest
 
         // Assert: verify the index doesn't exist yet
         list = await memory.ListIndexesAsync();
-        Assert.False(list.Any(x => x.Name == indexName));
+        Assert.False(list.Any(x => x.Name == expectedName));
 
         // Act: import into a non existing index - the index is created
         var id = await memory.ImportTextAsync("some text", "foo", index: indexName);
@@ -61,7 +68,7 @@ public static class MissingIndexTest
 
         // Assert: verify the index has been created
         list = await memory.ListIndexesAsync();
-        Assert.True(list.Any(x => x.Name == indexName));
+        Assert.True(list.Any(x => x.Name == expectedName));
 
         // clean up
         await memory.DeleteIndexAsync(indexName);
