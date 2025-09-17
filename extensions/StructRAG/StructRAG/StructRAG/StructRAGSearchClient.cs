@@ -1,22 +1,23 @@
-using DocumentFormat.OpenXml.Office2010.Word;
-using DocumentFormat.OpenXml.Wordprocessing;
+using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.KernelMemory;
 using Microsoft.KernelMemory.AI;
 using Microsoft.KernelMemory.Context;
 using Microsoft.KernelMemory.MemoryStorage;
+using Microsoft.KernelMemory.Models;
 using Microsoft.KernelMemory.Search;
-using System;
-using System.Reflection;
-using System.Reflection.Metadata;
-using System.Runtime.CompilerServices;
-using System.Text;
+// ReSharper disable InconsistentNaming
 
+// ReSharper disable once CheckNamespace
 namespace Microsoft.KernelMemory.StructRAG;
 
 #pragma warning disable SKEXP0010 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 
+
+[SuppressMessage("Globalization", "CA1308:Normalize strings to uppercase")]
 public sealed class StructRAGSearchClient : ISearchClient
 {
     private readonly IMemoryDb _memoryDb;
@@ -24,91 +25,146 @@ public sealed class StructRAGSearchClient : ISearchClient
     private readonly SearchClientConfig _config;
     private readonly ILogger<StructRAGSearchClient> _log;
 
+
     public StructRAGSearchClient(
         IMemoryDb memoryDb,
         ITextGenerator textGenerator,
         SearchClientConfig? config = null,
         ILoggerFactory? loggerFactory = null)
     {
-        this._memoryDb = memoryDb;
-        this._textGenerator = textGenerator;
-        this._log = loggerFactory?.CreateLogger<StructRAGSearchClient>() ?? new NullLogger<StructRAGSearchClient>();
+        _memoryDb = memoryDb;
+        _textGenerator = textGenerator;
+        _log = loggerFactory?.CreateLogger<StructRAGSearchClient>() ?? new NullLogger<StructRAGSearchClient>();
 
-        this._config = config ?? new SearchClientConfig();
-        this._config.Validate();
+        _config = config ?? new SearchClientConfig();
+        _config.Validate();
     }
 
-    public async IAsyncEnumerable<MemoryAnswer> AskStreamingAsync(string index, string question, ICollection<MemoryFilter>? filters = null, double minRelevance = 0, IContext? context = null, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+
+    public async IAsyncEnumerable<MemoryAnswer> AskStreamingAsync(
+        string index,
+        string question,
+        ICollection<MemoryFilter>? filters = null,
+        double minRelevance = 0,
+        IContext? context = null,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        yield return await AskAsync(index, question, filters, minRelevance, context, cancellationToken);
+        yield return await AskAsync(index,
+            question,
+            filters,
+            minRelevance,
+            context,
+            cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<MemoryAnswer> AskAsync(string index, string question, ICollection<MemoryFilter>? filters = null, double minRelevance = 0, IContext? context = null, CancellationToken cancellationToken = default)
+
+    public async Task<MemoryAnswer> AskAsync(
+        string index,
+        string question,
+        ICollection<MemoryFilter>? filters = null,
+        double minRelevance = 0,
+        IContext? context = null,
+        CancellationToken cancellationToken = default)
     {
         _log.LogInformation("Asking question: {0}", question);
 
-        var records = await GetSimilarRecordsAsync(index, question, filters, minRelevance, cancellationToken)
-                                      .ConfigureAwait(false);
+        IEnumerable<(MemoryRecord Record, double Relevance)> records = await GetSimilarRecordsAsync(index,
+                question,
+                filters,
+                minRelevance,
+                cancellationToken)
+            .ConfigureAwait(false);
 
         if (_log.IsEnabled(LogLevel.Debug))
-            _log.LogDebug("Found {0} relevant memories, maxRelevance: {1}, minRelevance: {2}", records.Count(), records.MaxBy(c => c.Relevance).Relevance, records.MinBy(c => c.Relevance).Relevance);
+        {
+            _log.LogDebug("Found {0} relevant memories, maxRelevance: {1}, minRelevance: {2}",
+                records.Count(),
+                records.MaxBy(c => c.Relevance).Relevance,
+                records.MinBy(c => c.Relevance).Relevance);
+        }
 
         if (!records.Any())
         {
             return new MemoryAnswer
             {
                 Question = question,
-                Result = this._config.EmptyAnswer
+                Result = _config.EmptyAnswer
             };
         }
 
-        var effectiveRecords = records.Select(c => c.Record);
+        IEnumerable<MemoryRecord> effectiveRecords = records.Select(c => c.Record);
 
         // 1. router
-        var route = await Router(question, effectiveRecords, context, cancellationToken)
-                            .ConfigureAwait(false);
+        string route = await RouteAsync(question,
+                effectiveRecords,
+                context,
+                cancellationToken)
+            .ConfigureAwait(false);
 
         _log.LogInformation("Route: {0}", route);
 
         // 2. structurizer
-        (var instruction, var info) = await ConstructAsync(route, question, effectiveRecords, context, cancellationToken)
-                                            .ConfigureAwait(false);
+        (string instruction, string info) = await ConstructAsync(route,
+                question,
+                effectiveRecords,
+                context,
+                cancellationToken)
+            .ConfigureAwait(false);
 
         if (_log.IsEnabled(LogLevel.Trace))
+        {
             _log.LogTrace("Instruction: {0}\nInfo: {1}", instruction, info);
+        }
 
         // 3. utilizer
-        var subqueries = await DecomposeAsync(question, info, context, cancellationToken)
-                                        .ConfigureAwait(false);
+        IEnumerable<string> subqueries = await DecomposeAsync(question,
+                info,
+                context,
+                cancellationToken)
+            .ConfigureAwait(false);
 
         if (_log.IsEnabled(LogLevel.Trace))
+        {
             _log.LogTrace("Subqueries: {0}\n{1}", subqueries.Count(), string.Join(Environment.NewLine, subqueries));
+        }
 
-        var subknowledges = await ExtractAsync(route, question, info, subqueries, context, cancellationToken)
-                                        .ConfigureAwait(false);
+        IEnumerable<(string subquery, string subknowledge)> subknowledges = await ExtractAsync(route,
+                question,
+                info,
+                subqueries,
+                context,
+                cancellationToken)
+            .ConfigureAwait(false);
+
         if (_log.IsEnabled(LogLevel.Trace))
+        {
             _log.LogTrace("Subknowledges: {0}\n{1}", subknowledges.Count(), string.Join(Environment.NewLine, subknowledges.Select(c => $"Subquery: {c.subquery}\nRetrieval results:\n{c.subknowledge}\n\n")));
+        }
 
-        var answer = await MergeAsync(route, question, subknowledges, context, cancellationToken)
-                                        .ConfigureAwait(false);
+        string answer = await MergeAsync(route,
+                question,
+                subknowledges,
+                context,
+                cancellationToken)
+            .ConfigureAwait(false);
 
-        return new MemoryAnswer()
+        return new MemoryAnswer
         {
             Question = question,
             Result = answer,
             NoResult = false,
             RelevantSources = records
-                    .GroupBy(c => c.Record.GetDocumentId())
-                    .Select(c => new Citation
-                    {
-                        DocumentId = c.Key,
-                        FileId = c.First().Record.GetFileId(),
-                        Index = index,
-                        Link = $"{index}/{c.Key}/{c.First().Record.GetFileId()}",
-                        SourceContentType = c.First().Record.GetFileContentType(this._log),
-                        SourceName = c.First().Record.GetFileName(this._log),
-                        SourceUrl = c.First().Record.GetWebPageUrl(index),
-                        Partitions = c.Select(p => new Citation.Partition
+                .GroupBy(c => c.Record.GetDocumentId())
+                .Select(c => new Citation
+                {
+                    DocumentId = c.Key,
+                    FileId = c.First().Record.GetFileId(),
+                    Index = index,
+                    Link = $"{index}/{c.Key}/{c.First().Record.GetFileId()}",
+                    SourceContentType = c.First().Record.GetFileContentType(_log),
+                    SourceName = c.First().Record.GetFileName(_log),
+                    SourceUrl = c.First().Record.GetWebPageUrl(index),
+                    Partitions = c.Select(p => new Citation.Partition
                         {
                             Text = p.Record.GetPartitionText(),
                             LastUpdate = p.Record.GetLastUpdate(),
@@ -116,16 +172,20 @@ public sealed class StructRAGSearchClient : ISearchClient
                             PartitionNumber = p.Record.GetPartitionNumber(),
                             SectionNumber = p.Record.GetSectionNumber(),
                             Tags = p.Record.Tags
-                        }).ToList()
-                    }).ToList()
+                        })
+                        .ToList()
+                })
+                .ToList()
         };
     }
 
+
     public async Task<IEnumerable<string>> ListIndexesAsync(CancellationToken cancellationToken = default)
     {
-        return await this._memoryDb.GetIndexesAsync(cancellationToken)
-                                   .ConfigureAwait(false);
+        return await _memoryDb.GetIndexesAsync(cancellationToken)
+            .ConfigureAwait(false);
     }
+
 
     /// <inheritdoc />
     public async Task<SearchResult> SearchAsync(
@@ -137,9 +197,9 @@ public sealed class StructRAGSearchClient : ISearchClient
         IContext? context = null,
         CancellationToken cancellationToken = default)
     {
-        if (limit <= 0) { limit = this._config.MaxMatchesCount; }
+        if (limit <= 0) { limit = _config.MaxMatchesCount; }
 
-        var result = new SearchResult
+        SearchResult result = new()
         {
             Query = query,
             Results = []
@@ -147,15 +207,16 @@ public sealed class StructRAGSearchClient : ISearchClient
 
         if (string.IsNullOrWhiteSpace(query) && (filters == null || filters.Count == 0))
         {
-            this._log.LogWarning("No query or filters provided");
+            _log.LogWarning("No query or filters provided");
             return result;
         }
 
-        var list = new List<(MemoryRecord memory, double relevance)>();
+        List<(MemoryRecord memory, double relevance)> list = [];
+
         if (!string.IsNullOrEmpty(query))
         {
-            this._log.LogTrace("Fetching relevant memories by similarity, min relevance {0}", minRelevance);
-            IAsyncEnumerable<(MemoryRecord, double)> matches = this._memoryDb.GetSimilarListAsync(
+            _log.LogTrace("Fetching relevant memories by similarity, min relevance {0}", minRelevance);
+            IAsyncEnumerable<(MemoryRecord, double)> matches = _memoryDb.GetSimilarListAsync(
                 index: index,
                 text: query,
                 filters: filters,
@@ -172,8 +233,8 @@ public sealed class StructRAGSearchClient : ISearchClient
         }
         else
         {
-            this._log.LogTrace("Fetching relevant memories by filtering");
-            IAsyncEnumerable<MemoryRecord> matches = this._memoryDb.GetListAsync(
+            _log.LogTrace("Fetching relevant memories by filtering");
+            IAsyncEnumerable<MemoryRecord> matches = _memoryDb.GetListAsync(
                 index: index,
                 filters: filters,
                 limit: limit,
@@ -190,26 +251,28 @@ public sealed class StructRAGSearchClient : ISearchClient
         foreach ((MemoryRecord memory, double relevance) in list)
         {
             // Note: a document can be composed by multiple files
-            string documentId = memory.GetDocumentId(this._log);
+            string documentId = memory.GetDocumentId(_log);
 
             // Identify the file in case there are multiple files
-            string fileId = memory.GetFileId(this._log);
+            string fileId = memory.GetFileId(_log);
 
             // Note: this is not a URL and perhaps could be dropped. For now it acts as a unique identifier. See also SourceUrl.
             string linkToFile = $"{index}/{documentId}/{fileId}";
 
-            var partitionText = memory.GetPartitionText(this._log).Trim();
+            string partitionText = memory.GetPartitionText(_log).Trim();
+
             if (string.IsNullOrEmpty(partitionText))
             {
-                this._log.LogError("The document partition is empty, doc: {0}", memory.Id);
+                _log.LogError("The document partition is empty, doc: {0}", memory.Id);
                 continue;
             }
 
             // Relevance is `float.MinValue` when search uses only filters and no embeddings (see code above)
-            if (relevance > float.MinValue) { this._log.LogTrace("Adding result with relevance {0}", relevance); }
+            if (relevance > float.MinValue) { _log.LogTrace("Adding result with relevance {0}", relevance); }
 
             // If the file is already in the list of citations, only add the partition
-            var citation = result.Results.FirstOrDefault(x => x.Link == linkToFile);
+            Citation? citation = result.Results.FirstOrDefault(x => x.Link == linkToFile);
+
             if (citation == null)
             {
                 citation = new Citation();
@@ -221,22 +284,22 @@ public sealed class StructRAGSearchClient : ISearchClient
             citation.DocumentId = documentId;
             citation.FileId = fileId;
             citation.Link = linkToFile;
-            citation.SourceContentType = memory.GetFileContentType(this._log);
-            citation.SourceName = memory.GetFileName(this._log);
+            citation.SourceContentType = memory.GetFileContentType(_log);
+            citation.SourceName = memory.GetFileName(_log);
             citation.SourceUrl = memory.GetWebPageUrl(index);
 
             citation.Partitions.Add(new Citation.Partition
             {
                 Text = partitionText,
                 Relevance = (float)relevance,
-                PartitionNumber = memory.GetPartitionNumber(this._log),
+                PartitionNumber = memory.GetPartitionNumber(_log),
                 SectionNumber = memory.GetSectionNumber(),
                 LastUpdate = memory.GetLastUpdate(),
-                Tags = memory.Tags,
+                Tags = memory.Tags
             });
 
             // In cases where a buggy storage connector is returning too many records
-            if (result.Results.Count >= this._config.MaxMatchesCount)
+            if (result.Results.Count >= _config.MaxMatchesCount)
             {
                 break;
             }
@@ -244,20 +307,32 @@ public sealed class StructRAGSearchClient : ISearchClient
 
         if (result.Results.Count == 0)
         {
-            this._log.LogDebug("No memories found");
+            _log.LogDebug("No memories found");
         }
 
         return result;
     }
 
-    private async Task<IEnumerable<(MemoryRecord Record, double Relevance)>> GetSimilarRecordsAsync(string index, string question, ICollection<MemoryFilter>? filters = null, double minRelevance = 0, CancellationToken cancellationToken = default)
+
+    private async Task<IEnumerable<(MemoryRecord Record, double Relevance)>> GetSimilarRecordsAsync(
+        string index,
+        string question,
+        ICollection<MemoryFilter>? filters = null,
+        double minRelevance = 0,
+        CancellationToken cancellationToken = default)
     {
-        var chunks = this._memoryDb.GetSimilarListAsync(index, question, filters, minRelevance, limit: this._config.MaxMatchesCount, false, cancellationToken)
-                                         .ConfigureAwait(false);
+        ConfiguredCancelableAsyncEnumerable<(MemoryRecord, double)> chunks = _memoryDb.GetSimilarListAsync(index,
+                question,
+                filters,
+                minRelevance,
+                limit: _config.MaxMatchesCount,
+                false,
+                cancellationToken)
+            .ConfigureAwait(false);
 
-        var result = new List<(MemoryRecord record, double relevance)>();
+        List<(MemoryRecord record, double relevance)> result = [];
 
-        await foreach (var chunk in chunks)
+        await foreach ((MemoryRecord, double) chunk in chunks)
         {
             result.Add((chunk.Item1, chunk.Item2));
         }
@@ -265,16 +340,21 @@ public sealed class StructRAGSearchClient : ISearchClient
         return result;
     }
 
-    private async Task<string> Router(string question, IEnumerable<MemoryRecord> records, IContext? context, CancellationToken cancellationToken = default)
+
+    private async Task<string> RouteAsync(
+        string question,
+        IEnumerable<MemoryRecord> records,
+        IContext? context,
+        CancellationToken cancellationToken = default)
     {
-        var prompt = GetSKPrompt("StructRAG", "Route")
+        string prompt = GetSKPrompt("StructRAG", "Route")
             .Replace("{{$query}}", question)
             .Replace("{{$titles}}", string.Join(" ", records.DistinctBy(c => c.GetDocumentId()).Select(c => c.GetFileName())));
 
-        var text = new StringBuilder();
+        StringBuilder text = new();
 
-        await foreach (var x in this._textGenerator.GenerateTextAsync(prompt, GetTextGenerationOptions(context), cancellationToken)
-                            .ConfigureAwait(false))
+        await foreach (GeneratedTextContent x in _textGenerator.GenerateTextAsync(prompt, GetTextGenerationOptions(context), cancellationToken)
+            .ConfigureAwait(false))
         {
             text.Append(x);
         }
@@ -283,16 +363,19 @@ public sealed class StructRAGSearchClient : ISearchClient
     }
 
 
-    private async Task<(string instruction, string info)> ConstructAsync(string route,
-                                            string question,
-                                            IEnumerable<MemoryRecord> records,
-                                            IContext? context,
-                                            CancellationToken cancellationToken)
+    private async Task<(string instruction, string info)> ConstructAsync(
+        string route,
+        string question,
+        IEnumerable<MemoryRecord> records,
+        IContext? context,
+        CancellationToken cancellationToken)
     {
-        var promptName = string.Empty;
+        string promptName = string.Empty;
 
-        var chunks = string.Join(Environment.NewLine, records.Select(x => $"{x.GetFileName()}: {x.GetPartitionText()}"));
-        var instruction = string.Empty;
+        records = records.ToList();
+
+        string chunks = string.Join(Environment.NewLine, records.Select(x => $"{x.GetFileName()}: {x.GetPartitionText()}"));
+        string instruction = string.Empty;
 
         switch (route.ToLowerInvariant())
         {
@@ -320,15 +403,15 @@ public sealed class StructRAGSearchClient : ISearchClient
                 throw new InvalidOperationException();
         }
 
-        var prompt = GetSKPrompt("StructRAG", promptName)
+        string prompt = GetSKPrompt("StructRAG", promptName)
             .Replace("{{$instruction}}", question)
             .Replace("{{$titles}}", string.Join(Environment.NewLine, records.Select(x => x.GetFileName())))
             .Replace("{{$raw_content}}", chunks);
 
-        var text = new StringBuilder();
+        StringBuilder text = new();
 
-        await foreach (var x in this._textGenerator.GenerateTextAsync(prompt, GetTextGenerationOptions(context), cancellationToken)
-                            .ConfigureAwait(false))
+        await foreach (GeneratedTextContent x in _textGenerator.GenerateTextAsync(prompt, GetTextGenerationOptions(context), cancellationToken)
+            .ConfigureAwait(false))
         {
             text.Append(x);
         }
@@ -336,16 +419,21 @@ public sealed class StructRAGSearchClient : ISearchClient
         return (instruction, text.ToString());
     }
 
-    private async Task<IEnumerable<string>> DecomposeAsync(string instruction, string info, IContext? context, CancellationToken cancellationToken = default)
+
+    private async Task<IEnumerable<string>> DecomposeAsync(
+        string instruction,
+        string info,
+        IContext? context,
+        CancellationToken cancellationToken = default)
     {
-        var prompt = GetSKPrompt("StructRAG", "Decompose")
+        string prompt = GetSKPrompt("StructRAG", "Decompose")
             .Replace("{{$query}}", instruction)
             .Replace("{{$kb_info}}", info);
 
-        var text = new StringBuilder();
+        StringBuilder text = new();
 
-        await foreach (var x in this._textGenerator.GenerateTextAsync(prompt, GetTextGenerationOptions(context), cancellationToken)
-                            .ConfigureAwait(false))
+        await foreach (GeneratedTextContent x in _textGenerator.GenerateTextAsync(prompt, GetTextGenerationOptions(context), cancellationToken)
+            .ConfigureAwait(false))
         {
             text.Append(x);
         }
@@ -353,44 +441,41 @@ public sealed class StructRAGSearchClient : ISearchClient
         return text.ToString().Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
     }
 
-    private async Task<IEnumerable<(string subquery, string subknowledge)>> ExtractAsync(string route, string question, string info, IEnumerable<string> subqueries, IContext? context = null, CancellationToken cancellationToken = default)
+
+    private async Task<IEnumerable<(string subquery, string subknowledge)>> ExtractAsync(
+        string route,
+        string question,
+        string info,
+        IEnumerable<string> subqueries,
+        IContext? context = null,
+        CancellationToken cancellationToken = default)
     {
-        var instruction = string.Empty;
+        string instruction = string.Empty;
 
-        var subknowledges = new List<(string subquery, string subknowledge)>();
+        List<(string subquery, string subknowledge)> subknowledges = [];
 
-        foreach (var subquery in subqueries)
+        foreach (string subquery in subqueries)
         {
-            switch (route.ToLowerInvariant())
+            instruction = route.ToLowerInvariant() switch
             {
-                case "graph":
-                    instruction = $"Instruction:\nAnswer the Query based on the given Document.\n\nQuery:\n{subquery}\n\nDocument:\n{info}\n\nOutput:";
-                    break;
-                case "table":
-                    instruction = $"Instruction:\nThe following Tables show multiple independent tables built from multiple documents.\nFilter these tables according to the query, retaining only the table information that helps answer the query.\nNote that you need to analyze the attributes and entities mentioned in the query and filter accordingly.\nThe information needed to answer the query must exist in one or several tables, and you need to check these tables one by one.\n\nTables:{info}\n\nQuery:{subquery}\n\nOutput:";
-                    break;
-                case "algorithm":
-                    instruction = $"Instruction: According to the query, filter out information from algorithm descriptions that can help answer the query.\nNote, carefully analyze the entities and relationships mentioned in the query and filter based on this information.\n\nAlgorithms:{info}\n\nQuery:{subquery}\n\nOutput:";
-                    break;
-                case "catalogue":
-                    instruction = $"Instruction: According to the query, filter out information from the catalogue that can help answer the query.\nNote, carefully analyze the entities and relationships mentioned in the query and filter based on this information.\n\nCatalogues:{info}\n\nQuery:{subquery}\n\nOutput:";
-                    break;
-                case "chunk":
-                    instruction = $"Instruction:\nAnswer the Query based on the given Document.\n\nQuery:\n{subquery}\n\nDocument:\n{info}\n\nOutput:";
-                    break;
-                default:
-                    throw new InvalidOperationException();
-            }
+                "graph" => $"Instruction:\nAnswer the Query based on the given Document.\n\nQuery:\n{subquery}\n\nDocument:\n{info}\n\nOutput:",
+                "table" =>
+                    $"Instruction:\nThe following Tables show multiple independent tables built from multiple documents.\nFilter these tables according to the query, retaining only the table information that helps answer the query.\nNote that you need to analyze the attributes and entities mentioned in the query and filter accordingly.\nThe information needed to answer the query must exist in one or several tables, and you need to check these tables one by one.\n\nTables:{info}\n\nQuery:{subquery}\n\nOutput:",
+                "algorithm" => $"Instruction: According to the query, filter out information from algorithm descriptions that can help answer the query.\nNote, carefully analyze the entities and relationships mentioned in the query and filter based on this information.\n\nAlgorithms:{info}\n\nQuery:{subquery}\n\nOutput:",
+                "catalogue" => $"Instruction: According to the query, filter out information from the catalogue that can help answer the query.\nNote, carefully analyze the entities and relationships mentioned in the query and filter based on this information.\n\nCatalogues:{info}\n\nQuery:{subquery}\n\nOutput:",
+                "chunk" => $"Instruction:\nAnswer the Query based on the given Document.\n\nQuery:\n{subquery}\n\nDocument:\n{info}\n\nOutput:",
+                _ => throw new InvalidOperationException()
+            };
 
-            var text = new StringBuilder();
+            StringBuilder text = new();
 
-            var results = this._textGenerator
-                                    .GenerateTextAsync(instruction, GetTextGenerationOptions(context), cancellationToken)
-                                    .ConfigureAwait(false);
+            ConfiguredCancelableAsyncEnumerable<GeneratedTextContent> results = _textGenerator
+                .GenerateTextAsync(instruction, GetTextGenerationOptions(context), cancellationToken)
+                .ConfigureAwait(false);
 
-            var queryknowledges = new List<string>();
+            List<string> queryknowledges = [];
 
-            await foreach (var result in results)
+            await foreach (GeneratedTextContent result in results)
             {
                 text.Append(result);
             }
@@ -401,16 +486,22 @@ public sealed class StructRAGSearchClient : ISearchClient
         return subknowledges;
     }
 
-    private async Task<string> MergeAsync(string chosen, string question, IEnumerable<(string subquery, string subknowledge)> knowledges, IContext? context = null, CancellationToken cancellationToken = default)
+
+    private async Task<string> MergeAsync(
+        string chosen,
+        string question,
+        IEnumerable<(string subquery, string subknowledge)> knowledges,
+        IContext? context = null,
+        CancellationToken cancellationToken = default)
     {
-        var prompt = GetSKPrompt("StructRAG", "Merge")
+        string prompt = GetSKPrompt("StructRAG", "Merge")
             .Replace("{{$query}}", question)
             .Replace("{{$subknowledges}}", string.Join(Environment.NewLine, knowledges.Select(c => $"Subquery: {c.subquery}\nRetrieval results:\n{c.subknowledge}\n\n")));
 
-        var text = new StringBuilder();
+        StringBuilder text = new();
 
-        await foreach (var x in this._textGenerator.GenerateTextAsync(prompt, GetTextGenerationOptions(context), cancellationToken)
-                            .ConfigureAwait(false))
+        await foreach (GeneratedTextContent x in _textGenerator.GenerateTextAsync(prompt, GetTextGenerationOptions(context), cancellationToken)
+            .ConfigureAwait(false))
         {
             text.Append(x);
         }
@@ -418,31 +509,33 @@ public sealed class StructRAGSearchClient : ISearchClient
         return text.ToString();
     }
 
+
     private TextGenerationOptions GetTextGenerationOptions(IContext? context)
     {
-        int maxTokens = context.GetCustomRagMaxTokensOrDefault(this._config.AnswerTokens);
-        double temperature = context.GetCustomRagTemperatureOrDefault(this._config.Temperature);
-        double nucleusSampling = context.GetCustomRagNucleusSamplingOrDefault(this._config.TopP);
+        int maxTokens = context.GetCustomRagMaxTokensOrDefault(_config.AnswerTokens);
+        double temperature = context.GetCustomRagTemperatureOrDefault(_config.Temperature);
+        double nucleusSampling = context.GetCustomRagNucleusSamplingOrDefault(_config.TopP);
 
         return new TextGenerationOptions
         {
             MaxTokens = maxTokens,
             Temperature = temperature,
             NucleusSampling = nucleusSampling,
-            PresencePenalty = this._config.PresencePenalty,
-            FrequencyPenalty = this._config.FrequencyPenalty,
-            StopSequences = this._config.StopSequences,
-            TokenSelectionBiases = this._config.TokenSelectionBiases,
+            PresencePenalty = _config.PresencePenalty,
+            FrequencyPenalty = _config.FrequencyPenalty,
+            StopSequences = _config.StopSequences,
+            TokenSelectionBiases = _config.TokenSelectionBiases
         };
     }
 
+
     private static string GetSKPrompt(string pluginName, string functionName)
     {
-        var resourceStream = Assembly.GetExecutingAssembly()
-                                     .GetManifestResourceStream($"Prompts/{pluginName}/{functionName}.txt");
+        Stream? resourceStream = Assembly.GetExecutingAssembly()
+            .GetManifestResourceStream($"Prompts/{pluginName}/{functionName}.txt");
 
-        using var reader = new StreamReader(resourceStream!);
-        var text = reader.ReadToEnd();
+        using StreamReader reader = new(resourceStream!);
+        string text = reader.ReadToEnd();
         return text;
     }
 }

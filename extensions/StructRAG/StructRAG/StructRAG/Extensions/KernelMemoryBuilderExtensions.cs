@@ -1,7 +1,9 @@
 ﻿
-// ReSharper disable once CheckNamespace
 using Microsoft.Extensions.DependencyInjection;
+// ReSharper disable once CheckNamespace
 using Microsoft.KernelMemory.StructRAG;
+
+// ReSharper disable InconsistentNaming
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.KernelMemory;
@@ -20,6 +22,7 @@ public static class KernelMemoryBuilderExtensions
     {
         return builder.WithCustomSearchClient<StructRAGSearchClient>();
     }
+
 
     /// <summary>
     ///     Kernel Memory Builder extension method to add the StructRAG search client with configuration.
