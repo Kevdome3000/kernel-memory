@@ -19,22 +19,25 @@ public sealed class EmbeddingGeneratorFactoryTests : IDisposable
     private readonly Mock<ILoggerFactory> _mockLoggerFactory;
     private readonly HttpClient _httpClient;
 
+
     public EmbeddingGeneratorFactoryTests()
     {
         // Setup mock logger factory
-        this._mockLoggerFactory = new Mock<ILoggerFactory>();
-        this._mockLoggerFactory
+        _mockLoggerFactory = new Mock<ILoggerFactory>();
+        _mockLoggerFactory
             .Setup(x => x.CreateLogger(It.IsAny<string>()))
             .Returns(new Mock<ILogger>().Object);
 
-        this._httpClient = new HttpClient();
+        _httpClient = new HttpClient();
     }
+
 
     public void Dispose()
     {
-        this._httpClient.Dispose();
+        _httpClient.Dispose();
         GC.SuppressFinalize(this);
     }
+
 
     [Fact]
     public void CreateGenerator_CreatesOllamaGenerator()
@@ -49,9 +52,9 @@ public sealed class EmbeddingGeneratorFactoryTests : IDisposable
         // Act
         var generator = EmbeddingGeneratorFactory.CreateGenerator(
             config,
-            this._httpClient,
-            cache: null,
-            this._mockLoggerFactory.Object);
+            _httpClient,
+            null,
+            _mockLoggerFactory.Object);
 
         // Assert
         Assert.NotNull(generator);
@@ -59,6 +62,7 @@ public sealed class EmbeddingGeneratorFactoryTests : IDisposable
         Assert.Equal("qwen3-embedding", generator.ModelName);
         Assert.Equal(1024, generator.VectorDimensions); // Known dimension for qwen3-embedding
     }
+
 
     [Fact]
     public void CreateGenerator_CreatesOpenAIGenerator()
@@ -73,9 +77,9 @@ public sealed class EmbeddingGeneratorFactoryTests : IDisposable
         // Act
         var generator = EmbeddingGeneratorFactory.CreateGenerator(
             config,
-            this._httpClient,
-            cache: null,
-            this._mockLoggerFactory.Object);
+            _httpClient,
+            null,
+            _mockLoggerFactory.Object);
 
         // Assert
         Assert.NotNull(generator);
@@ -83,6 +87,7 @@ public sealed class EmbeddingGeneratorFactoryTests : IDisposable
         Assert.Equal("text-embedding-3-small", generator.ModelName);
         Assert.Equal(1536, generator.VectorDimensions); // Known dimension for text-embedding-3-small
     }
+
 
     [Fact]
     public void CreateGenerator_CreatesAzureOpenAIGenerator()
@@ -99,9 +104,9 @@ public sealed class EmbeddingGeneratorFactoryTests : IDisposable
         // Act
         var generator = EmbeddingGeneratorFactory.CreateGenerator(
             config,
-            this._httpClient,
-            cache: null,
-            this._mockLoggerFactory.Object);
+            _httpClient,
+            null,
+            _mockLoggerFactory.Object);
 
         // Assert
         Assert.NotNull(generator);
@@ -109,6 +114,7 @@ public sealed class EmbeddingGeneratorFactoryTests : IDisposable
         Assert.Equal("text-embedding-ada-002", generator.ModelName);
         Assert.Equal(1536, generator.VectorDimensions); // Known dimension for ada-002
     }
+
 
     [Fact]
     public void CreateGenerator_CreatesHuggingFaceGenerator()
@@ -123,9 +129,9 @@ public sealed class EmbeddingGeneratorFactoryTests : IDisposable
         // Act
         var generator = EmbeddingGeneratorFactory.CreateGenerator(
             config,
-            this._httpClient,
-            cache: null,
-            this._mockLoggerFactory.Object);
+            _httpClient,
+            null,
+            _mockLoggerFactory.Object);
 
         // Assert
         Assert.NotNull(generator);
@@ -133,6 +139,7 @@ public sealed class EmbeddingGeneratorFactoryTests : IDisposable
         Assert.Equal("sentence-transformers/all-MiniLM-L6-v2", generator.ModelName);
         Assert.Equal(384, generator.VectorDimensions); // Known dimension for all-MiniLM-L6-v2
     }
+
 
     [Fact]
     public void CreateGenerator_CreatesHuggingFaceGenerator_FromHfTokenEnvVar()
@@ -154,9 +161,9 @@ public sealed class EmbeddingGeneratorFactoryTests : IDisposable
             // Act
             var generator = EmbeddingGeneratorFactory.CreateGenerator(
                 config,
-                this._httpClient,
-                cache: null,
-                this._mockLoggerFactory.Object);
+                _httpClient,
+                null,
+                _mockLoggerFactory.Object);
 
             // Assert
             Assert.NotNull(generator);
@@ -167,6 +174,7 @@ public sealed class EmbeddingGeneratorFactoryTests : IDisposable
             Environment.SetEnvironmentVariable("HF_TOKEN", originalToken);
         }
     }
+
 
     [Fact]
     public void CreateGenerator_WrapsWithCacheWhenProvided()
@@ -184,14 +192,15 @@ public sealed class EmbeddingGeneratorFactoryTests : IDisposable
         // Act
         var generator = EmbeddingGeneratorFactory.CreateGenerator(
             config,
-            this._httpClient,
+            _httpClient,
             mockCache.Object,
-            this._mockLoggerFactory.Object);
+            _mockLoggerFactory.Object);
 
         // Assert
         Assert.NotNull(generator);
         Assert.IsType<CachedEmbeddingGenerator>(generator);
     }
+
 
     [Fact]
     public void CreateGenerator_DoesNotWrapWithCacheWhenNull()
@@ -206,14 +215,15 @@ public sealed class EmbeddingGeneratorFactoryTests : IDisposable
         // Act
         var generator = EmbeddingGeneratorFactory.CreateGenerator(
             config,
-            this._httpClient,
-            cache: null,
-            this._mockLoggerFactory.Object);
+            _httpClient,
+            null,
+            _mockLoggerFactory.Object);
 
         // Assert
         Assert.NotNull(generator);
         Assert.IsType<OllamaEmbeddingGenerator>(generator);
     }
+
 
     [Fact]
     public void CreateGenerator_ThrowsForNullConfig()
@@ -222,10 +232,11 @@ public sealed class EmbeddingGeneratorFactoryTests : IDisposable
         Assert.Throws<ArgumentNullException>(() =>
             EmbeddingGeneratorFactory.CreateGenerator(
                 null!,
-                this._httpClient,
-                cache: null,
-                this._mockLoggerFactory.Object));
+                _httpClient,
+                null,
+                _mockLoggerFactory.Object));
     }
+
 
     [Fact]
     public void CreateGenerator_ThrowsForNullHttpClient()
@@ -242,9 +253,10 @@ public sealed class EmbeddingGeneratorFactoryTests : IDisposable
             EmbeddingGeneratorFactory.CreateGenerator(
                 config,
                 null!,
-                cache: null,
-                this._mockLoggerFactory.Object));
+                null,
+                _mockLoggerFactory.Object));
     }
+
 
     [Fact]
     public void CreateGenerator_ThrowsForNullLoggerFactory()
@@ -260,10 +272,11 @@ public sealed class EmbeddingGeneratorFactoryTests : IDisposable
         Assert.Throws<ArgumentNullException>(() =>
             EmbeddingGeneratorFactory.CreateGenerator(
                 config,
-                this._httpClient,
-                cache: null,
+                _httpClient,
+                null,
                 null!));
     }
+
 
     [Fact]
     public void CreateGenerator_UsesDefaultDimensionsForUnknownModel()
@@ -278,14 +291,15 @@ public sealed class EmbeddingGeneratorFactoryTests : IDisposable
         // Act
         var generator = EmbeddingGeneratorFactory.CreateGenerator(
             config,
-            this._httpClient,
-            cache: null,
-            this._mockLoggerFactory.Object);
+            _httpClient,
+            null,
+            _mockLoggerFactory.Object);
 
         // Assert - Should use default Ollama dimension
         Assert.NotNull(generator);
         Assert.True(generator.VectorDimensions > 0);
     }
+
 
     [Fact]
     public void CreateGenerator_SetsIsNormalizedTrue()
@@ -306,15 +320,15 @@ public sealed class EmbeddingGeneratorFactoryTests : IDisposable
         // Act
         var ollamaGen = EmbeddingGeneratorFactory.CreateGenerator(
             ollamaConfig,
-            this._httpClient,
-            cache: null,
-            this._mockLoggerFactory.Object);
+            _httpClient,
+            null,
+            _mockLoggerFactory.Object);
 
         var openaiGen = EmbeddingGeneratorFactory.CreateGenerator(
             openaiConfig,
-            this._httpClient,
-            cache: null,
-            this._mockLoggerFactory.Object);
+            _httpClient,
+            null,
+            _mockLoggerFactory.Object);
 
         // Assert - All generators should be normalized
         Assert.True(ollamaGen.IsNormalized);

@@ -16,6 +16,7 @@ public sealed class TestCliApplicationBuilder
 {
     private AppConfig? _testConfig;
 
+
     /// <summary>
     /// Injects a custom AppConfig for testing (no file I/O required).
     /// </summary>
@@ -23,9 +24,10 @@ public sealed class TestCliApplicationBuilder
     /// <returns>This builder for fluent chaining.</returns>
     public TestCliApplicationBuilder WithConfig(AppConfig config)
     {
-        this._testConfig = config ?? throw new ArgumentNullException(nameof(config));
+        _testConfig = config ?? throw new ArgumentNullException(nameof(config));
         return this;
     }
+
 
     /// <summary>
     /// Builds a CommandApp with injected test config (no file I/O).
@@ -34,7 +36,7 @@ public sealed class TestCliApplicationBuilder
     public CommandApp Build()
     {
         // Use test config or create a minimal default
-        var config = this._testConfig ?? this.CreateMinimalTestConfig();
+        var config = _testConfig ?? CreateMinimalTestConfig();
 
         // Create DI container and register config
         var services = new ServiceCollection();
@@ -52,6 +54,7 @@ public sealed class TestCliApplicationBuilder
 
         return app;
     }
+
 
     /// <summary>
     /// Creates a minimal test config pointing to temp directory (never ~/.km).

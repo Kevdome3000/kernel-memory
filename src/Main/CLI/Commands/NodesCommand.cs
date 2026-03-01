@@ -15,6 +15,7 @@ public class NodesCommandSettings : GlobalOptions
 {
 }
 
+
 /// <summary>
 /// Command to list all configured nodes.
 /// </summary>
@@ -29,6 +30,7 @@ public class NodesCommand : BaseCommand<NodesCommandSettings>
     {
     }
 
+
     public override async Task<int> ExecuteAsync(
         CommandContext context,
         NodesCommandSettings settings,
@@ -36,21 +38,24 @@ public class NodesCommand : BaseCommand<NodesCommandSettings>
     {
         try
         {
-            var (config, node, formatter) = this.Initialize(settings);
+            var (config, node, formatter) = Initialize(settings);
 
             // Get all node IDs
             var nodeIds = config.Nodes.Keys.ToList();
             var totalCount = nodeIds.Count;
 
             // Format as list
-            formatter.FormatList(nodeIds, totalCount, 0, totalCount);
+            formatter.FormatList(nodeIds,
+                totalCount,
+                0,
+                totalCount);
 
             return Constants.App.ExitCodeSuccess;
         }
         catch (Exception ex)
         {
             var formatter = OutputFormatterFactory.Create(settings);
-            return this.HandleError(ex, formatter);
+            return HandleError(ex, formatter);
         }
     }
 }

@@ -25,6 +25,7 @@ public sealed class SearchExceptionTests
         Assert.Equal(nodeId, exception.NodeId);
     }
 
+
     [Fact]
     public void Constructor_WithInnerException_SetsProperties()
     {
@@ -42,6 +43,7 @@ public sealed class SearchExceptionTests
         Assert.Same(innerException, exception.InnerException);
     }
 
+
     [Fact]
     public void Constructor_WithoutNodeId_NodeIdIsNull()
     {
@@ -51,6 +53,7 @@ public sealed class SearchExceptionTests
         // Assert
         Assert.Null(exception.NodeId);
     }
+
 
     [Fact]
     public void StandardConstructors_Work()
@@ -67,6 +70,7 @@ public sealed class SearchExceptionTests
         Assert.Equal("Test message", ex3.Message);
         Assert.Same(inner, ex3.InnerException);
     }
+
 
     [Theory]
     [InlineData(SearchErrorType.NodeNotFound)]

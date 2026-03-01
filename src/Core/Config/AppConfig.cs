@@ -46,18 +46,19 @@ public sealed class AppConfig : IValidatable
     [JsonPropertyName("logging")]
     public LoggingConfig? Logging { get; set; }
 
+
     /// <summary>
     /// Validates the entire configuration tree
     /// </summary>
     /// <param name="path"></param>
     public void Validate(string path = "")
     {
-        if (this.Nodes.Count == 0)
+        if (Nodes.Count == 0)
         {
             throw new ConfigException("Nodes", "At least one node must be configured");
         }
 
-        foreach (var (nodeId, nodeConfig) in this.Nodes)
+        foreach (var (nodeId, nodeConfig) in Nodes)
         {
             if (string.IsNullOrWhiteSpace(nodeId))
             {
@@ -67,10 +68,11 @@ public sealed class AppConfig : IValidatable
             nodeConfig.Validate($"Nodes.{nodeId}");
         }
 
-        this.EmbeddingsCache?.Validate("EmbeddingsCache");
-        this.LLMCache?.Validate("LLMCache");
-        this.Search?.Validate("Search");
+        EmbeddingsCache?.Validate("EmbeddingsCache");
+        LLMCache?.Validate("LLMCache");
+        Search?.Validate("Search");
     }
+
 
     /// <summary>
     /// Creates a default configuration with a single "personal" node
@@ -82,6 +84,7 @@ public sealed class AppConfig : IValidatable
         var kmDir = Path.Combine(homeDir, ".km");
         return CreateDefault(kmDir);
     }
+
 
     /// <summary>
     /// Creates a default configuration with a single "personal" node

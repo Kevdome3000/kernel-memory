@@ -1,4 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved.
+using System.Diagnostics.CodeAnalysis;
+
 namespace KernelMemory.Core.Search.Models;
 
 /// <summary>
@@ -20,7 +22,7 @@ public sealed class SearchResponse
     /// <summary>
     /// Search results ordered by relevance (DESC) then createdAt (DESC).
     /// </summary>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
+    [SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
     public required SearchResult[] Results { get; init; }
 
     /// <summary>

@@ -8,11 +8,12 @@ public sealed class VectorMathTests
 {
     private const double Tolerance = 1e-6;
 
+
     [Fact]
     public void NormalizeVector_ProducesMagnitudeOne()
     {
         // Arrange
-        var vector = new float[] { 3.0f, 4.0f }; // 3-4-5 triangle
+        var vector = new[] { 3.0f, 4.0f }; // 3-4-5 triangle
 
         // Act
         var normalized = VectorMath.NormalizeVector(vector);
@@ -26,11 +27,12 @@ public sealed class VectorMathTests
         Assert.Equal(0.8f, normalized[1], (float)Tolerance);
     }
 
+
     [Fact]
     public void NormalizeVector_PreservesDirection()
     {
         // Arrange
-        var vector = new float[] { 1.0f, 2.0f, 3.0f };
+        var vector = new[] { 1.0f, 2.0f, 3.0f };
 
         // Act
         var normalized = VectorMath.NormalizeVector(vector);
@@ -45,15 +47,17 @@ public sealed class VectorMathTests
         Assert.Equal(ratio12, normalizedRatio12, Tolerance);
     }
 
+
     [Fact]
     public void NormalizeVector_ThrowsForZeroVector()
     {
         // Arrange
-        var zeroVector = new float[] { 0.0f, 0.0f, 0.0f };
+        var zeroVector = new[] { 0.0f, 0.0f, 0.0f };
 
         // Act & Assert
         Assert.Throws<ArgumentException>(() => VectorMath.NormalizeVector(zeroVector));
     }
+
 
     [Fact]
     public void NormalizeVector_ThrowsForEmptyVector()
@@ -65,6 +69,7 @@ public sealed class VectorMathTests
         Assert.Throws<ArgumentException>(() => VectorMath.NormalizeVector(emptyVector));
     }
 
+
     [Fact]
     public void NormalizeVector_ThrowsForNullVector()
     {
@@ -72,23 +77,25 @@ public sealed class VectorMathTests
         Assert.Throws<ArgumentNullException>(() => VectorMath.NormalizeVector(null!));
     }
 
+
     [Fact]
     public void NormalizeVector_HandlesNearZeroMagnitude()
     {
         // Arrange - Values so tiny that magnitude underflows to zero
         // float.Epsilon is the smallest positive float that is greater than zero
         // Values below this effectively produce zero magnitude
-        var zeroVector = new float[] { 0f, 0f };
+        var zeroVector = new[] { 0f, 0f };
 
         // Act & Assert - Zero vector should throw because magnitude is zero
         Assert.Throws<ArgumentException>(() => VectorMath.NormalizeVector(zeroVector));
     }
 
+
     [Fact]
     public void DotProduct_ReturnsOneForIdenticalNormalizedVectors()
     {
         // Arrange
-        var vector = new float[] { 3.0f, 4.0f };
+        var vector = new[] { 3.0f, 4.0f };
         var normalized = VectorMath.NormalizeVector(vector);
 
         // Act
@@ -98,12 +105,13 @@ public sealed class VectorMathTests
         Assert.Equal(1.0, dotProduct, Tolerance);
     }
 
+
     [Fact]
     public void DotProduct_ReturnsZeroForOrthogonalVectors()
     {
         // Arrange - Two orthogonal (perpendicular) normalized vectors
-        var v1 = VectorMath.NormalizeVector(new float[] { 1.0f, 0.0f });
-        var v2 = VectorMath.NormalizeVector(new float[] { 0.0f, 1.0f });
+        var v1 = VectorMath.NormalizeVector(new[] { 1.0f, 0.0f });
+        var v2 = VectorMath.NormalizeVector(new[] { 0.0f, 1.0f });
 
         // Act
         var dotProduct = VectorMath.DotProduct(v1, v2);
@@ -112,12 +120,13 @@ public sealed class VectorMathTests
         Assert.Equal(0.0, dotProduct, Tolerance);
     }
 
+
     [Fact]
     public void DotProduct_ReturnsNegativeOneForOppositeVectors()
     {
         // Arrange
-        var v1 = VectorMath.NormalizeVector(new float[] { 1.0f, 0.0f });
-        var v2 = VectorMath.NormalizeVector(new float[] { -1.0f, 0.0f });
+        var v1 = VectorMath.NormalizeVector(new[] { 1.0f, 0.0f });
+        var v2 = VectorMath.NormalizeVector(new[] { -1.0f, 0.0f });
 
         // Act
         var dotProduct = VectorMath.DotProduct(v1, v2);
@@ -126,34 +135,37 @@ public sealed class VectorMathTests
         Assert.Equal(-1.0, dotProduct, Tolerance);
     }
 
+
     [Fact]
     public void DotProduct_ThrowsForDifferentLengths()
     {
         // Arrange
-        var v1 = new float[] { 1.0f, 2.0f };
-        var v2 = new float[] { 1.0f, 2.0f, 3.0f };
+        var v1 = new[] { 1.0f, 2.0f };
+        var v2 = new[] { 1.0f, 2.0f, 3.0f };
 
         // Act & Assert
         Assert.Throws<ArgumentException>(() => VectorMath.DotProduct(v1, v2));
     }
 
+
     [Fact]
     public void DotProduct_ThrowsForNullVectors()
     {
         // Arrange
-        var vector = new float[] { 1.0f, 2.0f };
+        var vector = new[] { 1.0f, 2.0f };
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => VectorMath.DotProduct(null!, vector));
         Assert.Throws<ArgumentNullException>(() => VectorMath.DotProduct(vector, null!));
     }
 
+
     [Fact]
     public void DotProduct_EqualsCosineSimilarityForNormalizedVectors()
     {
         // Arrange - Two vectors at 60 degrees (cosine = 0.5)
-        var v1 = VectorMath.NormalizeVector(new float[] { 1.0f, 0.0f });
-        var v2 = VectorMath.NormalizeVector(new float[] { 0.5f, (float)Math.Sqrt(0.75) }); // 60 degrees
+        var v1 = VectorMath.NormalizeVector(new[] { 1.0f, 0.0f });
+        var v2 = VectorMath.NormalizeVector(new[] { 0.5f, (float)Math.Sqrt(0.75) }); // 60 degrees
 
         // Act
         var dotProduct = VectorMath.DotProduct(v1, v2);
@@ -162,11 +174,12 @@ public sealed class VectorMathTests
         Assert.Equal(0.5, dotProduct, Tolerance);
     }
 
+
     [Fact]
     public void VectorToBlob_And_BlobToVector_RoundTrip()
     {
         // Arrange
-        var original = new float[] { 1.5f, -2.5f, 3.14159f, 0.0f };
+        var original = new[] { 1.5f, -2.5f, 3.14159f, 0.0f };
 
         // Act
         var blob = VectorMath.VectorToBlob(original);
@@ -174,17 +187,19 @@ public sealed class VectorMathTests
 
         // Assert
         Assert.Equal(original.Length, restored.Length);
+
         for (int i = 0; i < original.Length; i++)
         {
             Assert.Equal(original[i], restored[i]);
         }
     }
 
+
     [Fact]
     public void VectorToBlob_ProducesCorrectSize()
     {
         // Arrange
-        var vector = new float[] { 1.0f, 2.0f, 3.0f, 4.0f };
+        var vector = new[] { 1.0f, 2.0f, 3.0f, 4.0f };
 
         // Act
         var blob = VectorMath.VectorToBlob(vector);
@@ -192,6 +207,7 @@ public sealed class VectorMathTests
         // Assert - Should be 4 bytes per float
         Assert.Equal(vector.Length * sizeof(float), blob.Length);
     }
+
 
     [Fact]
     public void BlobToVector_ThrowsForInvalidBlobLength()
@@ -203,6 +219,7 @@ public sealed class VectorMathTests
         Assert.Throws<ArgumentException>(() => VectorMath.BlobToVector(invalidBlob));
     }
 
+
     [Fact]
     public void VectorToBlob_ThrowsForNullVector()
     {
@@ -210,12 +227,14 @@ public sealed class VectorMathTests
         Assert.Throws<ArgumentNullException>(() => VectorMath.VectorToBlob(null!));
     }
 
+
     [Fact]
     public void BlobToVector_ThrowsForNullBlob()
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => VectorMath.BlobToVector(null!));
     }
+
 
     [Fact]
     public void VectorToBlob_HandlesEmptyVector()
@@ -232,11 +251,12 @@ public sealed class VectorMathTests
         Assert.Empty(restored);
     }
 
+
     [Fact]
     public void VectorSerialization_HandlesSpecialFloatValues()
     {
         // Arrange
-        var specialValues = new float[] { float.MaxValue, float.MinValue, float.Epsilon, -float.Epsilon };
+        var specialValues = new[] { float.MaxValue, float.MinValue, float.Epsilon, -float.Epsilon };
 
         // Act
         var blob = VectorMath.VectorToBlob(specialValues);
@@ -249,12 +269,14 @@ public sealed class VectorMathTests
         }
     }
 
+
     [Fact]
     public void NormalizeVector_HandlesHighDimensionalVectors()
     {
         // Arrange - 1024 dimensions (common for embedding models)
         // Using deterministic values instead of Random for reproducibility and security compliance
         var highDimVector = new float[1024];
+
         for (int i = 0; i < highDimVector.Length; i++)
         {
             // Deterministic pattern: sine wave values between -1 and 1

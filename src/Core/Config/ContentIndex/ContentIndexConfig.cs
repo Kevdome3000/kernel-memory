@@ -10,8 +10,8 @@ namespace KernelMemory.Core.Config.ContentIndex;
 /// Content index is the source of truth, backed by Entity Framework
 /// </summary>
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
-[JsonDerivedType(typeof(SqliteContentIndexConfig), typeDiscriminator: "sqlite")]
-[JsonDerivedType(typeof(PostgresContentIndexConfig), typeDiscriminator: "postgres")]
+[JsonDerivedType(typeof(SqliteContentIndexConfig), "sqlite")]
+[JsonDerivedType(typeof(PostgresContentIndexConfig), "postgres")]
 public abstract class ContentIndexConfig : IValidatable
 {
     /// <summary>
@@ -19,6 +19,7 @@ public abstract class ContentIndexConfig : IValidatable
     /// </summary>
     [JsonIgnore]
     public abstract ContentIndexTypes Type { get; }
+
 
     /// <summary>
     /// Validates the content index configuration

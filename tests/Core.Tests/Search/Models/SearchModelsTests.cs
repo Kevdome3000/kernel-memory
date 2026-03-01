@@ -24,6 +24,7 @@ public sealed class SearchModelsTests
         Assert.Equal(TimeSpan.FromMilliseconds(123), timing.SearchTime);
     }
 
+
     [Fact]
     public void QueryValidationResult_ValidQuery_CreatesSuccessResult()
     {
@@ -42,6 +43,7 @@ public sealed class SearchModelsTests
         Assert.Null(result.ErrorPosition);
         Assert.Equal(3, result.AvailableFields.Length);
     }
+
 
     [Fact]
     public void QueryValidationResult_InvalidQuery_CreatesErrorResult()

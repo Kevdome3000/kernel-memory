@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved.
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using KernelMemory.Core;
 using KernelMemory.Core.Storage.Models;
 using Spectre.Console;
@@ -12,19 +13,21 @@ namespace KernelMemory.Main.CLI.OutputFormatters;
 public class HumanOutputFormatter : IOutputFormatter
 {
     private readonly bool _useColors;
+
     private static readonly JsonSerializerOptions s_jsonOptions = new()
     {
         WriteIndented = true,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
     public string Verbosity { get; }
 
+
     public HumanOutputFormatter(string verbosity, bool useColors)
     {
-        this.Verbosity = verbosity;
-        this._useColors = useColors;
+        Verbosity = verbosity;
+        _useColors = useColors;
 
         // Disable colors if requested
         if (!useColors)
@@ -33,20 +36,21 @@ public class HumanOutputFormatter : IOutputFormatter
         }
     }
 
+
     public void Format(object data)
     {
-        if (this.Verbosity.Equals("silent", StringComparison.OrdinalIgnoreCase))
+        if (Verbosity.Equals("silent", StringComparison.OrdinalIgnoreCase))
         {
             return;
         }
 
         switch (data)
         {
-            case Core.Storage.Models.ContentDtoWithNode contentWithNode:
-                this.FormatContentWithNode(contentWithNode);
+            case ContentDtoWithNode contentWithNode:
+                FormatContentWithNode(contentWithNode);
                 break;
             case ContentDto content:
-                this.FormatContent(content);
+                FormatContent(content);
                 break;
             case string str:
                 AnsiConsole.WriteLine(str);
@@ -54,10 +58,11 @@ public class HumanOutputFormatter : IOutputFormatter
             default:
                 // For unknown types (like DTO objects), format as indented JSON
                 // to avoid leaking internal type names
-                this.FormatAsJson(data);
+                FormatAsJson(data);
                 break;
         }
     }
+
 
     private void FormatAsJson(object data)
     {
@@ -65,9 +70,10 @@ public class HumanOutputFormatter : IOutputFormatter
         AnsiConsole.WriteLine(json);
     }
 
+
     public void FormatError(string errorMessage)
     {
-        if (this._useColors)
+        if (_useColors)
         {
             AnsiConsole.MarkupLine($"[red]Error:[/] {Markup.Escape(errorMessage)}");
         }
@@ -77,37 +83,55 @@ public class HumanOutputFormatter : IOutputFormatter
         }
     }
 
-    public void FormatList<T>(IEnumerable<T> items, long totalCount, int skip, int take)
+
+    public void FormatList<T>(
+        IEnumerable<T> items,
+        long totalCount,
+        int skip,
+        int take)
     {
-        if (this.Verbosity.Equals("silent", StringComparison.OrdinalIgnoreCase))
+        if (Verbosity.Equals("silent", StringComparison.OrdinalIgnoreCase))
         {
             return;
         }
 
         var itemsList = items.ToList();
 
-        if (typeof(T) == typeof(Core.Storage.Models.ContentDtoWithNode))
+        if (typeof(T) == typeof(ContentDtoWithNode))
         {
-            this.FormatContentWithNodeList(itemsList.Cast<Core.Storage.Models.ContentDtoWithNode>(), totalCount, skip, take);
+            FormatContentWithNodeList(itemsList.Cast<ContentDtoWithNode>(),
+                totalCount,
+                skip,
+                take);
         }
         else if (typeof(T) == typeof(ContentDto))
         {
-            this.FormatContentList(itemsList.Cast<ContentDto>(), totalCount, skip, take);
+            FormatContentList(itemsList.Cast<ContentDto>(),
+                totalCount,
+                skip,
+                take);
         }
         else if (typeof(T) == typeof(string))
         {
-            this.FormatStringList(itemsList.Cast<string>(), totalCount, skip, take);
+            FormatStringList(itemsList.Cast<string>(),
+                totalCount,
+                skip,
+                take);
         }
         else
         {
-            this.FormatGenericList(itemsList, totalCount, skip, take);
+            FormatGenericList(itemsList,
+                totalCount,
+                skip,
+                take);
         }
     }
 
+
     private void FormatContent(ContentDto content)
     {
-        var isQuiet = this.Verbosity.Equals("quiet", StringComparison.OrdinalIgnoreCase);
-        var isVerbose = this.Verbosity.Equals("verbose", StringComparison.OrdinalIgnoreCase);
+        var isQuiet = Verbosity.Equals("quiet", StringComparison.OrdinalIgnoreCase);
+        var isVerbose = Verbosity.Equals("verbose", StringComparison.OrdinalIgnoreCase);
 
         if (isQuiet)
         {
@@ -127,6 +151,7 @@ public class HumanOutputFormatter : IOutputFormatter
 
         // Truncate content unless verbose
         var displayContent = content.Content;
+
         if (!isVerbose && displayContent.Length > Constants.App.MaxContentDisplayLength)
         {
             displayContent = string.Concat(displayContent.AsSpan(0, Constants.App.MaxContentDisplayLength), "...");
@@ -164,15 +189,20 @@ public class HumanOutputFormatter : IOutputFormatter
         AnsiConsole.Write(table);
     }
 
-    private void FormatContentList(IEnumerable<ContentDto> contents, long totalCount, int skip, int take)
+
+    private void FormatContentList(
+        IEnumerable<ContentDto> contents,
+        long totalCount,
+        int skip,
+        int take)
     {
-        var isQuiet = this.Verbosity.Equals("quiet", StringComparison.OrdinalIgnoreCase);
+        var isQuiet = Verbosity.Equals("quiet", StringComparison.OrdinalIgnoreCase);
         var contentsList = contents.ToList();
 
         // Check if list is empty
         if (contentsList.Count == 0)
         {
-            if (this._useColors)
+            if (_useColors)
             {
                 AnsiConsole.MarkupLine("[dim]No content found[/]");
             }
@@ -224,14 +254,19 @@ public class HumanOutputFormatter : IOutputFormatter
         AnsiConsole.Write(table);
     }
 
-    private void FormatStringList(IEnumerable<string> items, long totalCount, int skip, int take)
+
+    private void FormatStringList(
+        IEnumerable<string> items,
+        long totalCount,
+        int skip,
+        int take)
     {
         var itemsList = items.ToList();
 
         // Check if list is empty
         if (itemsList.Count == 0)
         {
-            if (this._useColors)
+            if (_useColors)
             {
                 AnsiConsole.MarkupLine("[dim]No items found[/]");
             }
@@ -242,7 +277,7 @@ public class HumanOutputFormatter : IOutputFormatter
             return;
         }
 
-        if (this.Verbosity.Equals("quiet", StringComparison.OrdinalIgnoreCase))
+        if (Verbosity.Equals("quiet", StringComparison.OrdinalIgnoreCase))
         {
             foreach (var item in itemsList)
             {
@@ -260,14 +295,19 @@ public class HumanOutputFormatter : IOutputFormatter
         }
     }
 
-    private void FormatGenericList<T>(IEnumerable<T> items, long totalCount, int skip, int take)
+
+    private void FormatGenericList<T>(
+        IEnumerable<T> items,
+        long totalCount,
+        int skip,
+        int take)
     {
         var itemsList = items.ToList();
 
         // Check if list is empty
         if (itemsList.Count == 0)
         {
-            if (this._useColors)
+            if (_useColors)
             {
                 AnsiConsole.MarkupLine("[dim]No items found[/]");
             }
@@ -287,10 +327,11 @@ public class HumanOutputFormatter : IOutputFormatter
         }
     }
 
-    private void FormatContentWithNode(Core.Storage.Models.ContentDtoWithNode content)
+
+    private void FormatContentWithNode(ContentDtoWithNode content)
     {
-        var isQuiet = this.Verbosity.Equals("quiet", StringComparison.OrdinalIgnoreCase);
-        var isVerbose = this.Verbosity.Equals("verbose", StringComparison.OrdinalIgnoreCase);
+        var isQuiet = Verbosity.Equals("quiet", StringComparison.OrdinalIgnoreCase);
+        var isVerbose = Verbosity.Equals("verbose", StringComparison.OrdinalIgnoreCase);
 
         if (isQuiet)
         {
@@ -309,6 +350,7 @@ public class HumanOutputFormatter : IOutputFormatter
 
         // Truncate content unless verbose
         var displayContent = content.Content;
+
         if (!isVerbose && displayContent.Length > Constants.App.MaxContentDisplayLength)
         {
             displayContent = string.Concat(displayContent.AsSpan(0, Constants.App.MaxContentDisplayLength), "...");
@@ -348,15 +390,20 @@ public class HumanOutputFormatter : IOutputFormatter
         AnsiConsole.Write(table);
     }
 
-    private void FormatContentWithNodeList(IEnumerable<Core.Storage.Models.ContentDtoWithNode> contents, long totalCount, int skip, int take)
+
+    private void FormatContentWithNodeList(
+        IEnumerable<ContentDtoWithNode> contents,
+        long totalCount,
+        int skip,
+        int take)
     {
-        var isQuiet = this.Verbosity.Equals("quiet", StringComparison.OrdinalIgnoreCase);
+        var isQuiet = Verbosity.Equals("quiet", StringComparison.OrdinalIgnoreCase);
         var contentsList = contents.ToList();
 
         // Check if list is empty
         if (contentsList.Count == 0)
         {
-            if (this._useColors)
+            if (_useColors)
             {
                 AnsiConsole.MarkupLine("[dim]No content found[/]");
             }

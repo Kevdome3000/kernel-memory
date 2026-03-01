@@ -16,12 +16,14 @@ public sealed class CacheModesTests
         Assert.True(Enum.IsDefined(CacheModes.ReadWrite));
     }
 
+
     [Fact]
     public void CacheModes_ShouldHaveReadOnlyValue()
     {
         // Assert
         Assert.True(Enum.IsDefined(CacheModes.ReadOnly));
     }
+
 
     [Fact]
     public void CacheModes_ShouldHaveWriteOnlyValue()
@@ -30,6 +32,7 @@ public sealed class CacheModesTests
         Assert.True(Enum.IsDefined(CacheModes.WriteOnly));
     }
 
+
     [Fact]
     public void CacheModes_ShouldHaveExactlyThreeValues()
     {
@@ -37,6 +40,7 @@ public sealed class CacheModesTests
         var values = Enum.GetValues<CacheModes>();
         Assert.Equal(3, values.Length);
     }
+
 
     [Theory]
     [InlineData("ReadWrite", CacheModes.ReadWrite)]

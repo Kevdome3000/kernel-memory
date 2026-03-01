@@ -13,14 +13,16 @@ public sealed class TypeRegistrar : ITypeRegistrar
 {
     private readonly IServiceCollection _services;
 
+
     /// <summary>
     /// Initializes a new instance of the <see cref="TypeRegistrar"/> class.
     /// </summary>
     /// <param name="services">The service collection to wrap.</param>
     public TypeRegistrar(IServiceCollection services)
     {
-        this._services = services ?? throw new ArgumentNullException(nameof(services));
+        _services = services ?? throw new ArgumentNullException(nameof(services));
     }
+
 
     /// <summary>
     /// Registers a service with its implementation.
@@ -29,8 +31,9 @@ public sealed class TypeRegistrar : ITypeRegistrar
     /// <param name="implementation">The implementation type.</param>
     public void Register(Type service, Type implementation)
     {
-        this._services.AddSingleton(service, implementation);
+        _services.AddSingleton(service, implementation);
     }
+
 
     /// <summary>
     /// Registers a service instance.
@@ -39,8 +42,9 @@ public sealed class TypeRegistrar : ITypeRegistrar
     /// <param name="implementation">The service instance.</param>
     public void RegisterInstance(Type service, object implementation)
     {
-        this._services.AddSingleton(service, implementation);
+        _services.AddSingleton(service, implementation);
     }
+
 
     /// <summary>
     /// Registers a service with a factory function.
@@ -49,8 +53,9 @@ public sealed class TypeRegistrar : ITypeRegistrar
     /// <param name="factory">The factory function.</param>
     public void RegisterLazy(Type service, Func<object> factory)
     {
-        this._services.AddSingleton(service, _ => factory());
+        _services.AddSingleton(service, _ => factory());
     }
+
 
     /// <summary>
     /// Builds the service provider and returns a type resolver.
@@ -58,6 +63,6 @@ public sealed class TypeRegistrar : ITypeRegistrar
     /// <returns>A type resolver wrapping the service provider.</returns>
     public ITypeResolver Build()
     {
-        return new TypeResolver(this._services.BuildServiceProvider());
+        return new TypeResolver(_services.BuildServiceProvider());
     }
 }

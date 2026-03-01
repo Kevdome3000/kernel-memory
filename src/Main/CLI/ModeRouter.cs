@@ -32,6 +32,7 @@ public sealed class ModeRouter
         };
     }
 
+
     /// <summary>
     /// Handles unimplemented mode by writing error to stderr.
     /// </summary>

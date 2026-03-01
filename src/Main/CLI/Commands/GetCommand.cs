@@ -25,15 +25,17 @@ public class GetCommandSettings : GlobalOptions
     [Description("Show all internal details")]
     public bool ShowFull { get; init; }
 
+
     public override ValidationResult Validate()
     {
         var baseResult = base.Validate();
+
         if (!baseResult.Successful)
         {
             return baseResult;
         }
 
-        if (string.IsNullOrWhiteSpace(this.Id))
+        if (string.IsNullOrWhiteSpace(Id))
         {
             return ValidationResult.Error("ID cannot be empty");
         }
@@ -41,6 +43,7 @@ public class GetCommandSettings : GlobalOptions
         return ValidationResult.Success();
     }
 }
+
 
 /// <summary>
 /// Command to get content by ID.
@@ -56,6 +59,7 @@ public class GetCommand : BaseCommand<GetCommandSettings>
     {
     }
 
+
     public override async Task<int> ExecuteAsync(
         CommandContext context,
         GetCommandSettings settings,
@@ -63,8 +67,8 @@ public class GetCommand : BaseCommand<GetCommandSettings>
     {
         try
         {
-            var (config, node, formatter) = this.Initialize(settings);
-            using var service = this.CreateContentService(node, readonlyMode: true);
+            var (config, node, formatter) = Initialize(settings);
+            using var service = CreateContentService(node, true);
 
             var result = await service.GetAsync(settings.Id, CancellationToken.None).ConfigureAwait(false);
 
@@ -84,15 +88,16 @@ public class GetCommand : BaseCommand<GetCommandSettings>
         catch (DatabaseNotFoundException)
         {
             // First-run scenario: no database exists yet (expected state)
-            this.ShowFirstRunMessage(settings);
+            ShowFirstRunMessage(settings);
             return Constants.App.ExitCodeSuccess; // Not a user error
         }
         catch (Exception ex)
         {
             var formatter = OutputFormatterFactory.Create(settings);
-            return this.HandleError(ex, formatter);
+            return HandleError(ex, formatter);
         }
     }
+
 
     /// <summary>
     /// Shows a friendly first-run message when no database exists yet.

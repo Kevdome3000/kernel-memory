@@ -26,7 +26,7 @@ public sealed class MongoJsonQueryParser : IQueryParser
         try
         {
             using var doc = JsonDocument.Parse(query);
-            return this.ParseElement(doc.RootElement);
+            return ParseElement(doc.RootElement);
         }
         catch (JsonException ex)
         {
@@ -42,6 +42,7 @@ public sealed class MongoJsonQueryParser : IQueryParser
         }
     }
 
+
     /// <summary>
     /// Validate query syntax without full parsing.
     /// </summary>
@@ -49,7 +50,7 @@ public sealed class MongoJsonQueryParser : IQueryParser
     {
         try
         {
-            this.Parse(query);
+            Parse(query);
             return true;
         }
         catch (QuerySyntaxException)
@@ -57,6 +58,7 @@ public sealed class MongoJsonQueryParser : IQueryParser
             return false;
         }
     }
+
 
     /// <summary>
     /// Parse a JSON element into a query node.
@@ -78,17 +80,17 @@ public sealed class MongoJsonQueryParser : IQueryParser
             // Special $text operator (full-text search) - check before other $ operators
             if (name == "$text")
             {
-                conditions.Add(this.ParseTextSearch(value));
+                conditions.Add(ParseTextSearch(value));
             }
             // Logical operators
             else if (name.StartsWith('$'))
             {
-                conditions.Add(this.ParseLogicalOperator(name, value));
+                conditions.Add(ParseLogicalOperator(name, value));
             }
             // Field comparison
             else
             {
-                conditions.Add(this.ParseFieldComparison(name, value));
+                conditions.Add(ParseFieldComparison(name, value));
             }
         }
 
@@ -110,6 +112,7 @@ public sealed class MongoJsonQueryParser : IQueryParser
         };
     }
 
+
     /// <summary>
     /// Parse a logical operator ($and, $or, $not, $nor).
     /// </summary>
@@ -117,13 +120,14 @@ public sealed class MongoJsonQueryParser : IQueryParser
     {
         return operatorName switch
         {
-            "$and" => this.ParseAndOr(LogicalOperator.And, value),
-            "$or" => this.ParseAndOr(LogicalOperator.Or, value),
-            "$nor" => this.ParseAndOr(LogicalOperator.Nor, value),
-            "$not" => this.ParseNot(value),
+            "$and" => ParseAndOr(LogicalOperator.And, value),
+            "$or" => ParseAndOr(LogicalOperator.Or, value),
+            "$nor" => ParseAndOr(LogicalOperator.Nor, value),
+            "$not" => ParseNot(value),
             _ => throw new QuerySyntaxException($"Unknown logical operator: {operatorName}")
         };
     }
+
 
     /// <summary>
     /// Parse $and, $or, or $nor (array of conditions).
@@ -136,9 +140,10 @@ public sealed class MongoJsonQueryParser : IQueryParser
         }
 
         var children = new List<QueryNode>();
+
         foreach (var element in value.EnumerateArray())
         {
-            children.Add(this.ParseElement(element));
+            children.Add(ParseElement(element));
         }
 
         if (children.Count == 0)
@@ -153,6 +158,7 @@ public sealed class MongoJsonQueryParser : IQueryParser
         };
     }
 
+
     /// <summary>
     /// Parse $not (single condition).
     /// </summary>
@@ -161,9 +167,10 @@ public sealed class MongoJsonQueryParser : IQueryParser
         return new LogicalNode
         {
             Operator = LogicalOperator.Not,
-            Children = [this.ParseElement(value)]
+            Children = [ParseElement(value)]
         };
     }
+
 
     /// <summary>
     /// Parse $text operator (full-text search).
@@ -197,6 +204,7 @@ public sealed class MongoJsonQueryParser : IQueryParser
         };
     }
 
+
     /// <summary>
     /// Parse a field comparison (field: value or field: {$op: value}).
     /// </summary>
@@ -211,7 +219,7 @@ public sealed class MongoJsonQueryParser : IQueryParser
             {
                 Field = field,
                 Operator = ComparisonOperator.Equal,
-                Value = this.ParseLiteralValue(value)
+                Value = ParseLiteralValue(value)
             };
         }
 
@@ -274,7 +282,7 @@ public sealed class MongoJsonQueryParser : IQueryParser
                 {
                     Field = field,
                     Operator = compOp,
-                    Value = this.ParseLiteralValue(opValue)
+                    Value = ParseLiteralValue(opValue)
                 });
             }
         }
@@ -292,6 +300,7 @@ public sealed class MongoJsonQueryParser : IQueryParser
         };
     }
 
+
     /// <summary>
     /// Parse a literal value from JSON.
     /// </summary>
@@ -303,10 +312,11 @@ public sealed class MongoJsonQueryParser : IQueryParser
             JsonValueKind.Number => new LiteralNode { Value = element.GetDouble() },
             JsonValueKind.True => new LiteralNode { Value = true },
             JsonValueKind.False => new LiteralNode { Value = false },
-            JsonValueKind.Array => this.ParseArrayValue(element),
+            JsonValueKind.Array => ParseArrayValue(element),
             _ => throw new QuerySyntaxException($"Unsupported value type: {element.ValueKind}")
         };
     }
+
 
     /// <summary>
     /// Parse an array value from JSON.
@@ -314,6 +324,7 @@ public sealed class MongoJsonQueryParser : IQueryParser
     private LiteralNode ParseArrayValue(JsonElement element)
     {
         var items = new List<string>();
+
         foreach (var item in element.EnumerateArray())
         {
             if (item.ValueKind == JsonValueKind.String)

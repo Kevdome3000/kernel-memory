@@ -17,6 +17,7 @@ public sealed class ContentService : IDisposable
     private readonly IReadOnlyDictionary<string, ISearchIndex>? _searchIndexes;
     private bool _disposed;
 
+
     /// <summary>
     /// Initializes a new instance of ContentService.
     /// </summary>
@@ -25,25 +26,27 @@ public sealed class ContentService : IDisposable
     /// <param name="searchIndexes">Optional search indexes to dispose when done.</param>
     public ContentService(IContentStorage storage, string nodeId, IReadOnlyDictionary<string, ISearchIndex>? searchIndexes = null)
     {
-        this._storage = storage;
-        this._nodeId = nodeId;
-        this._searchIndexes = searchIndexes;
+        _storage = storage;
+        _nodeId = nodeId;
+        _searchIndexes = searchIndexes;
     }
+
 
     /// <summary>
     /// Gets the node ID this service operates on.
     /// </summary>
-    public string NodeId => this._nodeId;
+    public string NodeId => _nodeId;
 
     /// <summary>
     /// Gets the underlying content storage implementation.
     /// </summary>
-    public IContentStorage Storage => this._storage;
+    public IContentStorage Storage => _storage;
 
     /// <summary>
     /// Gets the registered search indexes for this service.
     /// </summary>
-    public IReadOnlyDictionary<string, ISearchIndex> SearchIndexes => this._searchIndexes ?? new Dictionary<string, ISearchIndex>();
+    public IReadOnlyDictionary<string, ISearchIndex> SearchIndexes => _searchIndexes ?? new Dictionary<string, ISearchIndex>();
+
 
     /// <summary>
     /// Upserts content and returns the write result.
@@ -53,8 +56,9 @@ public sealed class ContentService : IDisposable
     /// <returns>WriteResult with ID and completion status.</returns>
     public async Task<WriteResult> UpsertAsync(UpsertRequest request, CancellationToken cancellationToken = default)
     {
-        return await this._storage.UpsertAsync(request, cancellationToken).ConfigureAwait(false);
+        return await _storage.UpsertAsync(request, cancellationToken).ConfigureAwait(false);
     }
+
 
     /// <summary>
     /// Gets content by ID.
@@ -64,8 +68,9 @@ public sealed class ContentService : IDisposable
     /// <returns>The content DTO, or null if not found.</returns>
     public async Task<ContentDto?> GetAsync(string id, CancellationToken cancellationToken = default)
     {
-        return await this._storage.GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
+        return await _storage.GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
     }
+
 
     /// <summary>
     /// Deletes content by ID.
@@ -75,8 +80,9 @@ public sealed class ContentService : IDisposable
     /// <returns>WriteResult with ID and completion status.</returns>
     public async Task<WriteResult> DeleteAsync(string id, CancellationToken cancellationToken = default)
     {
-        return await this._storage.DeleteAsync(id, cancellationToken).ConfigureAwait(false);
+        return await _storage.DeleteAsync(id, cancellationToken).ConfigureAwait(false);
     }
+
 
     /// <summary>
     /// Lists content with pagination.
@@ -87,8 +93,9 @@ public sealed class ContentService : IDisposable
     /// <returns>List of content DTOs.</returns>
     public async Task<List<ContentDto>> ListAsync(int skip, int take, CancellationToken cancellationToken = default)
     {
-        return await this._storage.ListAsync(skip, take, cancellationToken).ConfigureAwait(false);
+        return await _storage.ListAsync(skip, take, cancellationToken).ConfigureAwait(false);
     }
+
 
     /// <summary>
     /// Gets total count of content items.
@@ -97,23 +104,24 @@ public sealed class ContentService : IDisposable
     /// <returns>Total count.</returns>
     public async Task<long> CountAsync(CancellationToken cancellationToken = default)
     {
-        return await this._storage.CountAsync(cancellationToken).ConfigureAwait(false);
+        return await _storage.CountAsync(cancellationToken).ConfigureAwait(false);
     }
+
 
     /// <summary>
     /// Disposes the service and underlying search indexes.
     /// </summary>
     public void Dispose()
     {
-        if (this._disposed)
+        if (_disposed)
         {
             return;
         }
 
         // Dispose all search indexes (e.g., SqliteFtsIndex connections)
-        if (this._searchIndexes != null)
+        if (_searchIndexes != null)
         {
-            foreach (var index in this._searchIndexes.Values)
+            foreach (var index in _searchIndexes.Values)
             {
                 if (index is IDisposable disposable)
                 {
@@ -122,7 +130,7 @@ public sealed class ContentService : IDisposable
             }
         }
 
-        this._disposed = true;
+        _disposed = true;
         GC.SuppressFinalize(this);
     }
 }

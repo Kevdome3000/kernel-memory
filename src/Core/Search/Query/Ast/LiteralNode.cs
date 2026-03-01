@@ -1,4 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved.
+using System.Collections;
+
 namespace KernelMemory.Core.Search.Query.Ast;
 
 /// <summary>
@@ -16,32 +18,33 @@ public sealed class LiteralNode : QueryNode
     /// <summary>
     /// The type of the literal value for type-safe operations.
     /// </summary>
-    public Type ValueType => this.Value.GetType();
+    public Type ValueType => Value.GetType();
 
     /// <summary>
     /// True if the value is a string.
     /// </summary>
-    public bool IsString => this.Value is string;
+    public bool IsString => Value is string;
 
     /// <summary>
     /// True if the value is a number (int, long, float, double, decimal).
     /// </summary>
-    public bool IsNumber => this.Value is int or long or float or double or decimal;
+    public bool IsNumber => Value is int or long or float or double or decimal;
 
     /// <summary>
     /// True if the value is a date/time.
     /// </summary>
-    public bool IsDateTime => this.Value is DateTimeOffset or DateTime;
+    public bool IsDateTime => Value is DateTimeOffset or DateTime;
 
     /// <summary>
     /// True if the value is a boolean.
     /// </summary>
-    public bool IsBoolean => this.Value is bool;
+    public bool IsBoolean => Value is bool;
 
     /// <summary>
     /// True if the value is an array.
     /// </summary>
-    public bool IsArray => this.Value is Array or System.Collections.IList;
+    public bool IsArray => Value is Array or IList;
+
 
     /// <summary>
     /// Get the value as a string.
@@ -49,8 +52,9 @@ public sealed class LiteralNode : QueryNode
     /// </summary>
     public string AsString()
     {
-        return (string)this.Value;
+        return (string)Value;
     }
+
 
     /// <summary>
     /// Get the value as a DateTimeOffset.
@@ -59,13 +63,14 @@ public sealed class LiteralNode : QueryNode
     /// </summary>
     public DateTimeOffset AsDateTime()
     {
-        return this.Value switch
+        return Value switch
         {
             DateTimeOffset dto => dto,
             DateTime dt => new DateTimeOffset(dt),
-            _ => throw new InvalidOperationException($"Value is not a DateTime: {this.ValueType.Name}")
+            _ => throw new InvalidOperationException($"Value is not a DateTime: {ValueType.Name}")
         };
     }
+
 
     /// <summary>
     /// Get the value as a number (double).
@@ -73,16 +78,17 @@ public sealed class LiteralNode : QueryNode
     /// </summary>
     public double AsNumber()
     {
-        return this.Value switch
+        return Value switch
         {
             int i => i,
             long l => l,
             float f => f,
             double d => d,
             decimal m => (double)m,
-            _ => throw new InvalidOperationException($"Value is not a number: {this.ValueType.Name}")
+            _ => throw new InvalidOperationException($"Value is not a number: {ValueType.Name}")
         };
     }
+
 
     /// <summary>
     /// Get the value as an array of strings.
@@ -90,14 +96,15 @@ public sealed class LiteralNode : QueryNode
     /// </summary>
     public string[] AsStringArray()
     {
-        if (this.Value is string[] stringArray)
+        if (Value is string[] stringArray)
         {
             return stringArray;
         }
 
-        if (this.Value is System.Collections.IList list)
+        if (Value is IList list)
         {
             var result = new string[list.Count];
+
             for (int i = 0; i < list.Count; i++)
             {
                 result[i] = list[i]?.ToString() ?? string.Empty;
@@ -106,8 +113,9 @@ public sealed class LiteralNode : QueryNode
             return result;
         }
 
-        throw new InvalidOperationException($"Value is not an array: {this.ValueType.Name}");
+        throw new InvalidOperationException($"Value is not an array: {ValueType.Name}");
     }
+
 
     /// <summary>
     /// Accept a visitor for AST traversal.

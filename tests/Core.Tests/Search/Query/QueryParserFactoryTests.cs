@@ -22,6 +22,7 @@ public sealed class QueryParserFactoryTests
         Assert.IsType<MongoJsonQueryParser>(parser);
     }
 
+
     [Fact]
     public void DetectFormat_JsonQueryWithWhitespace_ReturnsMongoJsonParser()
     {
@@ -34,6 +35,7 @@ public sealed class QueryParserFactoryTests
         // Assert
         Assert.IsType<MongoJsonQueryParser>(parser);
     }
+
 
     [Fact]
     public void DetectFormat_InfixQuery_ReturnsInfixParser()
@@ -48,6 +50,7 @@ public sealed class QueryParserFactoryTests
         Assert.IsType<InfixQueryParser>(parser);
     }
 
+
     [Fact]
     public void DetectFormat_SimpleText_ReturnsInfixParser()
     {
@@ -61,6 +64,7 @@ public sealed class QueryParserFactoryTests
         Assert.IsType<InfixQueryParser>(parser);
     }
 
+
     [Fact]
     public void DetectFormat_EmptyQuery_ThrowsArgumentException()
     {
@@ -69,6 +73,7 @@ public sealed class QueryParserFactoryTests
         Assert.Throws<ArgumentException>(() => QueryParserFactory.DetectFormat("   "));
         Assert.Throws<ArgumentException>(() => QueryParserFactory.DetectFormat("\t\n"));
     }
+
 
     [Fact]
     public void Parse_JsonQuery_ReturnsValidAST()
@@ -83,6 +88,7 @@ public sealed class QueryParserFactoryTests
         Assert.NotNull(ast);
     }
 
+
     [Fact]
     public void Parse_InfixQuery_ReturnsValidAST()
     {
@@ -96,6 +102,7 @@ public sealed class QueryParserFactoryTests
         Assert.NotNull(ast);
     }
 
+
     [Fact]
     public void Parse_InvalidJsonQuery_ThrowsQuerySyntaxException()
     {
@@ -105,6 +112,7 @@ public sealed class QueryParserFactoryTests
         // Act & Assert
         Assert.Throws<QuerySyntaxException>(() => QueryParserFactory.Parse(query));
     }
+
 
     [Fact]
     public void Parse_InvalidInfixQuery_ThrowsQuerySyntaxException()

@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved.
 
+using System.Diagnostics.CodeAnalysis;
 using Serilog.Core;
 using Serilog.Events;
 
@@ -22,7 +23,7 @@ public sealed class SensitiveDataScrubbingPolicy : IDestructuringPolicy
     public bool TryDestructure(
         object value,
         ILogEventPropertyValueFactory propertyValueFactory,
-        [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out LogEventPropertyValue? result)
+        [NotNullWhen(true)] out LogEventPropertyValue? result)
     {
         // Handle null - let Serilog process normally
         if (value is null)

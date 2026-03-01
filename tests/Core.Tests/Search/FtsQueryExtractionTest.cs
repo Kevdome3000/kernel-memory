@@ -3,6 +3,7 @@
 using KernelMemory.Core.Search.Models;
 using KernelMemory.Core.Search.Query.Parsers;
 using KernelMemory.Core.Storage;
+using KernelMemory.Core.Storage.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -16,19 +17,21 @@ public sealed class FtsQueryExtractionTest : IDisposable
 {
     private readonly string _tempDir;
 
+
     public FtsQueryExtractionTest()
     {
-        this._tempDir = Path.Combine(Path.GetTempPath(), $"km-fts-query-test-{Guid.NewGuid():N}");
-        Directory.CreateDirectory(this._tempDir);
+        _tempDir = Path.Combine(Path.GetTempPath(), $"km-fts-query-test-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(_tempDir);
     }
+
 
     public void Dispose()
     {
         try
         {
-            if (Directory.Exists(this._tempDir))
+            if (Directory.Exists(_tempDir))
             {
-                Directory.Delete(this._tempDir, true);
+                Directory.Delete(_tempDir, true);
             }
         }
         catch (IOException)
@@ -37,15 +40,20 @@ public sealed class FtsQueryExtractionTest : IDisposable
         }
     }
 
+
     [Fact]
     public async Task SimpleTextQuery_GeneratesCorrectFtsQuery()
     {
         // Arrange: Create real FTS index with known content
-        var ftsDbPath = Path.Combine(this._tempDir, "fts.db");
+        var ftsDbPath = Path.Combine(_tempDir, "fts.db");
         var mockLogger = new Mock<ILogger<SqliteFtsIndex>>();
 
-        using var ftsIndex = new SqliteFtsIndex(ftsDbPath, enableStemming: true, mockLogger.Object);
-        await ftsIndex.IndexAsync("id1", "", "", "hello world").ConfigureAwait(false);
+        using var ftsIndex = new SqliteFtsIndex(ftsDbPath, true, mockLogger.Object);
+        await ftsIndex.IndexAsync("id1",
+                "",
+                "",
+                "hello world")
+            .ConfigureAwait(false);
 
         // Test query: "hello" should generate FTS query that finds the content
         // Parse the query
@@ -58,7 +66,7 @@ public sealed class FtsQueryExtractionTest : IDisposable
         // We can't easily test the private ExtractFtsQuery method, but we can test end-to-end
 
         // Create a minimal storage
-        var contentDbPath = Path.Combine(this._tempDir, "content.db");
+        var contentDbPath = Path.Combine(_tempDir, "content.db");
         var options = new DbContextOptionsBuilder<ContentStorageDbContext>()
             .UseSqlite($"Data Source={contentDbPath}")
             .Options;
@@ -69,12 +77,14 @@ public sealed class FtsQueryExtractionTest : IDisposable
         var storage = new ContentStorageService(context, new CuidGenerator(), mockStorageLogger.Object);
 
         // Insert the content record
-        await storage.UpsertAsync(new KernelMemory.Core.Storage.Models.UpsertRequest
-        {
-            Id = "id1",
-            Content = "hello world",
-            MimeType = "text/plain"
-        }, CancellationToken.None).ConfigureAwait(false);
+        await storage.UpsertAsync(new UpsertRequest
+                {
+                    Id = "id1",
+                    Content = "hello world",
+                    MimeType = "text/plain"
+                },
+                CancellationToken.None)
+            .ConfigureAwait(false);
 
         // Act: Search using NodeSearchService (which will call ExtractFtsQuery internally)
         var nodeService = new NodeSearchService("test", ftsIndex, storage);
@@ -92,21 +102,31 @@ public sealed class FtsQueryExtractionTest : IDisposable
         Assert.Contains(results, r => r.RecordId == "id1");
     }
 
+
     // Issue #4: Tests for reserved words search functionality
+
 
     [Fact]
     public async Task QuotedNOTReservedWord_FindsDocumentContainingNOT()
     {
         // Issue #4: Should be able to search for the literal word "NOT"
         // Arrange
-        var ftsDbPath = Path.Combine(this._tempDir, "fts-not.db");
+        var ftsDbPath = Path.Combine(_tempDir, "fts-not.db");
         var mockLogger = new Mock<ILogger<SqliteFtsIndex>>();
 
-        using var ftsIndex = new SqliteFtsIndex(ftsDbPath, enableStemming: false, mockLogger.Object);
-        await ftsIndex.IndexAsync("id1", "", "", "this is NOT important").ConfigureAwait(false);
-        await ftsIndex.IndexAsync("id2", "", "", "this is always important").ConfigureAwait(false);
+        using var ftsIndex = new SqliteFtsIndex(ftsDbPath, false, mockLogger.Object);
+        await ftsIndex.IndexAsync("id1",
+                "",
+                "",
+                "this is NOT important")
+            .ConfigureAwait(false);
+        await ftsIndex.IndexAsync("id2",
+                "",
+                "",
+                "this is always important")
+            .ConfigureAwait(false);
 
-        var contentDbPath = Path.Combine(this._tempDir, "content-not.db");
+        var contentDbPath = Path.Combine(_tempDir, "content-not.db");
         var options = new DbContextOptionsBuilder<ContentStorageDbContext>()
             .UseSqlite($"Data Source={contentDbPath}")
             .Options;
@@ -116,19 +136,23 @@ public sealed class FtsQueryExtractionTest : IDisposable
         var mockStorageLogger = new Mock<ILogger<ContentStorageService>>();
         var storage = new ContentStorageService(context, new CuidGenerator(), mockStorageLogger.Object);
 
-        await storage.UpsertAsync(new KernelMemory.Core.Storage.Models.UpsertRequest
-        {
-            Id = "id1",
-            Content = "this is NOT important",
-            MimeType = "text/plain"
-        }, CancellationToken.None).ConfigureAwait(false);
+        await storage.UpsertAsync(new UpsertRequest
+                {
+                    Id = "id1",
+                    Content = "this is NOT important",
+                    MimeType = "text/plain"
+                },
+                CancellationToken.None)
+            .ConfigureAwait(false);
 
-        await storage.UpsertAsync(new KernelMemory.Core.Storage.Models.UpsertRequest
-        {
-            Id = "id2",
-            Content = "this is always important",
-            MimeType = "text/plain"
-        }, CancellationToken.None).ConfigureAwait(false);
+        await storage.UpsertAsync(new UpsertRequest
+                {
+                    Id = "id2",
+                    Content = "this is always important",
+                    MimeType = "text/plain"
+                },
+                CancellationToken.None)
+            .ConfigureAwait(false);
 
         // Act: Search for the literal word "NOT" (quoted in the query)
         var queryNode = QueryParserFactory.Parse("\"NOT\"");
@@ -147,19 +171,28 @@ public sealed class FtsQueryExtractionTest : IDisposable
         Assert.Equal("id1", results[0].RecordId);
     }
 
+
     [Fact]
     public async Task QuotedANDReservedWord_FindsDocumentContainingAND()
     {
         // Issue #4: Should be able to search for the literal word "AND"
         // Arrange
-        var ftsDbPath = Path.Combine(this._tempDir, "fts-and.db");
+        var ftsDbPath = Path.Combine(_tempDir, "fts-and.db");
         var mockLogger = new Mock<ILogger<SqliteFtsIndex>>();
 
-        using var ftsIndex = new SqliteFtsIndex(ftsDbPath, enableStemming: false, mockLogger.Object);
-        await ftsIndex.IndexAsync("id1", "", "", "Alice AND Bob").ConfigureAwait(false);
-        await ftsIndex.IndexAsync("id2", "", "", "Alice with Bob").ConfigureAwait(false);
+        using var ftsIndex = new SqliteFtsIndex(ftsDbPath, false, mockLogger.Object);
+        await ftsIndex.IndexAsync("id1",
+                "",
+                "",
+                "Alice AND Bob")
+            .ConfigureAwait(false);
+        await ftsIndex.IndexAsync("id2",
+                "",
+                "",
+                "Alice with Bob")
+            .ConfigureAwait(false);
 
-        var contentDbPath = Path.Combine(this._tempDir, "content-and.db");
+        var contentDbPath = Path.Combine(_tempDir, "content-and.db");
         var options = new DbContextOptionsBuilder<ContentStorageDbContext>()
             .UseSqlite($"Data Source={contentDbPath}")
             .Options;
@@ -169,19 +202,23 @@ public sealed class FtsQueryExtractionTest : IDisposable
         var mockStorageLogger = new Mock<ILogger<ContentStorageService>>();
         var storage = new ContentStorageService(context, new CuidGenerator(), mockStorageLogger.Object);
 
-        await storage.UpsertAsync(new KernelMemory.Core.Storage.Models.UpsertRequest
-        {
-            Id = "id1",
-            Content = "Alice AND Bob",
-            MimeType = "text/plain"
-        }, CancellationToken.None).ConfigureAwait(false);
+        await storage.UpsertAsync(new UpsertRequest
+                {
+                    Id = "id1",
+                    Content = "Alice AND Bob",
+                    MimeType = "text/plain"
+                },
+                CancellationToken.None)
+            .ConfigureAwait(false);
 
-        await storage.UpsertAsync(new KernelMemory.Core.Storage.Models.UpsertRequest
-        {
-            Id = "id2",
-            Content = "Alice with Bob",
-            MimeType = "text/plain"
-        }, CancellationToken.None).ConfigureAwait(false);
+        await storage.UpsertAsync(new UpsertRequest
+                {
+                    Id = "id2",
+                    Content = "Alice with Bob",
+                    MimeType = "text/plain"
+                },
+                CancellationToken.None)
+            .ConfigureAwait(false);
 
         // Act: Search for the literal word "AND" (quoted in the query)
         var queryNode = QueryParserFactory.Parse("\"AND\"");
@@ -200,19 +237,28 @@ public sealed class FtsQueryExtractionTest : IDisposable
         Assert.Equal("id1", results[0].RecordId);
     }
 
+
     [Fact]
     public async Task QuotedORReservedWord_FindsDocumentContainingOR()
     {
         // Issue #4: Should be able to search for the literal word "OR"
         // Arrange
-        var ftsDbPath = Path.Combine(this._tempDir, "fts-or.db");
+        var ftsDbPath = Path.Combine(_tempDir, "fts-or.db");
         var mockLogger = new Mock<ILogger<SqliteFtsIndex>>();
 
-        using var ftsIndex = new SqliteFtsIndex(ftsDbPath, enableStemming: false, mockLogger.Object);
-        await ftsIndex.IndexAsync("id1", "", "", "yes OR no").ConfigureAwait(false);
-        await ftsIndex.IndexAsync("id2", "", "", "yes and no").ConfigureAwait(false);
+        using var ftsIndex = new SqliteFtsIndex(ftsDbPath, false, mockLogger.Object);
+        await ftsIndex.IndexAsync("id1",
+                "",
+                "",
+                "yes OR no")
+            .ConfigureAwait(false);
+        await ftsIndex.IndexAsync("id2",
+                "",
+                "",
+                "yes and no")
+            .ConfigureAwait(false);
 
-        var contentDbPath = Path.Combine(this._tempDir, "content-or.db");
+        var contentDbPath = Path.Combine(_tempDir, "content-or.db");
         var options = new DbContextOptionsBuilder<ContentStorageDbContext>()
             .UseSqlite($"Data Source={contentDbPath}")
             .Options;
@@ -222,19 +268,23 @@ public sealed class FtsQueryExtractionTest : IDisposable
         var mockStorageLogger = new Mock<ILogger<ContentStorageService>>();
         var storage = new ContentStorageService(context, new CuidGenerator(), mockStorageLogger.Object);
 
-        await storage.UpsertAsync(new KernelMemory.Core.Storage.Models.UpsertRequest
-        {
-            Id = "id1",
-            Content = "yes OR no",
-            MimeType = "text/plain"
-        }, CancellationToken.None).ConfigureAwait(false);
+        await storage.UpsertAsync(new UpsertRequest
+                {
+                    Id = "id1",
+                    Content = "yes OR no",
+                    MimeType = "text/plain"
+                },
+                CancellationToken.None)
+            .ConfigureAwait(false);
 
-        await storage.UpsertAsync(new KernelMemory.Core.Storage.Models.UpsertRequest
-        {
-            Id = "id2",
-            Content = "yes and no",
-            MimeType = "text/plain"
-        }, CancellationToken.None).ConfigureAwait(false);
+        await storage.UpsertAsync(new UpsertRequest
+                {
+                    Id = "id2",
+                    Content = "yes and no",
+                    MimeType = "text/plain"
+                },
+                CancellationToken.None)
+            .ConfigureAwait(false);
 
         // Act: Search for the literal word "OR" (quoted in the query)
         var queryNode = QueryParserFactory.Parse("\"OR\"");
@@ -253,19 +303,28 @@ public sealed class FtsQueryExtractionTest : IDisposable
         Assert.Equal("id1", results[0].RecordId);
     }
 
+
     [Fact]
     public async Task QuotedPhraseWithReservedWords_FindsDocumentWithExactPhrase()
     {
         // Issue #4: Should be able to search for phrases containing reserved words
         // Arrange
-        var ftsDbPath = Path.Combine(this._tempDir, "fts-phrase.db");
+        var ftsDbPath = Path.Combine(_tempDir, "fts-phrase.db");
         var mockLogger = new Mock<ILogger<SqliteFtsIndex>>();
 
-        using var ftsIndex = new SqliteFtsIndex(ftsDbPath, enableStemming: false, mockLogger.Object);
-        await ftsIndex.IndexAsync("id1", "", "", "this AND that").ConfigureAwait(false);
-        await ftsIndex.IndexAsync("id2", "", "", "this or that").ConfigureAwait(false);
+        using var ftsIndex = new SqliteFtsIndex(ftsDbPath, false, mockLogger.Object);
+        await ftsIndex.IndexAsync("id1",
+                "",
+                "",
+                "this AND that")
+            .ConfigureAwait(false);
+        await ftsIndex.IndexAsync("id2",
+                "",
+                "",
+                "this or that")
+            .ConfigureAwait(false);
 
-        var contentDbPath = Path.Combine(this._tempDir, "content-phrase.db");
+        var contentDbPath = Path.Combine(_tempDir, "content-phrase.db");
         var options = new DbContextOptionsBuilder<ContentStorageDbContext>()
             .UseSqlite($"Data Source={contentDbPath}")
             .Options;
@@ -275,19 +334,23 @@ public sealed class FtsQueryExtractionTest : IDisposable
         var mockStorageLogger = new Mock<ILogger<ContentStorageService>>();
         var storage = new ContentStorageService(context, new CuidGenerator(), mockStorageLogger.Object);
 
-        await storage.UpsertAsync(new KernelMemory.Core.Storage.Models.UpsertRequest
-        {
-            Id = "id1",
-            Content = "this AND that",
-            MimeType = "text/plain"
-        }, CancellationToken.None).ConfigureAwait(false);
+        await storage.UpsertAsync(new UpsertRequest
+                {
+                    Id = "id1",
+                    Content = "this AND that",
+                    MimeType = "text/plain"
+                },
+                CancellationToken.None)
+            .ConfigureAwait(false);
 
-        await storage.UpsertAsync(new KernelMemory.Core.Storage.Models.UpsertRequest
-        {
-            Id = "id2",
-            Content = "this or that",
-            MimeType = "text/plain"
-        }, CancellationToken.None).ConfigureAwait(false);
+        await storage.UpsertAsync(new UpsertRequest
+                {
+                    Id = "id2",
+                    Content = "this or that",
+                    MimeType = "text/plain"
+                },
+                CancellationToken.None)
+            .ConfigureAwait(false);
 
         // Act: Search for the phrase "this AND that"
         var queryNode = QueryParserFactory.Parse("\"this AND that\"");
@@ -306,20 +369,33 @@ public sealed class FtsQueryExtractionTest : IDisposable
         Assert.Equal("id1", results[0].RecordId);
     }
 
+
     [Fact]
     public async Task ReservedWordWithActualBooleanOperator_WorksCorrectly()
     {
         // Issue #4: Mixing quoted reserved words with actual boolean operators
         // Arrange
-        var ftsDbPath = Path.Combine(this._tempDir, "fts-mixed.db");
+        var ftsDbPath = Path.Combine(_tempDir, "fts-mixed.db");
         var mockLogger = new Mock<ILogger<SqliteFtsIndex>>();
 
-        using var ftsIndex = new SqliteFtsIndex(ftsDbPath, enableStemming: false, mockLogger.Object);
-        await ftsIndex.IndexAsync("id1", "", "", "NOT important kubernetes").ConfigureAwait(false);
-        await ftsIndex.IndexAsync("id2", "", "", "important kubernetes").ConfigureAwait(false);
-        await ftsIndex.IndexAsync("id3", "", "", "NOT important docker").ConfigureAwait(false);
+        using var ftsIndex = new SqliteFtsIndex(ftsDbPath, false, mockLogger.Object);
+        await ftsIndex.IndexAsync("id1",
+                "",
+                "",
+                "NOT important kubernetes")
+            .ConfigureAwait(false);
+        await ftsIndex.IndexAsync("id2",
+                "",
+                "",
+                "important kubernetes")
+            .ConfigureAwait(false);
+        await ftsIndex.IndexAsync("id3",
+                "",
+                "",
+                "NOT important docker")
+            .ConfigureAwait(false);
 
-        var contentDbPath = Path.Combine(this._tempDir, "content-mixed.db");
+        var contentDbPath = Path.Combine(_tempDir, "content-mixed.db");
         var options = new DbContextOptionsBuilder<ContentStorageDbContext>()
             .UseSqlite($"Data Source={contentDbPath}")
             .Options;
@@ -329,26 +405,32 @@ public sealed class FtsQueryExtractionTest : IDisposable
         var mockStorageLogger = new Mock<ILogger<ContentStorageService>>();
         var storage = new ContentStorageService(context, new CuidGenerator(), mockStorageLogger.Object);
 
-        await storage.UpsertAsync(new KernelMemory.Core.Storage.Models.UpsertRequest
-        {
-            Id = "id1",
-            Content = "NOT important kubernetes",
-            MimeType = "text/plain"
-        }, CancellationToken.None).ConfigureAwait(false);
+        await storage.UpsertAsync(new UpsertRequest
+                {
+                    Id = "id1",
+                    Content = "NOT important kubernetes",
+                    MimeType = "text/plain"
+                },
+                CancellationToken.None)
+            .ConfigureAwait(false);
 
-        await storage.UpsertAsync(new KernelMemory.Core.Storage.Models.UpsertRequest
-        {
-            Id = "id2",
-            Content = "important kubernetes",
-            MimeType = "text/plain"
-        }, CancellationToken.None).ConfigureAwait(false);
+        await storage.UpsertAsync(new UpsertRequest
+                {
+                    Id = "id2",
+                    Content = "important kubernetes",
+                    MimeType = "text/plain"
+                },
+                CancellationToken.None)
+            .ConfigureAwait(false);
 
-        await storage.UpsertAsync(new KernelMemory.Core.Storage.Models.UpsertRequest
-        {
-            Id = "id3",
-            Content = "NOT important docker",
-            MimeType = "text/plain"
-        }, CancellationToken.None).ConfigureAwait(false);
+        await storage.UpsertAsync(new UpsertRequest
+                {
+                    Id = "id3",
+                    Content = "NOT important docker",
+                    MimeType = "text/plain"
+                },
+                CancellationToken.None)
+            .ConfigureAwait(false);
 
         // Act: Search for "NOT" (literal) AND kubernetes (must contain both)
         var queryNode = QueryParserFactory.Parse("\"NOT\" AND kubernetes");

@@ -18,38 +18,41 @@ public sealed class SearchIndexFactoryVectorTests : IDisposable
     private readonly Mock<ILoggerFactory> _mockLoggerFactory;
     private readonly HttpClient _httpClient;
 
+
     public SearchIndexFactoryVectorTests()
     {
-        this._tempDir = Path.Combine(Path.GetTempPath(), $"factory_test_{Guid.NewGuid()}");
-        Directory.CreateDirectory(this._tempDir);
+        _tempDir = Path.Combine(Path.GetTempPath(), $"factory_test_{Guid.NewGuid()}");
+        Directory.CreateDirectory(_tempDir);
 
         // Setup mock logger factory
-        this._mockLoggerFactory = new Mock<ILoggerFactory>();
-        this._mockLoggerFactory
+        _mockLoggerFactory = new Mock<ILoggerFactory>();
+        _mockLoggerFactory
             .Setup(x => x.CreateLogger(It.IsAny<string>()))
             .Returns(new Mock<ILogger>().Object);
 
-        this._httpClient = new HttpClient();
+        _httpClient = new HttpClient();
     }
+
 
     public void Dispose()
     {
-        this._httpClient.Dispose();
+        _httpClient.Dispose();
 
         // Clean up temp directory
-        if (Directory.Exists(this._tempDir))
+        if (Directory.Exists(_tempDir))
         {
-            Directory.Delete(this._tempDir, recursive: true);
+            Directory.Delete(_tempDir, true);
         }
 
         GC.SuppressFinalize(this);
     }
 
+
     [Fact]
     public void CreateIndexesWithEmbeddings_CreatesFtsIndex()
     {
         // Arrange
-        var ftsPath = Path.Combine(this._tempDir, "fts.db");
+        var ftsPath = Path.Combine(_tempDir, "fts.db");
         var configs = new List<SearchIndexConfig>
         {
             new FtsSearchIndexConfig
@@ -63,9 +66,9 @@ public sealed class SearchIndexFactoryVectorTests : IDisposable
         // Act
         var indexes = SearchIndexFactory.CreateIndexes(
             configs,
-            this._httpClient,
-            embeddingCache: null,
-            this._mockLoggerFactory.Object);
+            _httpClient,
+            null,
+            _mockLoggerFactory.Object);
 
         // Assert
         Assert.Single(indexes);
@@ -76,11 +79,12 @@ public sealed class SearchIndexFactoryVectorTests : IDisposable
         ((IDisposable)indexes["fts-test"]).Dispose();
     }
 
+
     [Fact]
     public void CreateIndexesWithEmbeddings_CreatesVectorIndex()
     {
         // Arrange
-        var vectorPath = Path.Combine(this._tempDir, "vector.db");
+        var vectorPath = Path.Combine(_tempDir, "vector.db");
         var configs = new List<SearchIndexConfig>
         {
             new VectorSearchIndexConfig
@@ -100,9 +104,9 @@ public sealed class SearchIndexFactoryVectorTests : IDisposable
         // Act
         var indexes = SearchIndexFactory.CreateIndexes(
             configs,
-            this._httpClient,
-            embeddingCache: null,
-            this._mockLoggerFactory.Object);
+            _httpClient,
+            null,
+            _mockLoggerFactory.Object);
 
         // Assert
         Assert.Single(indexes);
@@ -117,12 +121,13 @@ public sealed class SearchIndexFactoryVectorTests : IDisposable
         vectorIndex.Dispose();
     }
 
+
     [Fact]
     public void CreateIndexesWithEmbeddings_CreatesMixedIndexes()
     {
         // Arrange
-        var ftsPath = Path.Combine(this._tempDir, "fts-mixed.db");
-        var vectorPath = Path.Combine(this._tempDir, "vector-mixed.db");
+        var ftsPath = Path.Combine(_tempDir, "fts-mixed.db");
+        var vectorPath = Path.Combine(_tempDir, "vector-mixed.db");
         var configs = new List<SearchIndexConfig>
         {
             new FtsSearchIndexConfig
@@ -148,9 +153,9 @@ public sealed class SearchIndexFactoryVectorTests : IDisposable
         // Act
         var indexes = SearchIndexFactory.CreateIndexes(
             configs,
-            this._httpClient,
-            embeddingCache: null,
-            this._mockLoggerFactory.Object);
+            _httpClient,
+            null,
+            _mockLoggerFactory.Object);
 
         // Assert
         Assert.Equal(2, indexes.Count);
@@ -161,6 +166,7 @@ public sealed class SearchIndexFactoryVectorTests : IDisposable
         ((IDisposable)indexes["fts-mixed"]).Dispose();
         ((IDisposable)indexes["vector-mixed"]).Dispose();
     }
+
 
     [Fact]
     public void CreateIndexesWithEmbeddings_ThrowsForVectorIndexWithoutPath()
@@ -185,16 +191,17 @@ public sealed class SearchIndexFactoryVectorTests : IDisposable
         Assert.Throws<InvalidOperationException>(() =>
             SearchIndexFactory.CreateIndexes(
                 configs,
-                this._httpClient,
-                embeddingCache: null,
-                this._mockLoggerFactory.Object));
+                _httpClient,
+                null,
+                _mockLoggerFactory.Object));
     }
+
 
     [Fact]
     public void CreateIndexesWithEmbeddings_ThrowsForVectorIndexWithoutEmbeddings()
     {
         // Arrange
-        var vectorPath = Path.Combine(this._tempDir, "vector-no-embeddings.db");
+        var vectorPath = Path.Combine(_tempDir, "vector-no-embeddings.db");
         var configs = new List<SearchIndexConfig>
         {
             new VectorSearchIndexConfig
@@ -210,17 +217,18 @@ public sealed class SearchIndexFactoryVectorTests : IDisposable
         Assert.Throws<InvalidOperationException>(() =>
             SearchIndexFactory.CreateIndexes(
                 configs,
-                this._httpClient,
-                embeddingCache: null,
-                this._mockLoggerFactory.Object));
+                _httpClient,
+                null,
+                _mockLoggerFactory.Object));
     }
+
 
     [Fact]
     public void CreateIndexes_DoesNotCreateVectorIndexes()
     {
         // Arrange - Vector config should be ignored by CreateIndexes (no embedding support)
-        var ftsPath = Path.Combine(this._tempDir, "fts-only.db");
-        var vectorPath = Path.Combine(this._tempDir, "vector-ignored.db");
+        var ftsPath = Path.Combine(_tempDir, "fts-only.db");
+        var vectorPath = Path.Combine(_tempDir, "vector-ignored.db");
         var configs = new List<SearchIndexConfig>
         {
             new FtsSearchIndexConfig
@@ -247,8 +255,8 @@ public sealed class SearchIndexFactoryVectorTests : IDisposable
         var indexes = SearchIndexFactory.CreateIndexes(
             configs,
             httpClient,
-            embeddingCache: null,
-            this._mockLoggerFactory.Object);
+            null,
+            _mockLoggerFactory.Object);
 
         // Assert - Both FTS and Vector indexes created
         Assert.Equal(2, indexes.Count);

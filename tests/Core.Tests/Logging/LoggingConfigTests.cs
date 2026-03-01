@@ -24,6 +24,7 @@ public sealed class LoggingConfigTests
         Assert.Equal(LogEventLevel.Information, config.Level);
     }
 
+
     /// <summary>
     /// Verifies file path is null by default (file logging disabled).
     /// File logging should only be enabled when explicitly configured.
@@ -37,6 +38,7 @@ public sealed class LoggingConfigTests
         // Assert
         Assert.Null(config.FilePath);
     }
+
 
     /// <summary>
     /// Verifies log level can be set to Verbose for detailed debugging.
@@ -54,6 +56,7 @@ public sealed class LoggingConfigTests
         Assert.Equal(LogEventLevel.Verbose, config.Level);
     }
 
+
     /// <summary>
     /// Verifies log level can be set to Debug.
     /// </summary>
@@ -69,6 +72,7 @@ public sealed class LoggingConfigTests
         // Assert
         Assert.Equal(LogEventLevel.Debug, config.Level);
     }
+
 
     /// <summary>
     /// Verifies log level can be set to Warning.
@@ -86,6 +90,7 @@ public sealed class LoggingConfigTests
         Assert.Equal(LogEventLevel.Warning, config.Level);
     }
 
+
     /// <summary>
     /// Verifies log level can be set to Error.
     /// </summary>
@@ -102,6 +107,7 @@ public sealed class LoggingConfigTests
         Assert.Equal(LogEventLevel.Error, config.Level);
     }
 
+
     /// <summary>
     /// Verifies log level can be set to Fatal.
     /// </summary>
@@ -117,6 +123,7 @@ public sealed class LoggingConfigTests
         // Assert
         Assert.Equal(LogEventLevel.Fatal, config.Level);
     }
+
 
     /// <summary>
     /// Verifies file path can be set to a relative path.
@@ -135,6 +142,7 @@ public sealed class LoggingConfigTests
         Assert.Equal("logs/app.log", config.FilePath);
     }
 
+
     /// <summary>
     /// Verifies file path can be set to an absolute path.
     /// </summary>
@@ -152,6 +160,7 @@ public sealed class LoggingConfigTests
         Assert.Equal(absolutePath, config.FilePath);
     }
 
+
     /// <summary>
     /// Verifies UseJsonFormat is false by default (human-readable).
     /// Human-readable format is better for development and CLI usage.
@@ -165,6 +174,7 @@ public sealed class LoggingConfigTests
         // Assert
         Assert.False(config.UseJsonFormat);
     }
+
 
     /// <summary>
     /// Verifies UseJsonFormat can be enabled for structured logging.
@@ -182,6 +192,7 @@ public sealed class LoggingConfigTests
         Assert.True(config.UseJsonFormat);
     }
 
+
     /// <summary>
     /// Verifies UseAsyncLogging is false by default (sync for CLI).
     /// Sync logging is better for short-lived CLI commands.
@@ -195,6 +206,7 @@ public sealed class LoggingConfigTests
         // Assert
         Assert.False(config.UseAsyncLogging);
     }
+
 
     /// <summary>
     /// Verifies UseAsyncLogging can be enabled for services.
@@ -213,6 +225,7 @@ public sealed class LoggingConfigTests
         Assert.True(config.UseAsyncLogging);
     }
 
+
     /// <summary>
     /// Verifies IsFileLoggingEnabled returns false when FilePath is null.
     /// </summary>
@@ -225,6 +238,7 @@ public sealed class LoggingConfigTests
         // Act & Assert
         Assert.False(config.IsFileLoggingEnabled);
     }
+
 
     /// <summary>
     /// Verifies IsFileLoggingEnabled returns false when FilePath is empty.
@@ -239,6 +253,7 @@ public sealed class LoggingConfigTests
         Assert.False(config.IsFileLoggingEnabled);
     }
 
+
     /// <summary>
     /// Verifies IsFileLoggingEnabled returns false when FilePath is whitespace.
     /// </summary>
@@ -251,6 +266,7 @@ public sealed class LoggingConfigTests
         // Act & Assert
         Assert.False(config.IsFileLoggingEnabled);
     }
+
 
     /// <summary>
     /// Verifies IsFileLoggingEnabled returns true when FilePath is set.

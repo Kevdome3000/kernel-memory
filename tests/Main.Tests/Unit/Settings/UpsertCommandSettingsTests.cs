@@ -24,6 +24,7 @@ public sealed class UpsertCommandSettingsTests
         Assert.True(result.Successful);
     }
 
+
     [Fact]
     public void Validate_WithEmptyContent_ReturnsError()
     {
@@ -41,6 +42,7 @@ public sealed class UpsertCommandSettingsTests
         Assert.Contains("Content cannot be empty", result.Message ?? string.Empty);
     }
 
+
     [Fact]
     public void Validate_WithWhitespaceContent_ReturnsError()
     {
@@ -56,6 +58,7 @@ public sealed class UpsertCommandSettingsTests
         // Assert
         Assert.False(result.Successful);
     }
+
 
     [Fact]
     public void Validate_WithInvalidBaseOptions_ReturnsError()
@@ -73,6 +76,7 @@ public sealed class UpsertCommandSettingsTests
         // Assert
         Assert.False(result.Successful);
     }
+
 
     [Fact]
     public void Validate_WithAllOptionalFields_ReturnsSuccess()
@@ -94,6 +98,7 @@ public sealed class UpsertCommandSettingsTests
         // Assert
         Assert.True(result.Successful);
     }
+
 
     [Fact]
     public void DefaultMimeType_IsTextPlain()

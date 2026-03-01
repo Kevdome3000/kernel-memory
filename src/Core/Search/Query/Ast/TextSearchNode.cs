@@ -22,6 +22,7 @@ public sealed class TextSearchNode : QueryNode
     /// </summary>
     public FieldNode? Field { get; init; }
 
+
     /// <summary>
     /// Accept a visitor for AST traversal.
     /// </summary>

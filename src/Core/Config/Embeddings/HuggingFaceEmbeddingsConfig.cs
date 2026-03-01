@@ -36,44 +36,46 @@ public sealed class HuggingFaceEmbeddingsConfig : EmbeddingsConfig
     [JsonPropertyName("baseUrl")]
     public string BaseUrl { get; set; } = Constants.EmbeddingDefaults.DefaultHuggingFaceBaseUrl;
 
+
     /// <inheritdoc />
     public override void Validate(string path)
     {
-        if (string.IsNullOrWhiteSpace(this.Model))
+        if (string.IsNullOrWhiteSpace(Model))
         {
             throw new ConfigException($"{path}.Model", "HuggingFace model name is required");
         }
 
         // ApiKey can be provided via config or HF_TOKEN environment variable.
         // Resolve env var into config so downstream code can rely on configuration only.
-        if (string.IsNullOrWhiteSpace(this.ApiKey))
+        if (string.IsNullOrWhiteSpace(ApiKey))
         {
             var token = Environment.GetEnvironmentVariable("HF_TOKEN");
+
             if (!string.IsNullOrWhiteSpace(token))
             {
-                this.ApiKey = token;
+                ApiKey = token;
             }
         }
 
-        if (string.IsNullOrWhiteSpace(this.ApiKey))
+        if (string.IsNullOrWhiteSpace(ApiKey))
         {
             throw new ConfigException($"{path}.ApiKey", "HuggingFace API key is required (set ApiKey or HF_TOKEN)");
         }
 
-        if (this.BatchSize < 1)
+        if (BatchSize < 1)
         {
             throw new ConfigException($"{path}.BatchSize", "BatchSize must be >= 1");
         }
 
-        if (string.IsNullOrWhiteSpace(this.BaseUrl))
+        if (string.IsNullOrWhiteSpace(BaseUrl))
         {
             throw new ConfigException($"{path}.BaseUrl", "HuggingFace base URL is required");
         }
 
-        if (!Uri.TryCreate(this.BaseUrl, UriKind.Absolute, out _))
+        if (!Uri.TryCreate(BaseUrl, UriKind.Absolute, out _))
         {
             throw new ConfigException($"{path}.BaseUrl",
-                $"Invalid HuggingFace base URL: {this.BaseUrl}");
+                $"Invalid HuggingFace base URL: {BaseUrl}");
         }
     }
 }

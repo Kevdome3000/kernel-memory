@@ -1,5 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved.
 
+using System.Diagnostics;
+using System.Text.RegularExpressions;
+
 namespace KernelMemory.Main.Tests.Integration;
 
 /// <summary>
@@ -30,7 +33,7 @@ public sealed class ExamplesCommandOutputTest
         {
             // Act: Execute km examples via bash with isolated config path
             // Note: --config must come AFTER the command name (Spectre.Console.Cli requirement)
-            var process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            var process = Process.Start(new ProcessStartInfo
             {
                 FileName = "bash",
                 Arguments = $"-c \"dotnet \\\"{kmDll}\\\" examples --config \\\"{tempConfigPath}\\\" > \\\"{outputFile}\\\" 2>&1\"",
@@ -78,8 +81,8 @@ public sealed class ExamplesCommandOutputTest
             Assert.Contains("--tags", output);
 
             // Count example commands
-            var searchCount = System.Text.RegularExpressions.Regex.Matches(output, "km search").Count;
-            var putCount = System.Text.RegularExpressions.Regex.Matches(output, "km put").Count;
+            var searchCount = Regex.Matches(output, "km search").Count;
+            var putCount = Regex.Matches(output, "km put").Count;
 
             Assert.True(searchCount >= 15, $"Expected >= 15 search examples, found {searchCount}");
             Assert.True(putCount >= 5, $"Expected >= 5 put examples, found {putCount}");
@@ -95,7 +98,7 @@ public sealed class ExamplesCommandOutputTest
             // Clean up temp directory
             if (Directory.Exists(tempDir))
             {
-                Directory.Delete(tempDir, recursive: true);
+                Directory.Delete(tempDir, true);
             }
         }
     }

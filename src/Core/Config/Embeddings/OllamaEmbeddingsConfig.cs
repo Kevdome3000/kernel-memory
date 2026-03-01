@@ -26,28 +26,29 @@ public sealed class OllamaEmbeddingsConfig : EmbeddingsConfig
     [JsonPropertyName("baseUrl")]
     public string BaseUrl { get; set; } = "http://localhost:11434";
 
+
     /// <inheritdoc />
     public override void Validate(string path)
     {
-        if (string.IsNullOrWhiteSpace(this.Model))
+        if (string.IsNullOrWhiteSpace(Model))
         {
             throw new ConfigException($"{path}.Model", "Ollama model name is required");
         }
 
-        if (string.IsNullOrWhiteSpace(this.BaseUrl))
+        if (string.IsNullOrWhiteSpace(BaseUrl))
         {
             throw new ConfigException($"{path}.BaseUrl", "Ollama base URL is required");
         }
 
-        if (this.BatchSize < 1)
+        if (BatchSize < 1)
         {
             throw new ConfigException($"{path}.BatchSize", "BatchSize must be >= 1");
         }
 
-        if (!Uri.TryCreate(this.BaseUrl, UriKind.Absolute, out _))
+        if (!Uri.TryCreate(BaseUrl, UriKind.Absolute, out _))
         {
             throw new ConfigException($"{path}.BaseUrl",
-                $"Invalid Ollama base URL: {this.BaseUrl}");
+                $"Invalid Ollama base URL: {BaseUrl}");
         }
     }
 }

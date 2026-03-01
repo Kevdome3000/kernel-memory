@@ -61,6 +61,7 @@ public sealed class AppConfigTests
         Assert.IsType<OllamaEmbeddingsConfig>(vectorIndex.Embeddings);
     }
 
+
     [Fact]
     public void Validate_WithValidConfig_ShouldNotThrow()
     {
@@ -70,6 +71,7 @@ public sealed class AppConfigTests
         // Act & Assert - should not throw
         config.Validate();
     }
+
 
     [Fact]
     public void Validate_WithNoNodes_ShouldThrowConfigException()
@@ -86,6 +88,7 @@ public sealed class AppConfigTests
         Assert.Contains("At least one node must be configured", exception.Message);
     }
 
+
     [Fact]
     public void Validate_WithEmptyNodeId_ShouldThrowConfigException()
     {
@@ -94,7 +97,7 @@ public sealed class AppConfigTests
         {
             Nodes = new Dictionary<string, NodeConfig>
             {
-                [""] = new NodeConfig
+                [""] = new()
                 {
                     Id = "test",
                     ContentIndex = new SqliteContentIndexConfig { Path = "test.db" }
@@ -108,6 +111,7 @@ public sealed class AppConfigTests
         Assert.Contains("Node ID cannot be empty", exception.Message);
     }
 
+
     [Fact]
     public void Validate_WithInvalidNodeConfig_ShouldThrowConfigException()
     {
@@ -116,7 +120,7 @@ public sealed class AppConfigTests
         {
             Nodes = new Dictionary<string, NodeConfig>
             {
-                ["test"] = new NodeConfig
+                ["test"] = new()
                 {
                     Id = "", // Invalid: empty ID
                     ContentIndex = new SqliteContentIndexConfig { Path = "test.db" }
@@ -129,6 +133,7 @@ public sealed class AppConfigTests
         Assert.Equal("Nodes.test", exception.ConfigPath);
         Assert.Contains("Node ID is required", exception.Message);
     }
+
 
     [Fact]
     public void Validate_WithInvalidEmbeddingsCache_ShouldThrowConfigException()
@@ -147,6 +152,7 @@ public sealed class AppConfigTests
         Assert.Contains("SQLite cache requires Path", exception.Message);
     }
 
+
     [Fact]
     public void Validate_WithInvalidLLMCache_ShouldThrowConfigException()
     {
@@ -163,6 +169,7 @@ public sealed class AppConfigTests
         Assert.Equal("LLMCache.ConnectionString", exception.ConfigPath);
         Assert.Contains("PostgreSQL cache requires ConnectionString", exception.Message);
     }
+
 
     [Fact]
     public void Validate_WithMultipleNodes_ShouldValidateAll()
@@ -185,6 +192,7 @@ public sealed class AppConfigTests
         Assert.True(config.Nodes.ContainsKey("work"));
     }
 
+
     [Fact]
     public void Validate_PropagatesPathInErrors()
     {
@@ -193,7 +201,7 @@ public sealed class AppConfigTests
         {
             Nodes = new Dictionary<string, NodeConfig>
             {
-                ["mynode"] = new NodeConfig
+                ["mynode"] = new()
                 {
                     Id = "mynode",
                     ContentIndex = new SqliteContentIndexConfig { Path = "" } // Invalid: empty path

@@ -21,35 +21,38 @@ public sealed class ExamplesCommand : Command<ExamplesCommand.Settings>
         public string? Command { get; init; }
     }
 
+
     /// <inheritdoc />
     public override int Execute(CommandContext context, Settings settings, CancellationToken cancellationToken)
     {
         if (!string.IsNullOrEmpty(settings.Command))
         {
-            this.ShowCommandExamples(settings.Command);
+            ShowCommandExamples(settings.Command);
         }
         else
         {
-            this.ShowAllExamples();
+            ShowAllExamples();
         }
 
         return 0;
     }
+
 
     private void ShowAllExamples()
     {
         AnsiConsole.Write(new Rule("[bold cyan]📚 Kernel Memory - Quick Start Guide[/]").LeftJustified());
         AnsiConsole.WriteLine();
 
-        this.ShowPutExamples();
-        this.ShowSearchExamples();
-        this.ShowListExamples();
-        this.ShowGetExamples();
-        this.ShowDeleteExamples();
-        this.ShowNodesExamples();
-        this.ShowConfigExamples();
-        this.ShowAdvancedExamples();
+        ShowPutExamples();
+        ShowSearchExamples();
+        ShowListExamples();
+        ShowGetExamples();
+        ShowDeleteExamples();
+        ShowNodesExamples();
+        ShowConfigExamples();
+        ShowAdvancedExamples();
     }
+
 
     private void ShowCommandExamples(string command)
     {
@@ -61,29 +64,29 @@ public sealed class ExamplesCommand : Command<ExamplesCommand.Settings>
         switch (normalizedCommand)
         {
             case "search":
-                this.ShowSearchExamples();
+                ShowSearchExamples();
                 break;
             case "put":
             case "upsert":
-                this.ShowPutExamples();
+                ShowPutExamples();
                 break;
             case "get":
-                this.ShowGetExamples();
+                ShowGetExamples();
                 break;
             case "list":
-                this.ShowListExamples();
+                ShowListExamples();
                 break;
             case "delete":
-                this.ShowDeleteExamples();
+                ShowDeleteExamples();
                 break;
             case "nodes":
-                this.ShowNodesExamples();
+                ShowNodesExamples();
                 break;
             case "config":
-                this.ShowConfigExamples();
+                ShowConfigExamples();
                 break;
             case "advanced":
-                this.ShowAdvancedExamples();
+                ShowAdvancedExamples();
                 break;
             default:
                 AnsiConsole.MarkupLine($"[red]Unknown command: {command}[/]");
@@ -91,6 +94,7 @@ public sealed class ExamplesCommand : Command<ExamplesCommand.Settings>
                 break;
         }
     }
+
 
     private void ShowSearchExamples()
     {
@@ -184,6 +188,7 @@ public sealed class ExamplesCommand : Command<ExamplesCommand.Settings>
         AnsiConsole.WriteLine();
     }
 
+
     private void ShowPutExamples()
     {
         AnsiConsole.Write(new Rule("[green]📤 SAVE - Store your thoughts and files[/]").LeftJustified());
@@ -220,6 +225,7 @@ public sealed class ExamplesCommand : Command<ExamplesCommand.Settings>
         AnsiConsole.WriteLine();
     }
 
+
     private void ShowGetExamples()
     {
         AnsiConsole.Write(new Rule("[blue]📥 RETRIEVE - Get your saved content[/]").LeftJustified());
@@ -245,6 +251,7 @@ public sealed class ExamplesCommand : Command<ExamplesCommand.Settings>
         AnsiConsole.MarkupLine("[dim]Retrieve from your personal collection[/]");
         AnsiConsole.WriteLine();
     }
+
 
     private void ShowListExamples()
     {
@@ -272,6 +279,7 @@ public sealed class ExamplesCommand : Command<ExamplesCommand.Settings>
         AnsiConsole.WriteLine();
     }
 
+
     private void ShowDeleteExamples()
     {
         AnsiConsole.Write(new Rule("[red]🗑  REMOVE - Clean up old notes[/]").LeftJustified());
@@ -293,6 +301,7 @@ public sealed class ExamplesCommand : Command<ExamplesCommand.Settings>
         AnsiConsole.WriteLine();
     }
 
+
     private void ShowNodesExamples()
     {
         AnsiConsole.Write(new Rule("[blue]🗂  COLLECTIONS - Your note spaces[/]").LeftJustified());
@@ -313,6 +322,7 @@ public sealed class ExamplesCommand : Command<ExamplesCommand.Settings>
         AnsiConsole.MarkupLine("[dim]Easy-to-read collection settings[/]");
         AnsiConsole.WriteLine();
     }
+
 
     private void ShowConfigExamples()
     {
@@ -344,6 +354,7 @@ public sealed class ExamplesCommand : Command<ExamplesCommand.Settings>
         AnsiConsole.MarkupLine("[dim]Use a specific settings file for this command[/]");
         AnsiConsole.WriteLine();
     }
+
 
     private void ShowAdvancedExamples()
     {

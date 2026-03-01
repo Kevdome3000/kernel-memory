@@ -1,4 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved.
+using System.Diagnostics.CodeAnalysis;
+
 namespace KernelMemory.Core.Search.Models;
 
 /// <summary>
@@ -27,13 +29,13 @@ public sealed class SearchMetadata
     /// Per-node timing information.
     /// Useful for identifying slow nodes.
     /// </summary>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
+    [SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
     public NodeTiming[] NodeTimings { get; init; } = [];
 
     /// <summary>
     /// Warnings encountered during search.
     /// Examples: node timeouts, unavailable indexes, etc.
     /// </summary>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
+    [SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
     public string[] Warnings { get; init; } = [];
 }

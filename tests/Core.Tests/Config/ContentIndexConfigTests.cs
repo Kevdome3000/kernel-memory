@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved.
 using KernelMemory.Core.Config;
+using KernelMemory.Core.Config.ContentIndex;
 using KernelMemory.Core.Config.Validation;
 
 namespace KernelMemory.Core.Tests.Config;
@@ -37,7 +38,7 @@ public sealed class ContentIndexConfigTests
             // Assert
             Assert.NotNull(config);
             var node = config.Nodes["test"];
-            var postgresIndex = Assert.IsType<KernelMemory.Core.Config.ContentIndex.PostgresContentIndexConfig>(node.ContentIndex);
+            var postgresIndex = Assert.IsType<PostgresContentIndexConfig>(node.ContentIndex);
             Assert.Equal("Host=localhost;Database=testdb;Username=test;Password=test", postgresIndex.ConnectionString);
         }
         finally
@@ -48,6 +49,7 @@ public sealed class ContentIndexConfigTests
             }
         }
     }
+
 
     [Fact]
     public void LoadFromFile_WithPostgresContentIndexMissingConnectionString_ShouldThrowConfigException()

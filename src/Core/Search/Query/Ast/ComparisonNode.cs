@@ -25,6 +25,7 @@ public sealed class ComparisonNode : QueryNode
     /// </summary>
     public LiteralNode? Value { get; init; }
 
+
     /// <summary>
     /// Accept a visitor for AST traversal.
     /// </summary>

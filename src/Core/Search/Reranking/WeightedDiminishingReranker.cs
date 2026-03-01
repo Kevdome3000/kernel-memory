@@ -32,14 +32,15 @@ public sealed class WeightedDiminishingReranker : ISearchReranker
 
         // Phase 1: Apply weights to each index result
         var weightedResults = results.Select(r => (
-            Result: r,
-            WeightedScore: this.ApplyWeights(r, config)
-        )).ToList();
+                Result: r,
+                WeightedScore: ApplyWeights(r, config)
+            ))
+            .ToList();
 
         // Phase 2: Group by record ID and aggregate with diminishing returns
         var aggregated = weightedResults
             .GroupBy(r => r.Result.RecordId)
-            .Select(group => this.AggregateRecord(group.Key, [.. group], config))
+            .Select(group => AggregateRecord(group.Key, [.. group], config))
             .ToArray();
 
         // Sort by final relevance (descending), then by createdAt (descending) for recency bias
@@ -48,6 +49,7 @@ public sealed class WeightedDiminishingReranker : ISearchReranker
             .ThenByDescending(r => r.CreatedAt)
             .ToArray();
     }
+
 
     /// <summary>
     /// Apply node and index weights to a single index result.
@@ -62,6 +64,7 @@ public sealed class WeightedDiminishingReranker : ISearchReranker
 
         // Get index weight (default to 1.0 if not configured)
         var indexWeight = Constants.SearchDefaults.DefaultIndexWeight;
+
         if (config.IndexWeights.TryGetValue(result.NodeId, out var nodeIndexes))
         {
             if (nodeIndexes.TryGetValue(result.IndexId, out var iw))
@@ -75,6 +78,7 @@ public sealed class WeightedDiminishingReranker : ISearchReranker
 
         return weighted;
     }
+
 
     /// <summary>
     /// Aggregate multiple appearances of the same record with diminishing returns.

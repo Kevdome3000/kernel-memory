@@ -1,4 +1,5 @@
 // Copyright (c) Microsoft. All rights reserved.
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.Json;
 using KernelMemory.Core.Search;
@@ -21,6 +22,7 @@ public class ContentStorageService : IContentStorage
     private readonly ILogger<ContentStorageService> _logger;
     private readonly IReadOnlyDictionary<string, ISearchIndex> _searchIndexById;
 
+
     /// <summary>
     /// Initializes ContentStorageService without search indexes.
     /// </summary>
@@ -31,9 +33,13 @@ public class ContentStorageService : IContentStorage
         ContentStorageDbContext context,
         ICuidGenerator cuidGenerator,
         ILogger<ContentStorageService> logger)
-        : this(context, cuidGenerator, logger, new Dictionary<string, ISearchIndex>())
+        : this(context,
+            cuidGenerator,
+            logger,
+            new Dictionary<string, ISearchIndex>())
     {
     }
+
 
     /// <summary>
     /// Initializes ContentStorageService with search indexes.
@@ -48,11 +54,12 @@ public class ContentStorageService : IContentStorage
         ILogger<ContentStorageService> logger,
         IReadOnlyDictionary<string, ISearchIndex> searchIndexById)
     {
-        this._context = context;
-        this._cuidGenerator = cuidGenerator;
-        this._logger = logger;
-        this._searchIndexById = searchIndexById;
+        _context = context;
+        _cuidGenerator = cuidGenerator;
+        _logger = logger;
+        _searchIndexById = searchIndexById;
     }
+
 
     /// <summary>
     /// Upserts content following the two-phase write pattern.
@@ -60,57 +67,67 @@ public class ContentStorageService : IContentStorage
     /// </summary>
     /// <param name="request"></param>
     /// <param name="cancellationToken"></param>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Best-effort error handling for phase 2 and processing - operation is queued successfully in phase 1")]
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Best-effort error handling for phase 2 and processing - operation is queued successfully in phase 1")]
     public async Task<WriteResult> UpsertAsync(UpsertRequest request, CancellationToken cancellationToken = default)
     {
         // Generate ID if not provided
         var contentId = string.IsNullOrWhiteSpace(request.Id)
-            ? this._cuidGenerator.Generate()
+            ? _cuidGenerator.Generate()
             : request.Id;
 
-        this._logger.LogInformation("Starting upsert operation for content ID: {ContentId}", contentId);
+        _logger.LogInformation("Starting upsert operation for content ID: {ContentId}", contentId);
 
         // Phase 1: Queue the operation (MUST succeed - throws if fails)
-        var operationId = await this.QueueUpsertOperationAsync(contentId, request, cancellationToken).ConfigureAwait(false);
-        this._logger.LogInformation("Upsert queued successfully - ContentId: {ContentId}, OperationId: {OperationId}, MimeType: {MimeType}, Size: {ByteSize} bytes",
-            contentId, operationId, request.MimeType, request.Content.Length);
+        var operationId = await QueueUpsertOperationAsync(contentId, request, cancellationToken).ConfigureAwait(false);
+        _logger.LogInformation("Upsert queued successfully - ContentId: {ContentId}, OperationId: {OperationId}, MimeType: {MimeType}, Size: {ByteSize} bytes",
+            contentId,
+            operationId,
+            request.MimeType,
+            request.Content.Length);
 
         // Phase 2: Try to cancel superseded operations (best effort)
         try
         {
-            var cancelledCount = await this.TryCancelSupersededUpsertOperationsAsync(contentId, operationId, cancellationToken).ConfigureAwait(false);
+            var cancelledCount = await TryCancelSupersededUpsertOperationsAsync(contentId, operationId, cancellationToken).ConfigureAwait(false);
+
             if (cancelledCount > 0)
             {
-                this._logger.LogInformation("Superseded {CancelledCount} older operation(s) for ContentId: {ContentId}, keeping latest OperationId: {OperationId}",
-                    cancelledCount, contentId, operationId);
+                _logger.LogInformation("Superseded {CancelledCount} older operation(s) for ContentId: {ContentId}, keeping latest OperationId: {OperationId}",
+                    cancelledCount,
+                    contentId,
+                    operationId);
             }
             else
             {
-                this._logger.LogDebug("No superseded operations to cancel for ContentId: {ContentId}, OperationId: {OperationId}",
-                    contentId, operationId);
+                _logger.LogDebug("No superseded operations to cancel for ContentId: {ContentId}, OperationId: {OperationId}",
+                    contentId,
+                    operationId);
             }
         }
         catch (Exception ex)
         {
             // Best effort - log but don't fail
-            this._logger.LogWarning(ex, "Failed to cancel superseded operations for ContentId: {ContentId}, OperationId: {OperationId} - continuing anyway",
-                contentId, operationId);
+            _logger.LogWarning(ex,
+                "Failed to cancel superseded operations for ContentId: {ContentId}, OperationId: {OperationId} - continuing anyway",
+                contentId,
+                operationId);
         }
 
         // Processing: Try to process the new operation synchronously
         try
         {
-            await this.TryProcessNextOperationAsync(contentId, cancellationToken).ConfigureAwait(false);
-            this._logger.LogDebug("Processing complete for content {ContentId}", contentId);
+            await TryProcessNextOperationAsync(contentId, cancellationToken).ConfigureAwait(false);
+            _logger.LogDebug("Processing complete for content {ContentId}", contentId);
             return WriteResult.Success(contentId);
         }
         catch (Exception ex)
         {
             // Log but don't fail - operation is queued and will be processed eventually
-            this._logger.LogWarning(ex, "Failed to process operation synchronously for content {ContentId} - will be processed by background worker", contentId);
+            _logger.LogWarning(ex, "Failed to process operation synchronously for content {ContentId} - will be processed by background worker", contentId);
             return WriteResult.QueuedOnly(contentId, ex.Message);
         }
     }
+
 
     /// <summary>
     /// Deletes content following the two-phase write pattern.
@@ -118,52 +135,60 @@ public class ContentStorageService : IContentStorage
     /// </summary>
     /// <param name="id"></param>
     /// <param name="cancellationToken"></param>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Best-effort error handling for phase 2 and processing - operation is queued successfully in phase 1")]
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Best-effort error handling for phase 2 and processing - operation is queued successfully in phase 1")]
     public async Task<WriteResult> DeleteAsync(string id, CancellationToken cancellationToken = default)
     {
-        this._logger.LogInformation("Starting delete operation for content ID: {ContentId}", id);
+        _logger.LogInformation("Starting delete operation for content ID: {ContentId}", id);
 
         // Phase 1: Queue the operation (MUST succeed - throws if fails)
-        var operationId = await this.QueueDeleteOperationAsync(id, cancellationToken).ConfigureAwait(false);
-        this._logger.LogInformation("Delete queued successfully - ContentId: {ContentId}, OperationId: {OperationId}",
-            id, operationId);
+        var operationId = await QueueDeleteOperationAsync(id, cancellationToken).ConfigureAwait(false);
+        _logger.LogInformation("Delete queued successfully - ContentId: {ContentId}, OperationId: {OperationId}",
+            id,
+            operationId);
 
         // Phase 2: Try to cancel ALL previous operations (best effort)
         try
         {
-            var cancelledCount = await this.TryCancelAllOperationsAsync(id, operationId, cancellationToken).ConfigureAwait(false);
+            var cancelledCount = await TryCancelAllOperationsAsync(id, operationId, cancellationToken).ConfigureAwait(false);
+
             if (cancelledCount > 0)
             {
-                this._logger.LogInformation("Cancelled {CancelledCount} previous operation(s) for ContentId: {ContentId}, proceeding with delete OperationId: {OperationId}",
-                    cancelledCount, id, operationId);
+                _logger.LogInformation("Cancelled {CancelledCount} previous operation(s) for ContentId: {ContentId}, proceeding with delete OperationId: {OperationId}",
+                    cancelledCount,
+                    id,
+                    operationId);
             }
             else
             {
-                this._logger.LogDebug("No previous operations to cancel for ContentId: {ContentId}, OperationId: {OperationId}",
-                    id, operationId);
+                _logger.LogDebug("No previous operations to cancel for ContentId: {ContentId}, OperationId: {OperationId}",
+                    id,
+                    operationId);
             }
         }
         catch (Exception ex)
         {
             // Best effort - log but don't fail
-            this._logger.LogWarning(ex, "Failed to cancel previous operations for ContentId: {ContentId}, OperationId: {OperationId} - continuing anyway",
-                id, operationId);
+            _logger.LogWarning(ex,
+                "Failed to cancel previous operations for ContentId: {ContentId}, OperationId: {OperationId} - continuing anyway",
+                id,
+                operationId);
         }
 
         // Processing: Try to process the new operation synchronously
         try
         {
-            await this.TryProcessNextOperationAsync(id, cancellationToken).ConfigureAwait(false);
-            this._logger.LogDebug("Processing complete for content {ContentId}", id);
+            await TryProcessNextOperationAsync(id, cancellationToken).ConfigureAwait(false);
+            _logger.LogDebug("Processing complete for content {ContentId}", id);
             return WriteResult.Success(id);
         }
         catch (Exception ex)
         {
             // Log but don't fail - operation is queued and will be processed eventually
-            this._logger.LogWarning(ex, "Failed to process operation synchronously for content {ContentId} - will be processed by background worker", id);
+            _logger.LogWarning(ex, "Failed to process operation synchronously for content {ContentId} - will be processed by background worker", id);
             return WriteResult.QueuedOnly(id, ex.Message);
         }
     }
+
 
     /// <summary>
     /// Retrieves content by ID.
@@ -172,9 +197,10 @@ public class ContentStorageService : IContentStorage
     /// <param name="cancellationToken"></param>
     public async Task<ContentDto?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
     {
-        var record = await this._context.Content
+        var record = await _context.Content
             .AsNoTracking()
-            .FirstOrDefaultAsync(c => c.Id == id, cancellationToken).ConfigureAwait(false);
+            .FirstOrDefaultAsync(c => c.Id == id, cancellationToken)
+            .ConfigureAwait(false);
 
         if (record == null)
         {
@@ -197,14 +223,16 @@ public class ContentStorageService : IContentStorage
         };
     }
 
+
     /// <summary>
     /// Counts total number of content records.
     /// </summary>
     /// <param name="cancellationToken"></param>
     public async Task<long> CountAsync(CancellationToken cancellationToken = default)
     {
-        return await this._context.Content.LongCountAsync(cancellationToken).ConfigureAwait(false);
+        return await _context.Content.LongCountAsync(cancellationToken).ConfigureAwait(false);
     }
+
 
     /// <summary>
     /// Lists content records with pagination support.
@@ -215,30 +243,34 @@ public class ContentStorageService : IContentStorage
     /// <returns>List of content DTOs.</returns>
     public async Task<List<ContentDto>> ListAsync(int skip, int take, CancellationToken cancellationToken = default)
     {
-        var records = await this._context.Content
+        var records = await _context.Content
             .AsNoTracking()
             .OrderByDescending(c => c.RecordCreatedAt)
             .Skip(skip)
             .Take(take)
-            .ToListAsync(cancellationToken).ConfigureAwait(false);
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
 
         return records.Select(record => new ContentDto
-        {
-            Id = record.Id,
-            Content = record.Content,
-            MimeType = record.MimeType,
-            ByteSize = record.ByteSize,
-            ContentCreatedAt = record.ContentCreatedAt,
-            RecordCreatedAt = record.RecordCreatedAt,
-            RecordUpdatedAt = record.RecordUpdatedAt,
-            Title = record.Title,
-            Description = record.Description,
-            Tags = record.Tags,
-            Metadata = record.Metadata
-        }).ToList();
+            {
+                Id = record.Id,
+                Content = record.Content,
+                MimeType = record.MimeType,
+                ByteSize = record.ByteSize,
+                ContentCreatedAt = record.ContentCreatedAt,
+                RecordCreatedAt = record.RecordCreatedAt,
+                RecordUpdatedAt = record.RecordUpdatedAt,
+                Title = record.Title,
+                Description = record.Description,
+                Tags = record.Tags,
+                Metadata = record.Metadata
+            })
+            .ToList();
     }
 
+
     // ========== Phase 1: Queue Operations (REQUIRED) ==========
+
 
     /// <summary>
     /// Phase 1: Queue an upsert operation. Must succeed.
@@ -252,14 +284,14 @@ public class ContentStorageService : IContentStorage
         var steps = new List<string> { "upsert" };
 
         // Add step for each configured search index using its ID
-        foreach (var indexId in this._searchIndexById.Keys)
+        foreach (var indexId in _searchIndexById.Keys)
         {
             steps.Add($"index:{indexId}");
         }
 
         var operation = new OperationRecord
         {
-            Id = this._cuidGenerator.Generate(),
+            Id = _cuidGenerator.Generate(),
             Complete = false,
             Cancelled = false,
             ContentId = contentId,
@@ -272,12 +304,16 @@ public class ContentStorageService : IContentStorage
             LastAttemptTimestamp = null
         };
 
-        this._context.Operations.Add(operation);
-        await this._context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        _context.Operations.Add(operation);
+        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-        this._logger.LogDebug("Queued upsert operation {OperationId} for content {ContentId} with steps: {Steps}", operation.Id, contentId, string.Join(", ", steps));
+        _logger.LogDebug("Queued upsert operation {OperationId} for content {ContentId} with steps: {Steps}",
+            operation.Id,
+            contentId,
+            string.Join(", ", steps));
         return operation.Id;
     }
+
 
     /// <summary>
     /// Phase 1: Queue a delete operation. Must succeed.
@@ -290,14 +326,14 @@ public class ContentStorageService : IContentStorage
         var steps = new List<string> { "delete" };
 
         // Add delete step for each configured search index using its ID
-        foreach (var indexId in this._searchIndexById.Keys)
+        foreach (var indexId in _searchIndexById.Keys)
         {
             steps.Add($"index:{indexId}:delete");
         }
 
         var operation = new OperationRecord
         {
-            Id = this._cuidGenerator.Generate(),
+            Id = _cuidGenerator.Generate(),
             Complete = false,
             Cancelled = false,
             ContentId = contentId,
@@ -310,14 +346,19 @@ public class ContentStorageService : IContentStorage
             LastAttemptTimestamp = null
         };
 
-        this._context.Operations.Add(operation);
-        await this._context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        _context.Operations.Add(operation);
+        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-        this._logger.LogDebug("Queued delete operation {OperationId} for content {ContentId} with steps: {Steps}", operation.Id, contentId, string.Join(", ", steps));
+        _logger.LogDebug("Queued delete operation {OperationId} for content {ContentId} with steps: {Steps}",
+            operation.Id,
+            contentId,
+            string.Join(", ", steps));
         return operation.Id;
     }
 
+
     // ========== Phase 2: Optimize Queue (OPTIONAL - Best Effort) ==========
+
 
     /// <summary>
     /// Phase 2: Try to cancel superseded upsert operations (best effort).
@@ -331,32 +372,35 @@ public class ContentStorageService : IContentStorage
     {
         // Find incomplete operations with same ContentId and older Timestamp
         // Exclude Delete operations (they must complete)
-        var timestamp = await this._context.Operations
+        var timestamp = await _context.Operations
             .Where(o => o.Id == newOperationId)
             .Select(o => o.Timestamp)
-            .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+            .FirstOrDefaultAsync(cancellationToken)
+            .ConfigureAwait(false);
 
-        var superseded = await this._context.Operations
+        var superseded = await _context.Operations
             .Where(o => o.ContentId == contentId
                 && o.Id != newOperationId
                 && !o.Complete
                 && o.Timestamp < timestamp
                 && o.PlannedStepsJson.Contains("upsert")) // Only cancel upserts
-            .ToListAsync(cancellationToken).ConfigureAwait(false);
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
 
         foreach (var op in superseded)
         {
             op.Cancelled = true;
-            this._logger.LogDebug("Cancelled superseded operation {OperationId} for content {ContentId}", op.Id, contentId);
+            _logger.LogDebug("Cancelled superseded operation {OperationId} for content {ContentId}", op.Id, contentId);
         }
 
         if (superseded.Count > 0)
         {
-            await this._context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
 
         return superseded.Count;
     }
+
 
     /// <summary>
     /// Phase 2: Try to cancel ALL previous operations for delete (best effort).
@@ -368,33 +412,37 @@ public class ContentStorageService : IContentStorage
     private async Task<int> TryCancelAllOperationsAsync(string contentId, string newOperationId, CancellationToken cancellationToken)
     {
         // Find incomplete operations with same ContentId and older Timestamp
-        var timestamp = await this._context.Operations
+        var timestamp = await _context.Operations
             .Where(o => o.Id == newOperationId)
             .Select(o => o.Timestamp)
-            .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+            .FirstOrDefaultAsync(cancellationToken)
+            .ConfigureAwait(false);
 
-        var superseded = await this._context.Operations
+        var superseded = await _context.Operations
             .Where(o => o.ContentId == contentId
                 && o.Id != newOperationId
                 && !o.Complete
                 && o.Timestamp < timestamp)
-            .ToListAsync(cancellationToken).ConfigureAwait(false);
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
 
         foreach (var op in superseded)
         {
             op.Cancelled = true;
-            this._logger.LogDebug("Cancelled operation {OperationId} for content {ContentId} due to delete", op.Id, contentId);
+            _logger.LogDebug("Cancelled operation {OperationId} for content {ContentId} due to delete", op.Id, contentId);
         }
 
         if (superseded.Count > 0)
         {
-            await this._context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
 
         return superseded.Count;
     }
 
+
     // ========== Processing: Execute Operations ==========
+
 
     /// <summary>
     /// Try to process the next operation for a content ID.
@@ -402,74 +450,80 @@ public class ContentStorageService : IContentStorage
     /// </summary>
     /// <param name="contentId"></param>
     /// <param name="cancellationToken"></param>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Catch all to ensure operation failure is logged and content remains locked for retry")]
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Catch all to ensure operation failure is logged and content remains locked for retry")]
     private async Task TryProcessNextOperationAsync(string contentId, CancellationToken cancellationToken)
     {
         // Step 1: Get next operation to process
-        var operation = await this._context.Operations
+        var operation = await _context.Operations
             .Where(o => o.ContentId == contentId && !o.Complete)
             .OrderBy(o => o.Timestamp)
-            .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+            .FirstOrDefaultAsync(cancellationToken)
+            .ConfigureAwait(false);
 
         if (operation == null)
         {
-            this._logger.LogDebug("No operations to process for content {ContentId}", contentId);
+            _logger.LogDebug("No operations to process for content {ContentId}", contentId);
             return;
         }
 
         // Check if operation is locked
         if (operation.LastAttemptTimestamp.HasValue)
         {
-            this._logger.LogDebug("Operation {OperationId} is locked - skipping (no recovery)", operation.Id);
+            _logger.LogDebug("Operation {OperationId} is locked - skipping (no recovery)", operation.Id);
             return; // Skip locked operations
         }
 
         // If cancelled, mark complete and skip execution
         if (operation.Cancelled)
         {
-            this._logger.LogDebug("Operation {OperationId} was cancelled - marking complete", operation.Id);
+            _logger.LogDebug("Operation {OperationId} was cancelled - marking complete", operation.Id);
             operation.Complete = true;
             operation.LastFailureReason = "Cancelled";
-            await this._context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
             // Try to process next operation recursively
-            await this.TryProcessNextOperationAsync(contentId, cancellationToken).ConfigureAwait(false);
+            await TryProcessNextOperationAsync(contentId, cancellationToken).ConfigureAwait(false);
             return;
         }
 
         // Step 2: Acquire lock (Transaction 1)
-        var lockAcquired = await this.TryAcquireLockAsync(operation.Id, contentId, cancellationToken).ConfigureAwait(false);
+        var lockAcquired = await TryAcquireLockAsync(operation.Id, contentId, cancellationToken).ConfigureAwait(false);
+
         if (!lockAcquired)
         {
-            this._logger.LogDebug("Failed to acquire lock for operation {OperationId} - another VM got there first", operation.Id);
+            _logger.LogDebug("Failed to acquire lock for operation {OperationId} - another VM got there first", operation.Id);
             return; // Another VM got the lock
         }
 
-        this._logger.LogDebug("Lock acquired for operation {OperationId}", operation.Id);
+        _logger.LogDebug("Lock acquired for operation {OperationId}", operation.Id);
 
         try
         {
             // Step 3: Execute planned steps
-            await this.ExecuteStepsAsync(operation, cancellationToken).ConfigureAwait(false);
+            await ExecuteStepsAsync(operation, cancellationToken).ConfigureAwait(false);
 
             // Step 4: Complete and unlock (Transaction 2)
-            await this.CompleteAndUnlockAsync(operation.Id, contentId, cancellationToken).ConfigureAwait(false);
+            await CompleteAndUnlockAsync(operation.Id, contentId, cancellationToken).ConfigureAwait(false);
 
-            this._logger.LogInformation("Operation {OperationId} completed successfully for content {ContentId}", operation.Id, contentId);
+            _logger.LogInformation("Operation {OperationId} completed successfully for content {ContentId}", operation.Id, contentId);
 
             // Step 5: Process next operation (if any)
-            await this.TryProcessNextOperationAsync(contentId, cancellationToken).ConfigureAwait(false);
+            await TryProcessNextOperationAsync(contentId, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
             // Update failure reason
             operation.LastFailureReason = ex.Message;
-            await this._context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-            this._logger.LogError(ex, "Operation {OperationId} failed - content {ContentId} remains locked", operation.Id, contentId);
+            _logger.LogError(ex,
+                "Operation {OperationId} failed - content {ContentId} remains locked",
+                operation.Id,
+                contentId);
             throw; // Propagate error (operation and content remain locked)
         }
     }
+
 
     /// <summary>
     /// Step 2: Try to acquire lock on operation and content atomically.
@@ -481,7 +535,7 @@ public class ContentStorageService : IContentStorage
     private async Task<bool> TryAcquireLockAsync(string operationId, string contentId, CancellationToken cancellationToken)
     {
         // Start a transaction for atomic lock acquisition
-        using var transaction = await this._context.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+        using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
 
         try
         {
@@ -494,10 +548,11 @@ public class ContentStorageService : IContentStorage
                 WHERE Id = @p1 
                   AND LastAttemptTimestamp IS NULL";
 
-            var operationRows = await this._context.Database.ExecuteSqlRawAsync(
-                OperationSql,
-                [now, operationId],
-                cancellationToken).ConfigureAwait(false);
+            var operationRows = await _context.Database.ExecuteSqlRawAsync(
+                    OperationSql,
+                    [now, operationId],
+                    cancellationToken)
+                .ConfigureAwait(false);
 
             if (operationRows == 0)
             {
@@ -515,10 +570,11 @@ public class ContentStorageService : IContentStorage
 
             // Note: We don't check Ready = true because content might not exist yet (insert case)
             // We execute this to ensure content is locked if it exists
-            await this._context.Database.ExecuteSqlRawAsync(
-                ContentSql,
-                [now, contentId],
-                cancellationToken).ConfigureAwait(false);
+            await _context.Database.ExecuteSqlRawAsync(
+                    ContentSql,
+                    [now, contentId],
+                    cancellationToken)
+                .ConfigureAwait(false);
 
             // Commit transaction
             await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
@@ -531,6 +587,7 @@ public class ContentStorageService : IContentStorage
         }
     }
 
+
     /// <summary>
     /// Step 3: Execute all remaining steps for an operation.
     /// </summary>
@@ -540,21 +597,22 @@ public class ContentStorageService : IContentStorage
     {
         foreach (var step in operation.RemainingSteps)
         {
-            this._logger.LogDebug("Executing step '{Step}' for operation {OperationId}", step, operation.Id);
+            _logger.LogDebug("Executing step '{Step}' for operation {OperationId}", step, operation.Id);
 
             // Parse step name and execute
             if (step == "upsert")
             {
-                await this.ExecuteUpsertStepAsync(operation, cancellationToken).ConfigureAwait(false);
+                await ExecuteUpsertStepAsync(operation, cancellationToken).ConfigureAwait(false);
             }
             else if (step == "delete")
             {
-                await this.ExecuteDeleteStepAsync(operation, cancellationToken).ConfigureAwait(false);
+                await ExecuteDeleteStepAsync(operation, cancellationToken).ConfigureAwait(false);
             }
             else if (step.StartsWith("index:", StringComparison.Ordinal))
             {
                 // Parse: "index:fts-stemmed" or "index:fts-exact:delete"
                 var parts = step.Split(':');
+
                 if (parts.Length < 2)
                 {
                     throw new InvalidOperationException($"Invalid index step format: {step}");
@@ -565,11 +623,11 @@ public class ContentStorageService : IContentStorage
 
                 if (isDelete)
                 {
-                    await this.ExecuteIndexDeleteStepAsync(operation, indexId, cancellationToken).ConfigureAwait(false);
+                    await ExecuteIndexDeleteStepAsync(operation, indexId, cancellationToken).ConfigureAwait(false);
                 }
                 else
                 {
-                    await this.ExecuteIndexStepAsync(operation, indexId, cancellationToken).ConfigureAwait(false);
+                    await ExecuteIndexStepAsync(operation, indexId, cancellationToken).ConfigureAwait(false);
                 }
             }
             else
@@ -584,10 +642,11 @@ public class ContentStorageService : IContentStorage
             operation.CompletedSteps = completed;
             operation.RemainingSteps = remaining;
 
-            await this._context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-            this._logger.LogDebug("Step '{Step}' completed for operation {OperationId}", step, operation.Id);
+            await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            _logger.LogDebug("Step '{Step}' completed for operation {OperationId}", step, operation.Id);
         }
     }
+
 
     /// <summary>
     /// Execute upsert step: delete existing + create new (if exists).
@@ -603,11 +662,12 @@ public class ContentStorageService : IContentStorage
         var contentCreatedAt = request.ContentCreatedAt ?? now;
 
         // Delete existing record if it exists
-        var existing = await this._context.Content.FirstOrDefaultAsync(c => c.Id == operation.ContentId, cancellationToken).ConfigureAwait(false);
+        var existing = await _context.Content.FirstOrDefaultAsync(c => c.Id == operation.ContentId, cancellationToken).ConfigureAwait(false);
+
         if (existing != null)
         {
-            this._context.Content.Remove(existing);
-            this._logger.LogDebug("Deleted existing content {ContentId} for upsert", operation.ContentId);
+            _context.Content.Remove(existing);
+            _logger.LogDebug("Deleted existing content {ContentId} for upsert", operation.ContentId);
         }
 
         // Create new record
@@ -627,11 +687,12 @@ public class ContentStorageService : IContentStorage
             Metadata = request.Metadata
         };
 
-        this._context.Content.Add(content);
-        await this._context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        _context.Content.Add(content);
+        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-        this._logger.LogDebug("Created new content record {ContentId}", operation.ContentId);
+        _logger.LogDebug("Created new content record {ContentId}", operation.ContentId);
     }
+
 
     /// <summary>
     /// Execute delete step: delete content if exists (idempotent).
@@ -640,19 +701,20 @@ public class ContentStorageService : IContentStorage
     /// <param name="cancellationToken"></param>
     private async Task ExecuteDeleteStepAsync(OperationRecord operation, CancellationToken cancellationToken)
     {
-        var existing = await this._context.Content.FirstOrDefaultAsync(c => c.Id == operation.ContentId, cancellationToken).ConfigureAwait(false);
+        var existing = await _context.Content.FirstOrDefaultAsync(c => c.Id == operation.ContentId, cancellationToken).ConfigureAwait(false);
 
         if (existing != null)
         {
-            this._context.Content.Remove(existing);
-            await this._context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-            this._logger.LogDebug("Deleted content {ContentId}", operation.ContentId);
+            _context.Content.Remove(existing);
+            await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            _logger.LogDebug("Deleted content {ContentId}", operation.ContentId);
         }
         else
         {
-            this._logger.LogDebug("Content {ContentId} not found - delete is idempotent, no error", operation.ContentId);
+            _logger.LogDebug("Content {ContentId} not found - delete is idempotent, no error", operation.ContentId);
         }
     }
+
 
     /// <summary>
     /// Execute index step: update content in specific search index.
@@ -664,21 +726,21 @@ public class ContentStorageService : IContentStorage
     private async Task ExecuteIndexStepAsync(OperationRecord operation, string indexId, CancellationToken cancellationToken)
     {
         // Fail hard if index ID not found in current config
-        if (!this._searchIndexById.TryGetValue(indexId, out var searchIndex))
+        if (!_searchIndexById.TryGetValue(indexId, out var searchIndex))
         {
-            this._logger.LogError("Search index '{IndexId}' not found in current configuration for operation {OperationId}. Operation will remain locked until index is restored or manually recovered.", indexId, operation.Id);
+            _logger.LogError("Search index '{IndexId}' not found in current configuration for operation {OperationId}. Operation will remain locked until index is restored or manually recovered.", indexId, operation.Id);
             throw new InvalidOperationException($"Search index '{indexId}' not found in current configuration. Cannot process operation {operation.Id}.");
         }
 
         // Get the content from the database
-        var content = await this._context.Content
+        var content = await _context.Content
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.Id == operation.ContentId, cancellationToken)
             .ConfigureAwait(false);
 
         if (content == null)
         {
-            this._logger.LogWarning("Content {ContentId} not found for indexing in index {IndexId} - skipping", operation.ContentId, indexId);
+            _logger.LogWarning("Content {ContentId} not found for indexing in index {IndexId} - skipping", operation.ContentId, indexId);
             return;
         }
 
@@ -686,7 +748,12 @@ public class ContentStorageService : IContentStorage
         // Use the 4-parameter signature to properly index all fields
         if (searchIndex is IFtsIndex ftsIndex)
         {
-            await ftsIndex.IndexAsync(operation.ContentId, content.Title, content.Description, content.Content, cancellationToken).ConfigureAwait(false);
+            await ftsIndex.IndexAsync(operation.ContentId,
+                    content.Title,
+                    content.Description,
+                    content.Content,
+                    cancellationToken)
+                .ConfigureAwait(false);
         }
         else
         {
@@ -694,8 +761,9 @@ public class ContentStorageService : IContentStorage
             await searchIndex.IndexAsync(operation.ContentId, content.Content, cancellationToken).ConfigureAwait(false);
         }
 
-        this._logger.LogDebug("Indexed content {ContentId} in search index {IndexId}", operation.ContentId, indexId);
+        _logger.LogDebug("Indexed content {ContentId} in search index {IndexId}", operation.ContentId, indexId);
     }
+
 
     /// <summary>
     /// Execute index delete step: remove content from specific search index.
@@ -707,16 +775,17 @@ public class ContentStorageService : IContentStorage
     private async Task ExecuteIndexDeleteStepAsync(OperationRecord operation, string indexId, CancellationToken cancellationToken)
     {
         // Fail hard if index ID not found in current config
-        if (!this._searchIndexById.TryGetValue(indexId, out var searchIndex))
+        if (!_searchIndexById.TryGetValue(indexId, out var searchIndex))
         {
-            this._logger.LogError("Search index '{IndexId}' not found in current configuration for operation {OperationId}. Operation will remain locked until index is restored or manually recovered.", indexId, operation.Id);
+            _logger.LogError("Search index '{IndexId}' not found in current configuration for operation {OperationId}. Operation will remain locked until index is restored or manually recovered.", indexId, operation.Id);
             throw new InvalidOperationException($"Search index '{indexId}' not found in current configuration. Cannot process operation {operation.Id}.");
         }
 
         // Remove from search index (idempotent)
         await searchIndex.RemoveAsync(operation.ContentId, cancellationToken).ConfigureAwait(false);
-        this._logger.LogDebug("Removed content {ContentId} from search index {IndexId}", operation.ContentId, indexId);
+        _logger.LogDebug("Removed content {ContentId} from search index {IndexId}", operation.ContentId, indexId);
     }
+
 
     /// <summary>
     /// Step 4: Complete operation and unlock content.
@@ -726,7 +795,7 @@ public class ContentStorageService : IContentStorage
     /// <param name="cancellationToken"></param>
     private async Task CompleteAndUnlockAsync(string operationId, string contentId, CancellationToken cancellationToken)
     {
-        using var transaction = await this._context.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+        using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
 
         try
         {
@@ -738,7 +807,7 @@ public class ContentStorageService : IContentStorage
                 SET Complete = 1
                 WHERE Id = @p0";
 
-            await this._context.Database.ExecuteSqlRawAsync(OperationSql, [operationId], cancellationToken).ConfigureAwait(false);
+            await _context.Database.ExecuteSqlRawAsync(OperationSql, [operationId], cancellationToken).ConfigureAwait(false);
 
             // Unlock content (set Ready = true)
             const string ContentSql = @"
@@ -747,10 +816,10 @@ public class ContentStorageService : IContentStorage
                     RecordUpdatedAt = @p0
                 WHERE Id = @p1";
 
-            await this._context.Database.ExecuteSqlRawAsync(ContentSql, [now, contentId], cancellationToken).ConfigureAwait(false);
+            await _context.Database.ExecuteSqlRawAsync(ContentSql, [now, contentId], cancellationToken).ConfigureAwait(false);
 
             await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
-            this._logger.LogDebug("Operation {OperationId} completed and content {ContentId} unlocked", operationId, contentId);
+            _logger.LogDebug("Operation {OperationId} completed and content {ContentId} unlocked", operationId, contentId);
         }
         catch
         {

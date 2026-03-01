@@ -1,4 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved.
+using System.Diagnostics.CodeAnalysis;
+
 namespace KernelMemory.Core.Search.Query.Ast;
 
 /// <summary>
@@ -18,13 +20,13 @@ public sealed class FieldNode : QueryNode
     /// Example: "metadata.author" → ["metadata", "author"]
     /// Example: "content" → ["content"]
     /// </summary>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
-    public string[] PathSegments => this.FieldPath.Split('.');
+    [SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
+    public string[] PathSegments => FieldPath.Split('.');
 
     /// <summary>
     /// True if this is a metadata field (starts with "metadata.").
     /// </summary>
-    public bool IsMetadataField => this.FieldPath.StartsWith("metadata.", StringComparison.OrdinalIgnoreCase);
+    public bool IsMetadataField => FieldPath.StartsWith("metadata.", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
     /// Get the metadata key for metadata fields.
@@ -36,16 +38,17 @@ public sealed class FieldNode : QueryNode
     {
         get
         {
-            if (!this.IsMetadataField)
+            if (!IsMetadataField)
             {
                 return null;
             }
 
             // Remove "metadata." prefix
             const string Prefix = "metadata.";
-            return this.FieldPath.Substring(Prefix.Length);
+            return FieldPath.Substring(Prefix.Length);
         }
     }
+
 
     /// <summary>
     /// Accept a visitor for AST traversal.

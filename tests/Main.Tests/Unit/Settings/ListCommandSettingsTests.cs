@@ -25,6 +25,7 @@ public sealed class ListCommandSettingsTests
         Assert.True(result.Successful);
     }
 
+
     [Fact]
     public void Validate_WithNegativeSkip_ReturnsError()
     {
@@ -42,6 +43,7 @@ public sealed class ListCommandSettingsTests
         Assert.False(result.Successful);
         Assert.Contains("Skip must be >= 0", result.Message ?? string.Empty);
     }
+
 
     [Fact]
     public void Validate_WithZeroTake_ReturnsError()
@@ -61,6 +63,7 @@ public sealed class ListCommandSettingsTests
         Assert.Contains("Take must be > 0", result.Message ?? string.Empty);
     }
 
+
     [Fact]
     public void Validate_WithNegativeTake_ReturnsError()
     {
@@ -77,6 +80,7 @@ public sealed class ListCommandSettingsTests
         // Assert
         Assert.False(result.Successful);
     }
+
 
     [Fact]
     public void Validate_WithLargeSkipValue_ReturnsSuccess()
@@ -95,6 +99,7 @@ public sealed class ListCommandSettingsTests
         Assert.True(result.Successful);
     }
 
+
     [Fact]
     public void Validate_WithLargeTakeValue_ReturnsSuccess()
     {
@@ -111,6 +116,7 @@ public sealed class ListCommandSettingsTests
         // Assert
         Assert.True(result.Successful);
     }
+
 
     [Fact]
     public void Validate_WithInvalidBaseOptions_ReturnsError()
@@ -129,6 +135,7 @@ public sealed class ListCommandSettingsTests
         // Assert
         Assert.False(result.Successful);
     }
+
 
     [Fact]
     public void DefaultValues_AreSetCorrectly()

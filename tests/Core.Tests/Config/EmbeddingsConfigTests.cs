@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved.
 using KernelMemory.Core.Config;
+using KernelMemory.Core.Config.Embeddings;
 using KernelMemory.Core.Config.Validation;
 
 namespace KernelMemory.Core.Tests.Config;
@@ -51,7 +52,7 @@ public sealed class EmbeddingsConfigTests
             Assert.NotNull(config);
             var searchIndex = config.Nodes["test"].SearchIndexes[0];
             Assert.NotNull(searchIndex.Embeddings);
-            var ollamaConfig = Assert.IsType<KernelMemory.Core.Config.Embeddings.OllamaEmbeddingsConfig>(searchIndex.Embeddings);
+            var ollamaConfig = Assert.IsType<OllamaEmbeddingsConfig>(searchIndex.Embeddings);
             Assert.Equal("all-minilm", ollamaConfig.Model);
             Assert.Equal("http://localhost:11434", ollamaConfig.BaseUrl);
         }
@@ -63,6 +64,7 @@ public sealed class EmbeddingsConfigTests
             }
         }
     }
+
 
     [Fact]
     public void LoadFromFile_WithOpenAIEmbeddings_ShouldValidate()
@@ -107,7 +109,7 @@ public sealed class EmbeddingsConfigTests
             Assert.NotNull(config);
             var searchIndex = config.Nodes["test"].SearchIndexes[0];
             Assert.NotNull(searchIndex.Embeddings);
-            var openaiConfig = Assert.IsType<KernelMemory.Core.Config.Embeddings.OpenAIEmbeddingsConfig>(searchIndex.Embeddings);
+            var openaiConfig = Assert.IsType<OpenAIEmbeddingsConfig>(searchIndex.Embeddings);
             Assert.Equal("text-embedding-ada-002", openaiConfig.Model);
             Assert.Equal("test-key", openaiConfig.ApiKey);
         }
@@ -119,6 +121,7 @@ public sealed class EmbeddingsConfigTests
             }
         }
     }
+
 
     [Fact]
     public void LoadFromFile_WithOllamaEmbeddingsMissingModel_ShouldThrowConfigException()
@@ -168,6 +171,7 @@ public sealed class EmbeddingsConfigTests
         }
     }
 
+
     [Fact]
     public void LoadFromFile_WithOllamaEmbeddingsMissingBaseUrl_ShouldThrowConfigException()
     {
@@ -216,6 +220,7 @@ public sealed class EmbeddingsConfigTests
         }
     }
 
+
     [Fact]
     public void LoadFromFile_WithOpenAIEmbeddingsMissingApiKey_ShouldThrowConfigException()
     {
@@ -263,6 +268,7 @@ public sealed class EmbeddingsConfigTests
             }
         }
     }
+
 
     [Fact]
     public void LoadFromFile_WithAzureOpenAIEmbeddingsMissingModel_ShouldThrowConfigException()
@@ -314,6 +320,7 @@ public sealed class EmbeddingsConfigTests
         }
     }
 
+
     [Fact]
     public void LoadFromFile_WithAzureOpenAIEmbeddingsMissingEndpoint_ShouldThrowConfigException()
     {
@@ -363,6 +370,7 @@ public sealed class EmbeddingsConfigTests
             }
         }
     }
+
 
     [Fact]
     public void LoadFromFile_WithAzureOpenAIEmbeddingsMissingDeployment_ShouldThrowConfigException()
@@ -414,6 +422,7 @@ public sealed class EmbeddingsConfigTests
         }
     }
 
+
     [Fact]
     public void LoadFromFile_WithAzureOpenAIEmbeddingsNoAuth_ShouldThrowConfigException()
     {
@@ -463,6 +472,7 @@ public sealed class EmbeddingsConfigTests
         }
     }
 
+
     [Fact]
     public void LoadFromFile_WithAzureOpenAIEmbeddings_ShouldValidate()
     {
@@ -507,7 +517,7 @@ public sealed class EmbeddingsConfigTests
             Assert.NotNull(config);
             var searchIndex = config.Nodes["test"].SearchIndexes[0];
             Assert.NotNull(searchIndex.Embeddings);
-            var azureConfig = Assert.IsType<KernelMemory.Core.Config.Embeddings.AzureOpenAIEmbeddingsConfig>(searchIndex.Embeddings);
+            var azureConfig = Assert.IsType<AzureOpenAIEmbeddingsConfig>(searchIndex.Embeddings);
             Assert.Equal("text-embedding-ada-002", azureConfig.Model);
             Assert.Equal("https://test.openai.azure.com", azureConfig.Endpoint);
             Assert.Equal("text-embedding-ada-002", azureConfig.Deployment);

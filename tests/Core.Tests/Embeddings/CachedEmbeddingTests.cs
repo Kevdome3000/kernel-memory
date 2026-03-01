@@ -13,7 +13,7 @@ public sealed class CachedEmbeddingTests
     public void CachedEmbedding_WithRequiredProperties_ShouldBeCreated()
     {
         // Arrange
-        var vector = new float[] { 0.1f, 0.2f, 0.3f };
+        var vector = new[] { 0.1f, 0.2f, 0.3f };
 
         // Act
         var cached = new CachedEmbedding
@@ -26,11 +26,12 @@ public sealed class CachedEmbeddingTests
         Assert.Equal(vector, cached.Vector);
     }
 
+
     [Fact]
     public void CachedEmbedding_VectorShouldPreserveFloatPrecision()
     {
         // Arrange
-        var vector = new float[] { 0.123456789f, -0.987654321f, float.MaxValue, float.MinValue };
+        var vector = new[] { 0.123456789f, -0.987654321f, float.MaxValue, float.MinValue };
 
         // Act
         var cached = new CachedEmbedding
@@ -46,11 +47,13 @@ public sealed class CachedEmbeddingTests
         Assert.Equal(float.MinValue, cached.Vector[3]);
     }
 
+
     [Fact]
     public void CachedEmbedding_WithLargeVector_ShouldPreserveAllDimensions()
     {
         // Arrange - simulate 1536-dimension embedding (OpenAI ada-002)
         var vector = new float[1536];
+
         for (int i = 0; i < vector.Length; i++)
         {
             vector[i] = (float)i / 1536;
@@ -66,6 +69,6 @@ public sealed class CachedEmbeddingTests
         // Assert
         Assert.Equal(1536, cached.Vector.Length);
         Assert.Equal(0.0f, cached.Vector[0]);
-        Assert.Equal(1535f / 1536, cached.Vector[1535], precision: 6);
+        Assert.Equal(1535f / 1536, cached.Vector[1535], 6);
     }
 }

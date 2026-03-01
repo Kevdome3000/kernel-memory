@@ -43,8 +43,9 @@ public static class ConfigParser
     {
         WriteIndented = true,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
+
 
     /// <summary>
     /// Loads configuration from a file, or creates default config if file doesn't exist.
@@ -63,7 +64,9 @@ public static class ConfigParser
         if (!File.Exists(filePath))
         {
             var configDir = Path.GetDirectoryName(filePath);
-            var baseDir = string.IsNullOrEmpty(configDir) ? "." : configDir;
+            var baseDir = string.IsNullOrEmpty(configDir)
+                ? "."
+                : configDir;
 
             // Create default config relative to config file location
             config = AppConfig.CreateDefault(baseDir);
@@ -117,6 +120,7 @@ public static class ConfigParser
         }
     }
 
+
     /// <summary>
     /// Parses configuration from a JSON string
     /// </summary>
@@ -141,11 +145,6 @@ public static class ConfigParser
 
             return config;
         }
-        catch (ConfigException)
-        {
-            // Re-throw configuration exceptions as-is
-            throw;
-        }
         catch (JsonException ex)
         {
             throw new ConfigException(
@@ -154,6 +153,7 @@ public static class ConfigParser
                 ex);
         }
     }
+
 
     /// <summary>
     /// Expands tilde (~) in paths to the user's home directory
@@ -201,6 +201,7 @@ public static class ConfigParser
         }
     }
 
+
     /// <summary>
     /// Expands tilde in ContentIndex paths
     /// </summary>
@@ -214,6 +215,7 @@ public static class ConfigParser
         }
     }
 
+
     /// <summary>
     /// Expands tilde in Storage paths
     /// </summary>
@@ -226,6 +228,7 @@ public static class ConfigParser
             diskConfig.Path = ExpandTilde(diskConfig.Path, homeDir);
         }
     }
+
 
     /// <summary>
     /// Expands tilde in SearchIndex paths
@@ -248,6 +251,7 @@ public static class ConfigParser
         }
     }
 
+
     /// <summary>
     /// Expands tilde in Cache paths
     /// </summary>
@@ -260,6 +264,7 @@ public static class ConfigParser
             config.Path = ExpandTilde(config.Path, homeDir);
         }
     }
+
 
     /// <summary>
     /// Expands tilde (~/ or ~\) at the start of a path to the home directory.
@@ -282,15 +287,15 @@ public static class ConfigParser
 
         // Handle ~/ or ~\ (home directory with path separator)
         // Cross-platform: works with both / (Unix) and \ (Windows)
-        if (path.Length >= 2 && path[0] == '~' &&
-            (path[1] == Path.DirectorySeparatorChar ||
-             path[1] == Path.AltDirectorySeparatorChar))
+        if (path.Length >= 2 && path[0] == '~' && (path[1] == Path.DirectorySeparatorChar || path[1] == Path.AltDirectorySeparatorChar))
         {
             return Path.Combine(homeDir, path.Substring(2));
         }
 
         return path;
     }
+
+
     /// <summary>
     /// Writes the config file to disk if it doesn't exist.
     /// Used to ensure config file is always present after any operation.
@@ -307,6 +312,7 @@ public static class ConfigParser
         WriteConfigFile(filePath, config);
     }
 
+
     /// <summary>
     /// Writes the config file to disk, creating directories if needed.
     /// </summary>
@@ -316,13 +322,14 @@ public static class ConfigParser
     {
         // Create the directory if needed
         var configDir = Path.GetDirectoryName(filePath);
+
         if (!string.IsNullOrEmpty(configDir) && !Directory.Exists(configDir))
         {
             Directory.CreateDirectory(configDir);
         }
 
         // Write the config file
-        var json = System.Text.Json.JsonSerializer.Serialize(config, s_writeJsonOptions);
+        var json = JsonSerializer.Serialize(config, s_writeJsonOptions);
         File.WriteAllText(filePath, json);
     }
 }

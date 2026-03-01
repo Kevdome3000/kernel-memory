@@ -20,6 +20,7 @@ public sealed class YamlOutputFormatterTests
         Assert.Equal("verbose", formatter.Verbosity);
     }
 
+
     [Fact]
     public void Format_WithNormalVerbosity_DoesNotThrow()
     {
@@ -31,6 +32,7 @@ public sealed class YamlOutputFormatterTests
         formatter.Format(data);
     }
 
+
     [Fact]
     public void Format_WithSilentVerbosity_DoesNotOutput()
     {
@@ -41,6 +43,7 @@ public sealed class YamlOutputFormatterTests
         // Act & Assert
         formatter.Format(data);
     }
+
 
     [Fact]
     public void Format_WithContentDto_DoesNotThrow()
@@ -58,6 +61,7 @@ public sealed class YamlOutputFormatterTests
         formatter.Format(content);
     }
 
+
     [Fact]
     public void FormatError_WithMessage_DoesNotThrow()
     {
@@ -69,6 +73,7 @@ public sealed class YamlOutputFormatterTests
         formatter.FormatError(error);
     }
 
+
     [Fact]
     public void FormatList_WithItems_DoesNotThrow()
     {
@@ -77,8 +82,12 @@ public sealed class YamlOutputFormatterTests
         var items = new List<string> { "node1", "node2", "node3" };
 
         // Act & Assert
-        formatter.FormatList(items, totalCount: 3, skip: 0, take: 3);
+        formatter.FormatList(items,
+            3,
+            0,
+            3);
     }
+
 
     [Fact]
     public void FormatList_WithSilentVerbosity_DoesNotOutput()
@@ -91,8 +100,12 @@ public sealed class YamlOutputFormatterTests
         };
 
         // Act & Assert
-        formatter.FormatList(items, totalCount: 1, skip: 0, take: 1);
+        formatter.FormatList(items,
+            1,
+            0,
+            1);
     }
+
 
     [Fact]
     public void FormatList_WithEmptyList_DoesNotThrow()
@@ -102,6 +115,9 @@ public sealed class YamlOutputFormatterTests
         var items = new List<string>();
 
         // Act & Assert
-        formatter.FormatList(items, totalCount: 0, skip: 0, take: 10);
+        formatter.FormatList(items,
+            0,
+            0,
+            10);
     }
 }

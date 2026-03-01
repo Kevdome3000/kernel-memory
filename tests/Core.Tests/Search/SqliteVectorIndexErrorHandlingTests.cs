@@ -17,25 +17,28 @@ public sealed class SqliteVectorIndexErrorHandlingTests : IDisposable
     private readonly Mock<IEmbeddingGenerator> _mockGenerator;
     private readonly Mock<ILogger<SqliteVectorIndex>> _mockLogger;
 
+
     public SqliteVectorIndexErrorHandlingTests()
     {
-        this._dbPath = Path.Combine(Path.GetTempPath(), $"vector-error-test-{Guid.NewGuid()}.db");
-        this._mockGenerator = new Mock<IEmbeddingGenerator>();
-        this._mockLogger = new Mock<ILogger<SqliteVectorIndex>>();
+        _dbPath = Path.Combine(Path.GetTempPath(), $"vector-error-test-{Guid.NewGuid()}.db");
+        _mockGenerator = new Mock<IEmbeddingGenerator>();
+        _mockLogger = new Mock<ILogger<SqliteVectorIndex>>();
 
         // Setup mock generator to return predictable embeddings
-        this._mockGenerator.Setup(g => g.VectorDimensions).Returns(3);
-        this._mockGenerator.Setup(g => g.GenerateAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        _mockGenerator.Setup(g => g.VectorDimensions).Returns(3);
+        _mockGenerator.Setup(g => g.GenerateAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(EmbeddingResult.FromVector([1.0f, 0.0f, 0.0f]));
     }
 
+
     public void Dispose()
     {
-        if (File.Exists(this._dbPath))
+        if (File.Exists(_dbPath))
         {
-            File.Delete(this._dbPath);
+            File.Delete(_dbPath);
         }
     }
+
 
     /// <summary>
     /// Verifies that cache write failures generate warnings but don't prevent indexing.
@@ -49,7 +52,10 @@ public sealed class SqliteVectorIndexErrorHandlingTests : IDisposable
         mockCache.Setup(c => c.Mode).Returns(CacheModes.ReadWrite);
         mockCache.Setup(c => c.TryGetAsync(It.IsAny<EmbeddingCacheKey>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((CachedEmbedding?)null); // Cache miss
-        mockCache.Setup(c => c.StoreAsync(It.IsAny<EmbeddingCacheKey>(), It.IsAny<float[]>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+        mockCache.Setup(c => c.StoreAsync(It.IsAny<EmbeddingCacheKey>(),
+                It.IsAny<float[]>(),
+                It.IsAny<int?>(),
+                It.IsAny<CancellationToken>()))
             .ThrowsAsync(new IOException("Disk full")); // Cache write fails
 
         var mockCachedGenerator = new Mock<IEmbeddingGenerator>();
@@ -58,20 +64,25 @@ public sealed class SqliteVectorIndexErrorHandlingTests : IDisposable
             .ThrowsAsync(new IOException("Cache write failed")); // Simulates CachedEmbeddingGenerator catching cache error
 
         // But the actual generator should work
-        this._mockGenerator.Setup(g => g.GenerateAsync("test content", It.IsAny<CancellationToken>()))
+        _mockGenerator.Setup(g => g.GenerateAsync("test content", It.IsAny<CancellationToken>()))
             .ReturnsAsync(EmbeddingResult.FromVector([1.0f, 0.0f, 0.0f]));
 
-        using var index = new SqliteVectorIndex(this._dbPath, 3, useSqliteVec: false, this._mockGenerator.Object, this._mockLogger.Object);
+        using var index = new SqliteVectorIndex(_dbPath,
+            3,
+            false,
+            _mockGenerator.Object,
+            _mockLogger.Object);
 
         // Act - Should succeed despite cache error
         await index.IndexAsync("test-id", "test content", CancellationToken.None).ConfigureAwait(false);
 
         // Assert - Warning should be logged but operation succeeds
         // Verify data was actually stored
-        var results = await index.SearchAsync("test content", limit: 10, CancellationToken.None).ConfigureAwait(false);
+        var results = await index.SearchAsync("test content", 10, CancellationToken.None).ConfigureAwait(false);
         Assert.Single(results);
         Assert.Equal("test-id", results[0].ContentId);
     }
+
 
     /// <summary>
     /// Verifies that cache read failures don't prevent indexing.
@@ -87,10 +98,14 @@ public sealed class SqliteVectorIndexErrorHandlingTests : IDisposable
             .ThrowsAsync(new IOException("Cache corrupted"));
 
         // Even with cache read failure, generator should be called
-        this._mockGenerator.Setup(g => g.GenerateAsync("test", It.IsAny<CancellationToken>()))
+        _mockGenerator.Setup(g => g.GenerateAsync("test", It.IsAny<CancellationToken>()))
             .ReturnsAsync(EmbeddingResult.FromVector([1.0f, 0.0f, 0.0f]));
 
-        using var index = new SqliteVectorIndex(this._dbPath, 3, useSqliteVec: false, this._mockGenerator.Object, this._mockLogger.Object);
+        using var index = new SqliteVectorIndex(_dbPath,
+            3,
+            false,
+            _mockGenerator.Object,
+            _mockLogger.Object);
 
         // Act - Should succeed by calling generator directly
         await index.IndexAsync("id1", "test", CancellationToken.None).ConfigureAwait(false);
@@ -99,6 +114,7 @@ public sealed class SqliteVectorIndexErrorHandlingTests : IDisposable
         var results = await index.SearchAsync("test", 10, CancellationToken.None).ConfigureAwait(false);
         Assert.Single(results);
     }
+
 
     /// <summary>
     /// Verifies that when embedding provider is unreachable, operation throws with clear message.
@@ -113,14 +129,20 @@ public sealed class SqliteVectorIndexErrorHandlingTests : IDisposable
         failingGenerator.Setup(g => g.GenerateAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new HttpRequestException("Connection refused"));
 
-        using var index = new SqliteVectorIndex(this._dbPath, 3, useSqliteVec: false, failingGenerator.Object, this._mockLogger.Object);
+        using var index = new SqliteVectorIndex(_dbPath,
+            3,
+            false,
+            failingGenerator.Object,
+            _mockLogger.Object);
 
         // Act & Assert - Should throw and propagate to caller
         var ex = await Assert.ThrowsAsync<HttpRequestException>(async () =>
-            await index.IndexAsync("id1", "test content", CancellationToken.None).ConfigureAwait(false)).ConfigureAwait(false);
+                await index.IndexAsync("id1", "test content", CancellationToken.None).ConfigureAwait(false))
+            .ConfigureAwait(false);
 
         Assert.Contains("Connection refused", ex.Message);
     }
+
 
     /// <summary>
     /// Verifies that invalid API key errors are propagated with clear messages.
@@ -135,14 +157,20 @@ public sealed class SqliteVectorIndexErrorHandlingTests : IDisposable
         failingGenerator.Setup(g => g.GenerateAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new UnauthorizedAccessException("Invalid API key"));
 
-        using var index = new SqliteVectorIndex(this._dbPath, 3, useSqliteVec: false, failingGenerator.Object, this._mockLogger.Object);
+        using var index = new SqliteVectorIndex(_dbPath,
+            3,
+            false,
+            failingGenerator.Object,
+            _mockLogger.Object);
 
         // Act & Assert
         var ex = await Assert.ThrowsAsync<UnauthorizedAccessException>(async () =>
-            await index.IndexAsync("id1", "test content", CancellationToken.None).ConfigureAwait(false)).ConfigureAwait(false);
+                await index.IndexAsync("id1", "test content", CancellationToken.None).ConfigureAwait(false))
+            .ConfigureAwait(false);
 
         Assert.Contains("Invalid API key", ex.Message);
     }
+
 
     /// <summary>
     /// Verifies that when useSqliteVec is true but extension is unavailable,
@@ -155,11 +183,11 @@ public sealed class SqliteVectorIndexErrorHandlingTests : IDisposable
     {
         // Arrange - Request sqlite-vec but it won't be available (no extension installed)
         using var index = new SqliteVectorIndex(
-            this._dbPath,
-            dimensions: 3,
-            useSqliteVec: true, // Request extension
-            this._mockGenerator.Object,
-            this._mockLogger.Object);
+            _dbPath,
+            3,
+            true, // Request extension
+            _mockGenerator.Object,
+            _mockLogger.Object);
 
         // Act - First IndexAsync triggers initialization and warning
         await index.IndexAsync("test-id", "test content", CancellationToken.None).ConfigureAwait(false);
@@ -169,7 +197,7 @@ public sealed class SqliteVectorIndexErrorHandlingTests : IDisposable
         Assert.Single(results);
 
         // Verify warning was logged about sqlite-vec fallback
-        this._mockLogger.Verify(
+        _mockLogger.Verify(
             x => x.Log(
                 LogLevel.Warning,
                 It.IsAny<EventId>(),
@@ -178,6 +206,7 @@ public sealed class SqliteVectorIndexErrorHandlingTests : IDisposable
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.AtLeastOnce);
     }
+
 
     /// <summary>
     /// Verifies that vector search produces same results whether using
@@ -193,20 +222,28 @@ public sealed class SqliteVectorIndexErrorHandlingTests : IDisposable
 
         try
         {
-            this._mockGenerator.Setup(g => g.GenerateAsync("hello world", It.IsAny<CancellationToken>()))
+            _mockGenerator.Setup(g => g.GenerateAsync("hello world", It.IsAny<CancellationToken>()))
                 .ReturnsAsync(EmbeddingResult.FromVector([0.6f, 0.8f, 0.0f]));
-            this._mockGenerator.Setup(g => g.GenerateAsync("goodbye world", It.IsAny<CancellationToken>()))
+            _mockGenerator.Setup(g => g.GenerateAsync("goodbye world", It.IsAny<CancellationToken>()))
                 .ReturnsAsync(EmbeddingResult.FromVector([0.8f, 0.6f, 0.0f]));
-            this._mockGenerator.Setup(g => g.GenerateAsync("hello", It.IsAny<CancellationToken>()))
+            _mockGenerator.Setup(g => g.GenerateAsync("hello", It.IsAny<CancellationToken>()))
                 .ReturnsAsync(EmbeddingResult.FromVector([1.0f, 0.0f, 0.0f]));
 
             // Index without extension (C# implementation)
-            using var index1 = new SqliteVectorIndex(dbPath1, 3, useSqliteVec: false, this._mockGenerator.Object, this._mockLogger.Object);
+            using var index1 = new SqliteVectorIndex(dbPath1,
+                3,
+                false,
+                _mockGenerator.Object,
+                _mockLogger.Object);
             await index1.IndexAsync("id1", "hello world", CancellationToken.None).ConfigureAwait(false);
             await index1.IndexAsync("id2", "goodbye world", CancellationToken.None).ConfigureAwait(false);
 
             // Index with extension requested (will fall back to C# if unavailable)
-            using var index2 = new SqliteVectorIndex(dbPath2, 3, useSqliteVec: true, this._mockGenerator.Object, this._mockLogger.Object);
+            using var index2 = new SqliteVectorIndex(dbPath2,
+                3,
+                true,
+                _mockGenerator.Object,
+                _mockLogger.Object);
             await index2.IndexAsync("id1", "hello world", CancellationToken.None).ConfigureAwait(false);
             await index2.IndexAsync("id2", "goodbye world", CancellationToken.None).ConfigureAwait(false);
 
@@ -217,9 +254,9 @@ public sealed class SqliteVectorIndexErrorHandlingTests : IDisposable
             // Assert - Results should be identical (same ranking, same scores)
             Assert.Equal(results1.Count, results2.Count);
             Assert.Equal(results1[0].ContentId, results2[0].ContentId);
-            Assert.Equal(results1[0].Score, results2[0].Score, precision: 5);
+            Assert.Equal(results1[0].Score, results2[0].Score, 5);
             Assert.Equal(results1[1].ContentId, results2[1].ContentId);
-            Assert.Equal(results1[1].Score, results2[1].Score, precision: 5);
+            Assert.Equal(results1[1].Score, results2[1].Score, 5);
         }
         finally
         {

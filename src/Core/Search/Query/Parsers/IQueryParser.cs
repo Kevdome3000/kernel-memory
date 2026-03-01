@@ -18,6 +18,7 @@ public interface IQueryParser
     /// <exception cref="QuerySyntaxException">If the query is malformed.</exception>
     QueryNode Parse(string query);
 
+
     /// <summary>
     /// Validate a query without parsing (fast check).
     /// </summary>

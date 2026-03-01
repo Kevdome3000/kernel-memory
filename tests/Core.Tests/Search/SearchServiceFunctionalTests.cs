@@ -2,6 +2,7 @@
 
 using KernelMemory.Core.Search.Models;
 using KernelMemory.Core.Storage;
+using KernelMemory.Core.Storage.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -23,10 +24,11 @@ public sealed class SearchServiceFunctionalTests : IDisposable
     private readonly SqliteFtsIndex _fts1;
     private readonly SqliteFtsIndex _fts2;
 
+
     public SearchServiceFunctionalTests()
     {
-        this._tempDir = Path.Combine(Path.GetTempPath(), $"km-search-service-func-test-{Guid.NewGuid():N}");
-        Directory.CreateDirectory(this._tempDir);
+        _tempDir = Path.Combine(Path.GetTempPath(), $"km-search-service-func-test-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(_tempDir);
 
         var mockStorageLogger1 = new Mock<ILogger<ContentStorageService>>();
         var mockStorageLogger2 = new Mock<ILogger<ContentStorageService>>();
@@ -35,32 +37,38 @@ public sealed class SearchServiceFunctionalTests : IDisposable
         var cuidGenerator = new CuidGenerator();
 
         // Node 1
-        var content1DbPath = Path.Combine(this._tempDir, "node1_content.db");
+        var content1DbPath = Path.Combine(_tempDir, "node1_content.db");
         var options1 = new DbContextOptionsBuilder<ContentStorageDbContext>()
             .UseSqlite($"Data Source={content1DbPath}")
             .Options;
-        this._context1 = new ContentStorageDbContext(options1);
-        this._context1.Database.EnsureCreated();
+        _context1 = new ContentStorageDbContext(options1);
+        _context1.Database.EnsureCreated();
 
-        var fts1DbPath = Path.Combine(this._tempDir, "node1_fts.db");
-        this._fts1 = new SqliteFtsIndex(fts1DbPath, enableStemming: true, mockFtsLogger1.Object);
-        var searchIndexes1 = new Dictionary<string, ISearchIndex> { ["fts"] = this._fts1 };
-        this._storage1 = new ContentStorageService(this._context1, cuidGenerator, mockStorageLogger1.Object, (IReadOnlyDictionary<string, Core.Search.ISearchIndex>)searchIndexes1);
-        var node1Service = new NodeSearchService("node1", this._fts1, this._storage1);
+        var fts1DbPath = Path.Combine(_tempDir, "node1_fts.db");
+        _fts1 = new SqliteFtsIndex(fts1DbPath, true, mockFtsLogger1.Object);
+        var searchIndexes1 = new Dictionary<string, ISearchIndex> { ["fts"] = _fts1 };
+        _storage1 = new ContentStorageService(_context1,
+            cuidGenerator,
+            mockStorageLogger1.Object,
+            searchIndexes1);
+        var node1Service = new NodeSearchService("node1", _fts1, _storage1);
 
         // Node 2
-        var content2DbPath = Path.Combine(this._tempDir, "node2_content.db");
+        var content2DbPath = Path.Combine(_tempDir, "node2_content.db");
         var options2 = new DbContextOptionsBuilder<ContentStorageDbContext>()
             .UseSqlite($"Data Source={content2DbPath}")
             .Options;
-        this._context2 = new ContentStorageDbContext(options2);
-        this._context2.Database.EnsureCreated();
+        _context2 = new ContentStorageDbContext(options2);
+        _context2.Database.EnsureCreated();
 
-        var fts2DbPath = Path.Combine(this._tempDir, "node2_fts.db");
-        this._fts2 = new SqliteFtsIndex(fts2DbPath, enableStemming: true, mockFtsLogger2.Object);
-        var searchIndexes2 = new Dictionary<string, ISearchIndex> { ["fts"] = this._fts2 };
-        this._storage2 = new ContentStorageService(this._context2, cuidGenerator, mockStorageLogger2.Object, (IReadOnlyDictionary<string, Core.Search.ISearchIndex>)searchIndexes2);
-        var node2Service = new NodeSearchService("node2", this._fts2, this._storage2);
+        var fts2DbPath = Path.Combine(_tempDir, "node2_fts.db");
+        _fts2 = new SqliteFtsIndex(fts2DbPath, true, mockFtsLogger2.Object);
+        var searchIndexes2 = new Dictionary<string, ISearchIndex> { ["fts"] = _fts2 };
+        _storage2 = new ContentStorageService(_context2,
+            cuidGenerator,
+            mockStorageLogger2.Object,
+            searchIndexes2);
+        var node2Service = new NodeSearchService("node2", _fts2, _storage2);
 
         var nodeServices = new Dictionary<string, NodeSearchService>
         {
@@ -68,21 +76,22 @@ public sealed class SearchServiceFunctionalTests : IDisposable
             ["node2"] = node2Service
         };
 
-        this._searchService = new SearchService(nodeServices);
+        _searchService = new SearchService(nodeServices);
     }
+
 
     public void Dispose()
     {
-        this._fts1.Dispose();
-        this._fts2.Dispose();
-        this._context1.Dispose();
-        this._context2.Dispose();
+        _fts1.Dispose();
+        _fts2.Dispose();
+        _context1.Dispose();
+        _context2.Dispose();
 
         try
         {
-            if (Directory.Exists(this._tempDir))
+            if (Directory.Exists(_tempDir))
             {
-                Directory.Delete(this._tempDir, true);
+                Directory.Delete(_tempDir, true);
             }
         }
         catch (IOException)
@@ -91,21 +100,26 @@ public sealed class SearchServiceFunctionalTests : IDisposable
         }
     }
 
+
     [Fact]
     public async Task SearchAsync_AcrossMultipleNodes_AggregatesResults()
     {
         // Arrange: Insert into both nodes
-        await this._storage1.UpsertAsync(new KernelMemory.Core.Storage.Models.UpsertRequest
-        {
-            Content = "Docker tutorial from node1",
-            MimeType = "text/plain"
-        }, CancellationToken.None).ConfigureAwait(false);
+        await _storage1.UpsertAsync(new UpsertRequest
+                {
+                    Content = "Docker tutorial from node1",
+                    MimeType = "text/plain"
+                },
+                CancellationToken.None)
+            .ConfigureAwait(false);
 
-        await this._storage2.UpsertAsync(new KernelMemory.Core.Storage.Models.UpsertRequest
-        {
-            Content = "Docker guide from node2",
-            MimeType = "text/plain"
-        }, CancellationToken.None).ConfigureAwait(false);
+        await _storage2.UpsertAsync(new UpsertRequest
+                {
+                    Content = "Docker guide from node2",
+                    MimeType = "text/plain"
+                },
+                CancellationToken.None)
+            .ConfigureAwait(false);
 
         var request = new SearchRequest
         {
@@ -115,7 +129,7 @@ public sealed class SearchServiceFunctionalTests : IDisposable
         };
 
         // Act
-        var response = await this._searchService.SearchAsync(request, CancellationToken.None).ConfigureAwait(false);
+        var response = await _searchService.SearchAsync(request, CancellationToken.None).ConfigureAwait(false);
 
         // Assert
         Assert.NotNull(response);
@@ -125,21 +139,26 @@ public sealed class SearchServiceFunctionalTests : IDisposable
         Assert.Contains(response.Results, r => r.NodeId == "node2");
     }
 
+
     [Fact]
     public async Task SearchAsync_WithNodeFilter_SearchesOnlySpecifiedNode()
     {
         // Arrange
-        await this._storage1.UpsertAsync(new KernelMemory.Core.Storage.Models.UpsertRequest
-        {
-            Content = "Content in node1",
-            MimeType = "text/plain"
-        }, CancellationToken.None).ConfigureAwait(false);
+        await _storage1.UpsertAsync(new UpsertRequest
+                {
+                    Content = "Content in node1",
+                    MimeType = "text/plain"
+                },
+                CancellationToken.None)
+            .ConfigureAwait(false);
 
-        await this._storage2.UpsertAsync(new KernelMemory.Core.Storage.Models.UpsertRequest
-        {
-            Content = "Content in node2",
-            MimeType = "text/plain"
-        }, CancellationToken.None).ConfigureAwait(false);
+        await _storage2.UpsertAsync(new UpsertRequest
+                {
+                    Content = "Content in node2",
+                    MimeType = "text/plain"
+                },
+                CancellationToken.None)
+            .ConfigureAwait(false);
 
         var request = new SearchRequest
         {
@@ -150,7 +169,7 @@ public sealed class SearchServiceFunctionalTests : IDisposable
         };
 
         // Act
-        var response = await this._searchService.SearchAsync(request, CancellationToken.None).ConfigureAwait(false);
+        var response = await _searchService.SearchAsync(request, CancellationToken.None).ConfigureAwait(false);
 
         // Assert
         Assert.NotNull(response);
@@ -158,21 +177,26 @@ public sealed class SearchServiceFunctionalTests : IDisposable
         Assert.Equal(1, response.Metadata.NodesSearched);
     }
 
+
     [Fact]
     public async Task SearchAsync_WithExcludeNodes_ExcludesSpecifiedNode()
     {
         // Arrange
-        await this._storage1.UpsertAsync(new KernelMemory.Core.Storage.Models.UpsertRequest
-        {
-            Content = "Kubernetes in node1",
-            MimeType = "text/plain"
-        }, CancellationToken.None).ConfigureAwait(false);
+        await _storage1.UpsertAsync(new UpsertRequest
+                {
+                    Content = "Kubernetes in node1",
+                    MimeType = "text/plain"
+                },
+                CancellationToken.None)
+            .ConfigureAwait(false);
 
-        await this._storage2.UpsertAsync(new KernelMemory.Core.Storage.Models.UpsertRequest
-        {
-            Content = "Kubernetes in node2",
-            MimeType = "text/plain"
-        }, CancellationToken.None).ConfigureAwait(false);
+        await _storage2.UpsertAsync(new UpsertRequest
+                {
+                    Content = "Kubernetes in node2",
+                    MimeType = "text/plain"
+                },
+                CancellationToken.None)
+            .ConfigureAwait(false);
 
         var request = new SearchRequest
         {
@@ -183,7 +207,7 @@ public sealed class SearchServiceFunctionalTests : IDisposable
         };
 
         // Act
-        var response = await this._searchService.SearchAsync(request, CancellationToken.None).ConfigureAwait(false);
+        var response = await _searchService.SearchAsync(request, CancellationToken.None).ConfigureAwait(false);
 
         // Assert
         Assert.NotNull(response);
@@ -191,11 +215,12 @@ public sealed class SearchServiceFunctionalTests : IDisposable
         Assert.Equal(1, response.Metadata.NodesSearched);
     }
 
+
     [Fact]
     public async Task ValidateQueryAsync_WithValidQuery_ReturnsValid()
     {
         // Act
-        var result = await this._searchService.ValidateQueryAsync("kubernetes AND docker", CancellationToken.None).ConfigureAwait(false);
+        var result = await _searchService.ValidateQueryAsync("kubernetes AND docker", CancellationToken.None).ConfigureAwait(false);
 
         // Assert
         Assert.True(result.IsValid);
@@ -203,16 +228,18 @@ public sealed class SearchServiceFunctionalTests : IDisposable
         Assert.True(result.AvailableFields.Length > 0);
     }
 
+
     [Fact]
     public async Task ValidateQueryAsync_WithInvalidQuery_ReturnsInvalid()
     {
         // Act
-        var result = await this._searchService.ValidateQueryAsync("kubernetes AND docker)", CancellationToken.None).ConfigureAwait(false);
+        var result = await _searchService.ValidateQueryAsync("kubernetes AND docker)", CancellationToken.None).ConfigureAwait(false);
 
         // Assert
         Assert.False(result.IsValid);
         Assert.NotNull(result.ErrorMessage);
     }
+
 
     [Fact]
     public async Task SearchAsync_EmptyDatabase_ReturnsNoResults()
@@ -226,7 +253,7 @@ public sealed class SearchServiceFunctionalTests : IDisposable
         };
 
         // Act
-        var response = await this._searchService.SearchAsync(request, CancellationToken.None).ConfigureAwait(false);
+        var response = await _searchService.SearchAsync(request, CancellationToken.None).ConfigureAwait(false);
 
         // Assert
         Assert.NotNull(response);

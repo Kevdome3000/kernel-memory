@@ -19,15 +19,17 @@ public class DeleteCommandSettings : GlobalOptions
     [Description("Content ID to delete")]
     public string Id { get; init; } = string.Empty;
 
+
     public override ValidationResult Validate()
     {
         var baseResult = base.Validate();
+
         if (!baseResult.Successful)
         {
             return baseResult;
         }
 
-        if (string.IsNullOrWhiteSpace(this.Id))
+        if (string.IsNullOrWhiteSpace(Id))
         {
             return ValidationResult.Error("ID cannot be empty");
         }
@@ -35,6 +37,7 @@ public class DeleteCommandSettings : GlobalOptions
         return ValidationResult.Success();
     }
 }
+
 
 /// <summary>
 /// Command to delete content by ID.
@@ -50,6 +53,7 @@ public class DeleteCommand : BaseCommand<DeleteCommandSettings>
     {
     }
 
+
     public override async Task<int> ExecuteAsync(
         CommandContext context,
         DeleteCommandSettings settings,
@@ -57,8 +61,8 @@ public class DeleteCommand : BaseCommand<DeleteCommandSettings>
     {
         try
         {
-            var (config, node, formatter) = this.Initialize(settings);
-            using var service = this.CreateContentService(node);
+            var (config, node, formatter) = Initialize(settings);
+            using var service = CreateContentService(node);
 
             // Delete is idempotent - no error if not found
             var result = await service.DeleteAsync(settings.Id, CancellationToken.None).ConfigureAwait(false);
@@ -75,7 +79,9 @@ public class DeleteCommand : BaseCommand<DeleteCommandSettings>
                     id = result.Id,
                     completed = result.Completed,
                     queued = result.Queued,
-                    error = string.IsNullOrEmpty(result.Error) ? null : result.Error
+                    error = string.IsNullOrEmpty(result.Error)
+                        ? null
+                        : result.Error
                 });
             }
 
@@ -84,7 +90,7 @@ public class DeleteCommand : BaseCommand<DeleteCommandSettings>
         catch (Exception ex)
         {
             var formatter = OutputFormatterFactory.Create(settings);
-            return this.HandleError(ex, formatter);
+            return HandleError(ex, formatter);
         }
     }
 }

@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved.
 
+using System.Text.Json;
 using KernelMemory.Core.Config;
 using KernelMemory.Core.Config.Cache;
 using KernelMemory.Core.Config.ContentIndex;
@@ -22,14 +23,16 @@ public sealed class DoctorCommandTests
     private readonly Mock<ILoggerFactory> _mockLoggerFactory;
     private readonly Mock<ILogger<DoctorCommand>> _mockLogger;
 
+
     public DoctorCommandTests()
     {
-        this._mockLoggerFactory = new Mock<ILoggerFactory>();
-        this._mockLogger = new Mock<ILogger<DoctorCommand>>();
-        this._mockLoggerFactory
+        _mockLoggerFactory = new Mock<ILoggerFactory>();
+        _mockLogger = new Mock<ILogger<DoctorCommand>>();
+        _mockLoggerFactory
             .Setup(f => f.CreateLogger(It.IsAny<string>()))
-            .Returns(this._mockLogger.Object);
+            .Returns(_mockLogger.Object);
     }
+
 
     /// <summary>
     /// Verifies that doctor command succeeds when all dependencies are properly configured.
@@ -48,7 +51,7 @@ public sealed class DoctorCommandTests
             {
                 Nodes = new Dictionary<string, NodeConfig>
                 {
-                    ["test"] = new NodeConfig
+                    ["test"] = new()
                     {
                         Id = "test",
                         Access = NodeAccessLevels.Full,
@@ -69,9 +72,12 @@ public sealed class DoctorCommandTests
                 }
             };
 
-            using var command = new DoctorCommand(config, this._mockLoggerFactory.Object);
+            using var command = new DoctorCommand(config, _mockLoggerFactory.Object);
             var settings = new DoctorCommandSettings { NoColor = true, Format = "json" };
-            var cliContext = new CommandContext([], new EmptyRemainingArguments(), "doctor", null!);
+            var cliContext = new CommandContext([],
+                new EmptyRemainingArguments(),
+                "doctor",
+                null!);
 
             // Act
             var exitCode = await command.ExecuteAsync(cliContext, settings, CancellationToken.None).ConfigureAwait(false);
@@ -83,10 +89,11 @@ public sealed class DoctorCommandTests
         {
             if (Directory.Exists(tempDir))
             {
-                Directory.Delete(tempDir, recursive: true);
+                Directory.Delete(tempDir, true);
             }
         }
     }
+
 
     /// <summary>
     /// Verifies that doctor detects missing Ollama and returns error exit code.
@@ -105,7 +112,7 @@ public sealed class DoctorCommandTests
             {
                 Nodes = new Dictionary<string, NodeConfig>
                 {
-                    ["test"] = new NodeConfig
+                    ["test"] = new()
                     {
                         Id = "test",
                         Access = NodeAccessLevels.Full,
@@ -132,9 +139,12 @@ public sealed class DoctorCommandTests
                 }
             };
 
-            using var command = new DoctorCommand(config, this._mockLoggerFactory.Object);
+            using var command = new DoctorCommand(config, _mockLoggerFactory.Object);
             var settings = new DoctorCommandSettings { NoColor = true, Format = "json" };
-            var cliContext = new CommandContext([], new EmptyRemainingArguments(), "doctor", null!);
+            var cliContext = new CommandContext([],
+                new EmptyRemainingArguments(),
+                "doctor",
+                null!);
 
             // Act
             var exitCode = await command.ExecuteAsync(cliContext, settings, CancellationToken.None).ConfigureAwait(false);
@@ -146,10 +156,11 @@ public sealed class DoctorCommandTests
         {
             if (Directory.Exists(tempDir))
             {
-                Directory.Delete(tempDir, recursive: true);
+                Directory.Delete(tempDir, true);
             }
         }
     }
+
 
     /// <summary>
     /// Verifies that doctor detects missing OpenAI API key.
@@ -172,7 +183,7 @@ public sealed class DoctorCommandTests
             {
                 Nodes = new Dictionary<string, NodeConfig>
                 {
-                    ["test"] = new NodeConfig
+                    ["test"] = new()
                     {
                         Id = "test",
                         Access = NodeAccessLevels.Full,
@@ -199,9 +210,12 @@ public sealed class DoctorCommandTests
                 }
             };
 
-            using var command = new DoctorCommand(config, this._mockLoggerFactory.Object);
+            using var command = new DoctorCommand(config, _mockLoggerFactory.Object);
             var settings = new DoctorCommandSettings { NoColor = true, Format = "json" };
-            var cliContext = new CommandContext([], new EmptyRemainingArguments(), "doctor", null!);
+            var cliContext = new CommandContext([],
+                new EmptyRemainingArguments(),
+                "doctor",
+                null!);
 
             // Act
             var exitCode = await command.ExecuteAsync(cliContext, settings, CancellationToken.None).ConfigureAwait(false);
@@ -216,10 +230,11 @@ public sealed class DoctorCommandTests
 
             if (Directory.Exists(tempDir))
             {
-                Directory.Delete(tempDir, recursive: true);
+                Directory.Delete(tempDir, true);
             }
         }
     }
+
 
     /// <summary>
     /// Verifies that doctor warns about missing cache file but doesn't fail.
@@ -238,7 +253,7 @@ public sealed class DoctorCommandTests
             {
                 Nodes = new Dictionary<string, NodeConfig>
                 {
-                    ["test"] = new NodeConfig
+                    ["test"] = new()
                     {
                         Id = "test",
                         Access = NodeAccessLevels.Full,
@@ -266,9 +281,12 @@ public sealed class DoctorCommandTests
                 }
             };
 
-            using var command = new DoctorCommand(config, this._mockLoggerFactory.Object);
+            using var command = new DoctorCommand(config, _mockLoggerFactory.Object);
             var settings = new DoctorCommandSettings { NoColor = true, Format = "json" };
-            var cliContext = new CommandContext([], new EmptyRemainingArguments(), "doctor", null!);
+            var cliContext = new CommandContext([],
+                new EmptyRemainingArguments(),
+                "doctor",
+                null!);
 
             // Act
             var exitCode = await command.ExecuteAsync(cliContext, settings, CancellationToken.None).ConfigureAwait(false);
@@ -280,10 +298,11 @@ public sealed class DoctorCommandTests
         {
             if (Directory.Exists(tempDir))
             {
-                Directory.Delete(tempDir, recursive: true);
+                Directory.Delete(tempDir, true);
             }
         }
     }
+
 
     /// <summary>
     /// Verifies that doctor correctly groups output by node when multiple nodes are configured.
@@ -311,7 +330,7 @@ public sealed class DoctorCommandTests
             {
                 Nodes = new Dictionary<string, NodeConfig>
                 {
-                    ["personal"] = new NodeConfig
+                    ["personal"] = new()
                     {
                         Id = "personal",
                         Access = NodeAccessLevels.Full,
@@ -329,7 +348,7 @@ public sealed class DoctorCommandTests
                             }
                         }
                     },
-                    ["work"] = new NodeConfig
+                    ["work"] = new()
                     {
                         Id = "work",
                         Access = NodeAccessLevels.Full,
@@ -347,7 +366,7 @@ public sealed class DoctorCommandTests
                             }
                         }
                     },
-                    ["archive"] = new NodeConfig
+                    ["archive"] = new()
                     {
                         Id = "archive",
                         Access = NodeAccessLevels.ReadOnly,
@@ -375,9 +394,12 @@ public sealed class DoctorCommandTests
                 }
             };
 
-            using var command = new DoctorCommand(config, this._mockLoggerFactory.Object);
+            using var command = new DoctorCommand(config, _mockLoggerFactory.Object);
             var settings = new DoctorCommandSettings { NoColor = true, Format = "json" };
-            var cliContext = new CommandContext([], new EmptyRemainingArguments(), "doctor", null!);
+            var cliContext = new CommandContext([],
+                new EmptyRemainingArguments(),
+                "doctor",
+                null!);
 
             // Capture console output to verify JSON output contains nodeId
             var originalOut = Console.Out;
@@ -394,7 +416,7 @@ public sealed class DoctorCommandTests
 
                 // Parse JSON output to verify nodeId is set correctly
                 var output = stringWriter.ToString();
-                using var doc = System.Text.Json.JsonDocument.Parse(output);
+                using var doc = JsonDocument.Parse(output);
                 var root = doc.RootElement;
 
                 Assert.True(root.TryGetProperty("results", out var results));
@@ -414,8 +436,8 @@ public sealed class DoctorCommandTests
 
                 // Verify node-specific checks have correct nodeId
                 var nodeChecks = resultsList.Where(r =>
-                    r.TryGetProperty("nodeId", out var nid) &&
-                    nid.ValueKind == System.Text.Json.JsonValueKind.String).ToList();
+                        r.TryGetProperty("nodeId", out var nid) && nid.ValueKind == JsonValueKind.String)
+                    .ToList();
 
                 // Should have 6 node-specific checks (3 nodes x 2 checks each)
                 Assert.Equal(6, nodeChecks.Count);
@@ -442,11 +464,12 @@ public sealed class DoctorCommandTests
         {
             if (Directory.Exists(tempDir))
             {
-                Directory.Delete(tempDir, recursive: true);
+                Directory.Delete(tempDir, true);
             }
         }
     }
 }
+
 
 /// <summary>
 /// Empty IRemainingArguments implementation for CommandContext in tests.

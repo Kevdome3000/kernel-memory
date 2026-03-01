@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved.
 using KernelMemory.Core.Config;
+using KernelMemory.Core.Config.SearchIndex;
 using KernelMemory.Core.Config.Validation;
 
 namespace KernelMemory.Core.Tests.Config;
@@ -45,7 +46,7 @@ public sealed class SearchIndexConfigTests
             Assert.NotNull(config);
             var node = config.Nodes["test"];
             Assert.Single(node.SearchIndexes);
-            var graphIndex = Assert.IsType<KernelMemory.Core.Config.SearchIndex.GraphSearchIndexConfig>(node.SearchIndexes[0]);
+            var graphIndex = Assert.IsType<GraphSearchIndexConfig>(node.SearchIndexes[0]);
 
             var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             Assert.StartsWith(homeDir, graphIndex.Path);
@@ -58,6 +59,7 @@ public sealed class SearchIndexConfigTests
             }
         }
     }
+
 
     [Fact]
     public void LoadFromFile_WithFtsSearchIndexBothPathAndConnection_ShouldThrowConfigException()
@@ -100,6 +102,7 @@ public sealed class SearchIndexConfigTests
         }
     }
 
+
     [Fact]
     public void LoadFromFile_WithVectorSearchIndexBothPathAndConnection_ShouldThrowConfigException()
     {
@@ -141,6 +144,7 @@ public sealed class SearchIndexConfigTests
             }
         }
     }
+
 
     [Fact]
     public void LoadFromFile_WithVectorSearchIndexInvalidDimensions_ShouldThrowConfigException()

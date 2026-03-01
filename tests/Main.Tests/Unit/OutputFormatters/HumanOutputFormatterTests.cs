@@ -15,59 +15,64 @@ public sealed class HumanOutputFormatterTests
     public void Constructor_SetsVerbosity()
     {
         // Arrange & Act
-        var formatter = new HumanOutputFormatter("quiet", useColors: false);
+        var formatter = new HumanOutputFormatter("quiet", false);
 
         // Assert
         Assert.Equal("quiet", formatter.Verbosity);
     }
 
+
     [Fact]
     public void Constructor_WithColors_SetsColorMode()
     {
         // Arrange & Act
-        var formatter = new HumanOutputFormatter("normal", useColors: true);
+        var formatter = new HumanOutputFormatter("normal", true);
 
         // Assert - Verifies constructor doesn't throw
         Assert.Equal("normal", formatter.Verbosity);
     }
 
+
     [Fact]
     public void Constructor_WithNoColors_DisablesColors()
     {
         // Arrange & Act
-        var formatter = new HumanOutputFormatter("normal", useColors: false);
+        var formatter = new HumanOutputFormatter("normal", false);
 
         // Assert
         Assert.Equal("normal", formatter.Verbosity);
     }
 
+
     [Fact]
     public void Format_WithSilentVerbosity_DoesNotOutput()
     {
         // Arrange
-        var formatter = new HumanOutputFormatter("silent", useColors: false);
+        var formatter = new HumanOutputFormatter("silent", false);
         var data = new { test = "data" };
 
         // Act & Assert - Should silently exit
         formatter.Format(data);
     }
 
+
     [Fact]
     public void Format_WithStringData_HandlesString()
     {
         // Arrange
-        var formatter = new HumanOutputFormatter("normal", useColors: false);
+        var formatter = new HumanOutputFormatter("normal", false);
         const string testString = "Test output string";
 
         // Act & Assert
         formatter.Format(testString);
     }
 
+
     [Fact]
     public void Format_WithContentDto_FormatsContent()
     {
         // Arrange
-        var formatter = new HumanOutputFormatter("normal", useColors: false);
+        var formatter = new HumanOutputFormatter("normal", false);
         var content = new ContentDto
         {
             Id = "test-id-123",
@@ -87,11 +92,12 @@ public sealed class HumanOutputFormatterTests
         formatter.Format(content);
     }
 
+
     [Fact]
     public void Format_WithContentDto_QuietMode_OutputsOnlyId()
     {
         // Arrange
-        var formatter = new HumanOutputFormatter("quiet", useColors: false);
+        var formatter = new HumanOutputFormatter("quiet", false);
         var content = new ContentDto
         {
             Id = "quiet-id",
@@ -103,11 +109,12 @@ public sealed class HumanOutputFormatterTests
         formatter.Format(content);
     }
 
+
     [Fact]
     public void Format_WithContentDto_VerboseMode_ShowsAllDetails()
     {
         // Arrange
-        var formatter = new HumanOutputFormatter("verbose", useColors: false);
+        var formatter = new HumanOutputFormatter("verbose", false);
         var content = new ContentDto
         {
             Id = "verbose-id",
@@ -128,11 +135,12 @@ public sealed class HumanOutputFormatterTests
         formatter.Format(content);
     }
 
+
     [Fact]
     public void Format_WithLongContent_TruncatesInNormalMode()
     {
         // Arrange
-        var formatter = new HumanOutputFormatter("normal", useColors: false);
+        var formatter = new HumanOutputFormatter("normal", false);
         var longContent = new string('x', Constants.App.MaxContentDisplayLength + 100);
         var content = new ContentDto
         {
@@ -146,11 +154,12 @@ public sealed class HumanOutputFormatterTests
         formatter.Format(content);
     }
 
+
     [Fact]
     public void Format_WithLongContent_DoesNotTruncateInVerboseMode()
     {
         // Arrange
-        var formatter = new HumanOutputFormatter("verbose", useColors: false);
+        var formatter = new HumanOutputFormatter("verbose", false);
         var longContent = new string('y', Constants.App.MaxContentDisplayLength + 100);
         var content = new ContentDto
         {
@@ -164,80 +173,96 @@ public sealed class HumanOutputFormatterTests
         formatter.Format(content);
     }
 
+
     [Fact]
     public void Format_WithGenericObject_HandlesToString()
     {
         // Arrange
-        var formatter = new HumanOutputFormatter("normal", useColors: false);
+        var formatter = new HumanOutputFormatter("normal", false);
         var obj = new { id = "obj-123", status = "ok" };
 
         // Act & Assert
         formatter.Format(obj);
     }
 
+
     [Fact]
     public void FormatError_WithColors_FormatsError()
     {
         // Arrange
-        var formatter = new HumanOutputFormatter("normal", useColors: true);
+        var formatter = new HumanOutputFormatter("normal", true);
         const string errorMessage = "Test error with colors";
 
         // Act & Assert
         formatter.FormatError(errorMessage);
     }
 
+
     [Fact]
     public void FormatError_WithoutColors_FormatsError()
     {
         // Arrange
-        var formatter = new HumanOutputFormatter("normal", useColors: false);
+        var formatter = new HumanOutputFormatter("normal", false);
         const string errorMessage = "Test error without colors";
 
         // Act & Assert
         formatter.FormatError(errorMessage);
     }
 
+
     [Fact]
     public void FormatList_WithSilentVerbosity_DoesNotOutput()
     {
         // Arrange
-        var formatter = new HumanOutputFormatter("silent", useColors: false);
+        var formatter = new HumanOutputFormatter("silent", false);
         var items = new List<ContentDto>
         {
             new() { Id = "id1", Content = "Content 1", MimeType = "text/plain" }
         };
 
         // Act & Assert
-        formatter.FormatList(items, totalCount: 1, skip: 0, take: 1);
+        formatter.FormatList(items,
+            1,
+            0,
+            1);
     }
+
 
     [Fact]
     public void FormatList_WithEmptyContentList_ShowsEmptyMessage()
     {
         // Arrange
-        var formatter = new HumanOutputFormatter("normal", useColors: false);
+        var formatter = new HumanOutputFormatter("normal", false);
         var items = new List<ContentDto>();
 
         // Act & Assert
-        formatter.FormatList(items, totalCount: 0, skip: 0, take: 10);
+        formatter.FormatList(items,
+            0,
+            0,
+            10);
     }
+
 
     [Fact]
     public void FormatList_WithEmptyContentList_WithColors_ShowsEmptyMessage()
     {
         // Arrange
-        var formatter = new HumanOutputFormatter("normal", useColors: true);
+        var formatter = new HumanOutputFormatter("normal", true);
         var items = new List<ContentDto>();
 
         // Act & Assert
-        formatter.FormatList(items, totalCount: 0, skip: 0, take: 10);
+        formatter.FormatList(items,
+            0,
+            0,
+            10);
     }
+
 
     [Fact]
     public void FormatList_WithContentList_QuietMode_OutputsIds()
     {
         // Arrange
-        var formatter = new HumanOutputFormatter("quiet", useColors: false);
+        var formatter = new HumanOutputFormatter("quiet", false);
         var items = new List<ContentDto>
         {
             new() { Id = "id1", Content = "C1", MimeType = "text/plain", RecordCreatedAt = DateTimeOffset.UtcNow },
@@ -245,14 +270,18 @@ public sealed class HumanOutputFormatterTests
         };
 
         // Act & Assert
-        formatter.FormatList(items, totalCount: 2, skip: 0, take: 2);
+        formatter.FormatList(items,
+            2,
+            0,
+            2);
     }
+
 
     [Fact]
     public void FormatList_WithContentList_NormalMode_ShowsTable()
     {
         // Arrange
-        var formatter = new HumanOutputFormatter("normal", useColors: false);
+        var formatter = new HumanOutputFormatter("normal", false);
         var items = new List<ContentDto>
         {
             new() { Id = "id1", Content = "Content 1", MimeType = "text/plain", ByteSize = 9, RecordCreatedAt = DateTimeOffset.UtcNow },
@@ -260,91 +289,123 @@ public sealed class HumanOutputFormatterTests
         };
 
         // Act & Assert - Exercises table formatting and content preview truncation
-        formatter.FormatList(items, totalCount: 10, skip: 0, take: 2);
+        formatter.FormatList(items,
+            10,
+            0,
+            2);
     }
+
 
     [Fact]
     public void FormatList_WithStringList_ShowsList()
     {
         // Arrange
-        var formatter = new HumanOutputFormatter("normal", useColors: false);
+        var formatter = new HumanOutputFormatter("normal", false);
         var items = new List<string> { "node1", "node2", "node3" };
 
         // Act & Assert
-        formatter.FormatList(items, totalCount: 3, skip: 0, take: 3);
+        formatter.FormatList(items,
+            3,
+            0,
+            3);
     }
+
 
     [Fact]
     public void FormatList_WithEmptyStringList_ShowsEmptyMessage()
     {
         // Arrange
-        var formatter = new HumanOutputFormatter("normal", useColors: false);
+        var formatter = new HumanOutputFormatter("normal", false);
         var items = new List<string>();
 
         // Act & Assert
-        formatter.FormatList(items, totalCount: 0, skip: 0, take: 10);
+        formatter.FormatList(items,
+            0,
+            0,
+            10);
     }
+
 
     [Fact]
     public void FormatList_WithEmptyStringList_WithColors_ShowsEmptyMessage()
     {
         // Arrange
-        var formatter = new HumanOutputFormatter("normal", useColors: true);
+        var formatter = new HumanOutputFormatter("normal", true);
         var items = new List<string>();
 
         // Act & Assert
-        formatter.FormatList(items, totalCount: 0, skip: 0, take: 10);
+        formatter.FormatList(items,
+            0,
+            0,
+            10);
     }
+
 
     [Fact]
     public void FormatList_WithStringList_QuietMode_OutputsStrings()
     {
         // Arrange
-        var formatter = new HumanOutputFormatter("quiet", useColors: false);
+        var formatter = new HumanOutputFormatter("quiet", false);
         var items = new List<string> { "item1", "item2", "item3" };
 
         // Act & Assert
-        formatter.FormatList(items, totalCount: 3, skip: 0, take: 3);
+        formatter.FormatList(items,
+            3,
+            0,
+            3);
     }
+
 
     [Fact]
     public void FormatList_WithGenericList_ShowsList()
     {
         // Arrange
-        var formatter = new HumanOutputFormatter("normal", useColors: false);
+        var formatter = new HumanOutputFormatter("normal", false);
         var items = new List<int> { 1, 2, 3, 4, 5 };
 
         // Act & Assert
-        formatter.FormatList(items, totalCount: 5, skip: 0, take: 5);
+        formatter.FormatList(items,
+            5,
+            0,
+            5);
     }
+
 
     [Fact]
     public void FormatList_WithEmptyGenericList_ShowsEmptyMessage()
     {
         // Arrange
-        var formatter = new HumanOutputFormatter("normal", useColors: false);
+        var formatter = new HumanOutputFormatter("normal", false);
         var items = new List<int>();
 
         // Act & Assert
-        formatter.FormatList(items, totalCount: 0, skip: 0, take: 10);
+        formatter.FormatList(items,
+            0,
+            0,
+            10);
     }
+
 
     [Fact]
     public void FormatList_WithEmptyGenericList_WithColors_ShowsEmptyMessage()
     {
         // Arrange
-        var formatter = new HumanOutputFormatter("normal", useColors: true);
+        var formatter = new HumanOutputFormatter("normal", true);
         var items = new List<int>();
 
         // Act & Assert
-        formatter.FormatList(items, totalCount: 0, skip: 0, take: 10);
+        formatter.FormatList(items,
+            0,
+            0,
+            10);
     }
+
 
     [Fact]
     public void Format_WithContentDto_EmptyOptionalFields_HandlesCorrectly()
     {
         // Arrange
-        var formatter = new HumanOutputFormatter("normal", useColors: false);
+        var formatter = new HumanOutputFormatter("normal", false);
         var content = new ContentDto
         {
             Id = "minimal-id",
@@ -364,11 +425,12 @@ public sealed class HumanOutputFormatterTests
         formatter.Format(content);
     }
 
+
     [Fact]
     public void Format_WithContentDto_WithTitle_ShowsTitle()
     {
         // Arrange
-        var formatter = new HumanOutputFormatter("normal", useColors: false);
+        var formatter = new HumanOutputFormatter("normal", false);
         var content = new ContentDto
         {
             Id = "titled-id",
@@ -382,11 +444,12 @@ public sealed class HumanOutputFormatterTests
         formatter.Format(content);
     }
 
+
     [Fact]
     public void Format_WithContentDto_WithDescription_ShowsDescription()
     {
         // Arrange
-        var formatter = new HumanOutputFormatter("normal", useColors: false);
+        var formatter = new HumanOutputFormatter("normal", false);
         var content = new ContentDto
         {
             Id = "described-id",
@@ -400,11 +463,12 @@ public sealed class HumanOutputFormatterTests
         formatter.Format(content);
     }
 
+
     [Fact]
     public void Format_WithContentDto_WithTags_ShowsTags()
     {
         // Arrange
-        var formatter = new HumanOutputFormatter("normal", useColors: false);
+        var formatter = new HumanOutputFormatter("normal", false);
         var content = new ContentDto
         {
             Id = "tagged-id",

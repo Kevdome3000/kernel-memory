@@ -42,16 +42,17 @@ public sealed class CacheConfig : IValidatable
     [JsonPropertyName("connectionString")]
     public string? ConnectionString { get; set; }
 
+
     /// <summary>
     /// Validates the cache configuration
     /// </summary>
     /// <param name="path"></param>
     public void Validate(string path)
     {
-        var isSqlite = this.Type == CacheTypes.Sqlite;
-        var isPostgres = this.Type == CacheTypes.Postgres;
-        var hasPath = !string.IsNullOrWhiteSpace(this.Path);
-        var hasConnectionString = !string.IsNullOrWhiteSpace(this.ConnectionString);
+        var isSqlite = Type == CacheTypes.Sqlite;
+        var isPostgres = Type == CacheTypes.Postgres;
+        var hasPath = !string.IsNullOrWhiteSpace(Path);
+        var hasConnectionString = !string.IsNullOrWhiteSpace(ConnectionString);
 
         if (isSqlite && !hasPath)
         {
@@ -70,6 +71,7 @@ public sealed class CacheConfig : IValidatable
                 "Cache: specify either Path (SQLite) or ConnectionString (Postgres), not both");
         }
     }
+
 
     /// <summary>
     /// Creates a default SQLite cache configuration

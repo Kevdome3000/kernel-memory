@@ -18,6 +18,7 @@ public interface ISearchService
     /// <returns>Search results with metadata.</returns>
     Task<SearchResponse> SearchAsync(SearchRequest request, CancellationToken cancellationToken = default);
 
+
     /// <summary>
     /// Validate a query without executing it.
     /// Returns validation result with detailed errors if invalid.

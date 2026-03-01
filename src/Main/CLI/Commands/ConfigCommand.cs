@@ -33,6 +33,7 @@ public class ConfigCommandSettings : GlobalOptions
     public bool Create { get; init; }
 }
 
+
 /// <summary>
 /// Command to query configuration.
 /// </summary>
@@ -47,6 +48,7 @@ public class ConfigCommand : BaseCommand<ConfigCommandSettings>
 
     private readonly ConfigPathService _configPathService;
 
+
     /// <summary>
     /// Initializes a new instance of the <see cref="ConfigCommand"/> class.
     /// </summary>
@@ -58,10 +60,12 @@ public class ConfigCommand : BaseCommand<ConfigCommandSettings>
         ILoggerFactory loggerFactory,
         ConfigPathService configPathService) : base(config, loggerFactory)
     {
-        this._configPathService = configPathService ?? throw new ArgumentNullException(nameof(configPathService));
+        _configPathService = configPathService ?? throw new ArgumentNullException(nameof(configPathService));
     }
 
-    [SuppressMessage("Design", "CA1031:Do not catch general exception types",
+
+    [SuppressMessage("Design",
+        "CA1031:Do not catch general exception types",
         Justification = "Top-level command handler must catch all exceptions to return appropriate exit codes and error messages")]
     public override async Task<int> ExecuteAsync(
         CommandContext context,
@@ -73,13 +77,13 @@ public class ConfigCommand : BaseCommand<ConfigCommandSettings>
             // ConfigCommand doesn't need node selection - it queries the entire configuration
             // So we skip Initialize() and just use the injected config directly
             var formatter = OutputFormatterFactory.Create(settings);
-            var configPath = this._configPathService.Path;
+            var configPath = _configPathService.Path;
             var configFileExists = File.Exists(configPath);
 
             // Handle --create flag
             if (settings.Create)
             {
-                return this.HandleCreateConfig(configPath, configFileExists, formatter);
+                return HandleCreateConfig(configPath, configFileExists, formatter);
             }
 
             // Show warning if using default config without file
@@ -96,39 +100,44 @@ public class ConfigCommand : BaseCommand<ConfigCommandSettings>
             if (settings.ShowNodes)
             {
                 // Show all nodes summary
-                output = this.Config.Nodes.Select(kvp => new NodeSummaryDto
-                {
-                    Id = kvp.Key,
-                    Access = kvp.Value.Access.ToString(),
-                    ContentIndex = kvp.Value.ContentIndex.Type.ToString(),
-                    HasFileStorage = kvp.Value.FileStorage != null,
-                    HasRepoStorage = kvp.Value.RepoStorage != null,
-                    SearchIndexCount = kvp.Value.SearchIndexes.Count
-                }).ToList();
+                output = Config.Nodes.Select(kvp => new NodeSummaryDto
+                    {
+                        Id = kvp.Key,
+                        Access = kvp.Value.Access.ToString(),
+                        ContentIndex = kvp.Value.ContentIndex.Type.ToString(),
+                        HasFileStorage = kvp.Value.FileStorage != null,
+                        HasRepoStorage = kvp.Value.RepoStorage != null,
+                        SearchIndexCount = kvp.Value.SearchIndexes.Count
+                    })
+                    .ToList();
             }
             else if (settings.ShowCache)
             {
                 // Show cache configuration
-                var config = this.Config;
+                var config = Config;
                 output = new CacheInfoDto
                 {
-                    EmbeddingsCache = config.EmbeddingsCache != null ? new CacheConfigDto
-                    {
-                        Type = config.EmbeddingsCache.Type.ToString(),
-                        Path = config.EmbeddingsCache.Path
-                    } : null,
-                    LlmCache = config.LLMCache != null ? new CacheConfigDto
-                    {
-                        Type = config.LLMCache.Type.ToString(),
-                        Path = config.LLMCache.Path
-                    } : null
+                    EmbeddingsCache = config.EmbeddingsCache != null
+                        ? new CacheConfigDto
+                        {
+                            Type = config.EmbeddingsCache.Type.ToString(),
+                            Path = config.EmbeddingsCache.Path
+                        }
+                        : null,
+                    LlmCache = config.LLMCache != null
+                        ? new CacheConfigDto
+                        {
+                            Type = config.LLMCache.Type.ToString(),
+                            Path = config.LLMCache.Path
+                        }
+                        : null
                 };
             }
             else
             {
                 // Default: show the actual AppConfig structure (not DTOs)
                 // This allows users to copy/paste the output into their config file
-                output = this.Config;
+                output = Config;
             }
 
             formatter.Format(output);
@@ -138,9 +147,10 @@ public class ConfigCommand : BaseCommand<ConfigCommandSettings>
         catch (Exception ex)
         {
             var formatter = OutputFormatterFactory.Create(settings);
-            return this.HandleError(ex, formatter);
+            return HandleError(ex, formatter);
         }
     }
+
 
     /// <summary>
     /// Handles the --create flag to write the configuration to disk.
@@ -149,7 +159,8 @@ public class ConfigCommand : BaseCommand<ConfigCommandSettings>
     /// <param name="configFileExists">Whether the config file already exists.</param>
     /// <param name="formatter">Output formatter for messages.</param>
     /// <returns>Exit code.</returns>
-    [SuppressMessage("Design", "CA1031:Do not catch general exception types",
+    [SuppressMessage("Design",
+        "CA1031:Do not catch general exception types",
         Justification = "Config creation must catch all exceptions to return appropriate exit codes")]
     private int HandleCreateConfig(string configPath, bool configFileExists, IOutputFormatter formatter)
     {
@@ -164,13 +175,14 @@ public class ConfigCommand : BaseCommand<ConfigCommandSettings>
 
             // Ensure directory exists
             var configDir = Path.GetDirectoryName(configPath);
+
             if (!string.IsNullOrEmpty(configDir) && !Directory.Exists(configDir))
             {
                 Directory.CreateDirectory(configDir);
             }
 
             // Serialize config with nice formatting
-            var json = JsonSerializer.Serialize(this.Config, s_jsonOptions);
+            var json = JsonSerializer.Serialize(Config, s_jsonOptions);
 
             // Write to file
             File.WriteAllText(configPath, json);

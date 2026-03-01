@@ -27,6 +27,7 @@ public abstract class BaseCommand<TSettings> : AsyncCommand<TSettings>
     private readonly AppConfig _config;
     private readonly ILoggerFactory _loggerFactory;
 
+
     /// <summary>
     /// Initializes a new instance of the <see cref="BaseCommand{TSettings}"/> class.
     /// </summary>
@@ -34,19 +35,21 @@ public abstract class BaseCommand<TSettings> : AsyncCommand<TSettings>
     /// <param name="loggerFactory">Logger factory for creating loggers (injected by DI).</param>
     protected BaseCommand(AppConfig config, ILoggerFactory loggerFactory)
     {
-        this._config = config ?? throw new ArgumentNullException(nameof(config));
-        this._loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
+        _config = config ?? throw new ArgumentNullException(nameof(config));
+        _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
     }
+
 
     /// <summary>
     /// Gets the injected application configuration.
     /// </summary>
-    protected AppConfig Config => this._config;
+    protected AppConfig Config => _config;
 
     /// <summary>
     /// Gets the injected logger factory.
     /// </summary>
-    protected ILoggerFactory LoggerFactory => this._loggerFactory;
+    protected ILoggerFactory LoggerFactory => _loggerFactory;
+
 
     /// <summary>
     /// Initializes command dependencies: node and formatter.
@@ -58,7 +61,7 @@ public abstract class BaseCommand<TSettings> : AsyncCommand<TSettings>
         Initialize(TSettings settings)
     {
         // Config already loaded and injected via constructor
-        var config = this._config;
+        var config = _config;
 
         // Select node
         if (config.Nodes.Count == 0)
@@ -67,6 +70,7 @@ public abstract class BaseCommand<TSettings> : AsyncCommand<TSettings>
         }
 
         var nodeName = settings.NodeName ?? config.Nodes.Keys.First();
+
         if (!config.Nodes.TryGetValue(nodeName, out var node))
         {
             throw new InvalidOperationException($"Node '{nodeName}' not found in configuration.");
@@ -78,6 +82,7 @@ public abstract class BaseCommand<TSettings> : AsyncCommand<TSettings>
         return (config, node, formatter);
     }
 
+
     /// <summary>
     /// Creates a ContentService instance for the specified node.
     /// </summary>
@@ -85,7 +90,8 @@ public abstract class BaseCommand<TSettings> : AsyncCommand<TSettings>
     /// <param name="readonlyMode">If true, will not create directories or database. Will fail if database doesn't exist.</param>
     /// <returns>A ContentService instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown when database doesn't exist in readonly mode.</exception>
-    [SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope",
+    [SuppressMessage("Reliability",
+        "CA2000:Dispose objects before losing scope",
         Justification = "DbContext ownership is transferred to ContentStorageService which handles disposal")]
     protected ContentService CreateContentService(NodeConfig node, bool readonlyMode = false)
     {
@@ -109,6 +115,7 @@ public abstract class BaseCommand<TSettings> : AsyncCommand<TSettings>
         {
             // Write mode: Ensure directory exists
             var dbDir = Path.GetDirectoryName(dbPath);
+
             if (!string.IsNullOrEmpty(dbDir) && !Directory.Exists(dbDir))
             {
                 Directory.CreateDirectory(dbDir);
@@ -132,19 +139,20 @@ public abstract class BaseCommand<TSettings> : AsyncCommand<TSettings>
 
         // Create dependencies
         var cuidGenerator = new CuidGenerator();
-        var logger = this._loggerFactory.CreateLogger<ContentStorageService>();
+        var logger = _loggerFactory.CreateLogger<ContentStorageService>();
         var httpClient = new HttpClient();
 
         // Create embedding cache if configured
         IEmbeddingCache? embeddingCache = null;
-        if (this._config.EmbeddingsCache != null)
+
+        if (_config.EmbeddingsCache != null)
         {
-            var cachePath = this._config.EmbeddingsCache.Path
+            var cachePath = _config.EmbeddingsCache.Path
                 ?? throw new InvalidOperationException("Embeddings cache path is required");
-            var cacheLogger = this._loggerFactory.CreateLogger<SqliteEmbeddingCache>();
+            var cacheLogger = _loggerFactory.CreateLogger<SqliteEmbeddingCache>();
 
             // Determine cache mode from allowRead/allowWrite flags
-            var cacheMode = (this._config.EmbeddingsCache.AllowRead, this._config.EmbeddingsCache.AllowWrite) switch
+            var cacheMode = (_config.EmbeddingsCache.AllowRead, _config.EmbeddingsCache.AllowWrite) switch
             {
                 (true, true) => CacheModes.ReadWrite,
                 (true, false) => CacheModes.ReadOnly,
@@ -160,14 +168,18 @@ public abstract class BaseCommand<TSettings> : AsyncCommand<TSettings>
             node.SearchIndexes,
             httpClient,
             embeddingCache,
-            this._loggerFactory);
+            _loggerFactory);
 
         // Create storage service with search indexes
-        var storage = new ContentStorageService(context, cuidGenerator, logger, searchIndexes);
+        var storage = new ContentStorageService(context,
+            cuidGenerator,
+            logger,
+            searchIndexes);
 
         // Create and return content service, passing search indexes for proper disposal
         return new ContentService(storage, node.Id, searchIndexes);
     }
+
 
     /// <summary>
     /// Handles exceptions and returns appropriate exit code.

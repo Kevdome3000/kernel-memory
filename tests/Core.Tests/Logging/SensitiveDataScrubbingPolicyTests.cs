@@ -16,23 +16,25 @@ public sealed class SensitiveDataScrubbingPolicyTests : IDisposable
     private readonly string? _originalDotNetEnv;
     private readonly SensitiveDataScrubbingPolicy _policy;
 
+
     /// <summary>
     /// Initializes test capturing original environment.
     /// </summary>
     public SensitiveDataScrubbingPolicyTests()
     {
-        this._originalDotNetEnv = Environment.GetEnvironmentVariable(Constants.LoggingDefaults.DotNetEnvironmentVariable);
-        this._policy = new SensitiveDataScrubbingPolicy();
+        _originalDotNetEnv = Environment.GetEnvironmentVariable(Constants.LoggingDefaults.DotNetEnvironmentVariable);
+        _policy = new SensitiveDataScrubbingPolicy();
     }
+
 
     /// <summary>
     /// Restores original environment after test.
     /// </summary>
     public void Dispose()
     {
-        if (this._originalDotNetEnv != null)
+        if (_originalDotNetEnv != null)
         {
-            Environment.SetEnvironmentVariable(Constants.LoggingDefaults.DotNetEnvironmentVariable, this._originalDotNetEnv);
+            Environment.SetEnvironmentVariable(Constants.LoggingDefaults.DotNetEnvironmentVariable, _originalDotNetEnv);
         }
         else
         {
@@ -41,6 +43,7 @@ public sealed class SensitiveDataScrubbingPolicyTests : IDisposable
 
         GC.SuppressFinalize(this);
     }
+
 
     /// <summary>
     /// Verifies strings are scrubbed in Production environment.
@@ -54,7 +57,7 @@ public sealed class SensitiveDataScrubbingPolicyTests : IDisposable
         const string sensitiveValue = "secret-api-key-12345";
 
         // Act
-        var handled = this._policy.TryDestructure(sensitiveValue, new TestPropertyValueFactory(), out var result);
+        var handled = _policy.TryDestructure(sensitiveValue, new TestPropertyValueFactory(), out var result);
 
         // Assert
         Assert.True(handled);
@@ -62,6 +65,7 @@ public sealed class SensitiveDataScrubbingPolicyTests : IDisposable
         Assert.IsType<ScalarValue>(result);
         Assert.Equal(Constants.LoggingDefaults.RedactedPlaceholder, ((ScalarValue)result).Value);
     }
+
 
     /// <summary>
     /// Verifies strings are NOT scrubbed in Development environment.
@@ -75,12 +79,13 @@ public sealed class SensitiveDataScrubbingPolicyTests : IDisposable
         const string value = "test-value";
 
         // Act
-        var handled = this._policy.TryDestructure(value, new TestPropertyValueFactory(), out var result);
+        var handled = _policy.TryDestructure(value, new TestPropertyValueFactory(), out var result);
 
         // Assert - not handled means Serilog will process normally
         Assert.False(handled);
         Assert.Null(result);
     }
+
 
     /// <summary>
     /// Verifies strings are NOT scrubbed when no environment is set.
@@ -95,12 +100,13 @@ public sealed class SensitiveDataScrubbingPolicyTests : IDisposable
         const string value = "test-value";
 
         // Act
-        var handled = this._policy.TryDestructure(value, new TestPropertyValueFactory(), out var result);
+        var handled = _policy.TryDestructure(value, new TestPropertyValueFactory(), out var result);
 
         // Assert
         Assert.False(handled);
         Assert.Null(result);
     }
+
 
     /// <summary>
     /// Verifies non-string types are NOT scrubbed even in Production.
@@ -113,12 +119,13 @@ public sealed class SensitiveDataScrubbingPolicyTests : IDisposable
         Environment.SetEnvironmentVariable(Constants.LoggingDefaults.DotNetEnvironmentVariable, "Production");
 
         // Act
-        var handled = this._policy.TryDestructure(42, new TestPropertyValueFactory(), out var result);
+        var handled = _policy.TryDestructure(42, new TestPropertyValueFactory(), out var result);
 
         // Assert
         Assert.False(handled);
         Assert.Null(result);
     }
+
 
     /// <summary>
     /// Verifies DateTime is NOT scrubbed.
@@ -132,12 +139,13 @@ public sealed class SensitiveDataScrubbingPolicyTests : IDisposable
         var dateTime = DateTimeOffset.UtcNow;
 
         // Act
-        var handled = this._policy.TryDestructure(dateTime, new TestPropertyValueFactory(), out var result);
+        var handled = _policy.TryDestructure(dateTime, new TestPropertyValueFactory(), out var result);
 
         // Assert
         Assert.False(handled);
         Assert.Null(result);
     }
+
 
     /// <summary>
     /// Verifies booleans are NOT scrubbed.
@@ -150,12 +158,13 @@ public sealed class SensitiveDataScrubbingPolicyTests : IDisposable
         Environment.SetEnvironmentVariable(Constants.LoggingDefaults.DotNetEnvironmentVariable, "Production");
 
         // Act
-        var handled = this._policy.TryDestructure(true, new TestPropertyValueFactory(), out var result);
+        var handled = _policy.TryDestructure(true, new TestPropertyValueFactory(), out var result);
 
         // Assert
         Assert.False(handled);
         Assert.Null(result);
     }
+
 
     /// <summary>
     /// Verifies Guids are NOT scrubbed.
@@ -169,12 +178,13 @@ public sealed class SensitiveDataScrubbingPolicyTests : IDisposable
         var guid = Guid.NewGuid();
 
         // Act
-        var handled = this._policy.TryDestructure(guid, new TestPropertyValueFactory(), out var result);
+        var handled = _policy.TryDestructure(guid, new TestPropertyValueFactory(), out var result);
 
         // Assert
         Assert.False(handled);
         Assert.Null(result);
     }
+
 
     /// <summary>
     /// Verifies empty strings are still scrubbed in Production.
@@ -187,13 +197,14 @@ public sealed class SensitiveDataScrubbingPolicyTests : IDisposable
         Environment.SetEnvironmentVariable(Constants.LoggingDefaults.DotNetEnvironmentVariable, "Production");
 
         // Act
-        var handled = this._policy.TryDestructure(string.Empty, new TestPropertyValueFactory(), out var result);
+        var handled = _policy.TryDestructure(string.Empty, new TestPropertyValueFactory(), out var result);
 
         // Assert
         Assert.True(handled);
         Assert.NotNull(result);
         Assert.Equal(Constants.LoggingDefaults.RedactedPlaceholder, ((ScalarValue)result).Value);
     }
+
 
     /// <summary>
     /// Verifies null values are NOT scrubbed.
@@ -206,12 +217,13 @@ public sealed class SensitiveDataScrubbingPolicyTests : IDisposable
         Environment.SetEnvironmentVariable(Constants.LoggingDefaults.DotNetEnvironmentVariable, "Production");
 
         // Act
-        var handled = this._policy.TryDestructure(null!, new TestPropertyValueFactory(), out var result);
+        var handled = _policy.TryDestructure(null!, new TestPropertyValueFactory(), out var result);
 
         // Assert
         Assert.False(handled);
         Assert.Null(result);
     }
+
 
     /// <summary>
     /// Verifies strings are NOT scrubbed in Staging environment.
@@ -225,12 +237,13 @@ public sealed class SensitiveDataScrubbingPolicyTests : IDisposable
         const string value = "test-value";
 
         // Act
-        var handled = this._policy.TryDestructure(value, new TestPropertyValueFactory(), out var result);
+        var handled = _policy.TryDestructure(value, new TestPropertyValueFactory(), out var result);
 
         // Assert
         Assert.False(handled);
         Assert.Null(result);
     }
+
 
     /// <summary>
     /// Test implementation of ILogEventPropertyValueFactory for unit testing.

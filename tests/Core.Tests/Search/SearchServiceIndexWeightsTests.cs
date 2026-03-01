@@ -2,6 +2,7 @@
 
 using KernelMemory.Core.Search.Models;
 using KernelMemory.Core.Storage;
+using KernelMemory.Core.Storage.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -20,41 +21,46 @@ public sealed class SearchServiceIndexWeightsTests : IDisposable
     private readonly ContentStorageDbContext _context;
     private readonly SqliteFtsIndex _ftsIndex;
 
+
     public SearchServiceIndexWeightsTests()
     {
-        this._tempDir = Path.Combine(Path.GetTempPath(), $"km-index-weights-test-{Guid.NewGuid():N}");
-        Directory.CreateDirectory(this._tempDir);
+        _tempDir = Path.Combine(Path.GetTempPath(), $"km-index-weights-test-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(_tempDir);
 
         var mockStorageLogger = new Mock<ILogger<ContentStorageService>>();
         var mockFtsLogger = new Mock<ILogger<SqliteFtsIndex>>();
         var cuidGenerator = new CuidGenerator();
 
         // Create storage
-        var contentDbPath = Path.Combine(this._tempDir, "content.db");
+        var contentDbPath = Path.Combine(_tempDir, "content.db");
         var options = new DbContextOptionsBuilder<ContentStorageDbContext>()
             .UseSqlite($"Data Source={contentDbPath}")
             .Options;
-        this._context = new ContentStorageDbContext(options);
-        this._context.Database.EnsureCreated();
+        _context = new ContentStorageDbContext(options);
+        _context.Database.EnsureCreated();
 
         // Create FTS index
-        var ftsDbPath = Path.Combine(this._tempDir, "fts.db");
-        this._ftsIndex = new SqliteFtsIndex(ftsDbPath, enableStemming: true, mockFtsLogger.Object);
+        var ftsDbPath = Path.Combine(_tempDir, "fts.db");
+        _ftsIndex = new SqliteFtsIndex(ftsDbPath, true, mockFtsLogger.Object);
 
-        var searchIndexes = new Dictionary<string, ISearchIndex> { ["fts"] = this._ftsIndex };
-        this._storage = new ContentStorageService(this._context, cuidGenerator, mockStorageLogger.Object, (IReadOnlyDictionary<string, Core.Search.ISearchIndex>)searchIndexes);
+        var searchIndexes = new Dictionary<string, ISearchIndex> { ["fts"] = _ftsIndex };
+        _storage = new ContentStorageService(_context,
+            cuidGenerator,
+            mockStorageLogger.Object,
+            searchIndexes);
     }
+
 
     public void Dispose()
     {
-        this._ftsIndex.Dispose();
-        this._context.Dispose();
+        _ftsIndex.Dispose();
+        _context.Dispose();
 
         try
         {
-            if (Directory.Exists(this._tempDir))
+            if (Directory.Exists(_tempDir))
             {
-                Directory.Delete(this._tempDir, true);
+                Directory.Delete(_tempDir, true);
             }
         }
         catch (IOException)
@@ -63,30 +69,33 @@ public sealed class SearchServiceIndexWeightsTests : IDisposable
         }
     }
 
+
     [Fact]
     public async Task SearchService_WithConfiguredIndexWeights_UsesConfiguredWeights()
     {
         // Arrange: Insert test data
-        await this._storage.UpsertAsync(new KernelMemory.Core.Storage.Models.UpsertRequest
-        {
-            Content = "Test document about Docker containers",
-            MimeType = "text/plain"
-        }, CancellationToken.None).ConfigureAwait(false);
+        await _storage.UpsertAsync(new UpsertRequest
+                {
+                    Content = "Test document about Docker containers",
+                    MimeType = "text/plain"
+                },
+                CancellationToken.None)
+            .ConfigureAwait(false);
 
         // Configure custom index weights (0.5 instead of default 1.0)
         var indexWeights = new Dictionary<string, Dictionary<string, float>>
         {
-            ["test-node"] = new Dictionary<string, float>
+            ["test-node"] = new()
             {
-                [Constants.SearchDefaults.DefaultFtsIndexId] = 0.5f  // Custom weight
+                [Constants.SearchDefaults.DefaultFtsIndexId] = 0.5f // Custom weight
             }
         };
 
-        var nodeService = new NodeSearchService("test-node", this._ftsIndex, this._storage);
+        var nodeService = new NodeSearchService("test-node", _ftsIndex, _storage);
         var nodeServices = new Dictionary<string, NodeSearchService> { ["test-node"] = nodeService };
 
         // Create SearchService with custom index weights
-        var searchService = new SearchService(nodeServices, indexWeights: indexWeights);
+        var searchService = new SearchService(nodeServices, indexWeights);
 
         var request = new SearchRequest
         {
@@ -108,17 +117,20 @@ public sealed class SearchServiceIndexWeightsTests : IDisposable
             $"Expected relevance <= 0.6 (due to 0.5 index weight), got {result.Relevance}");
     }
 
+
     [Fact]
     public async Task SearchService_WithoutConfiguredIndexWeights_UsesDefaultWeight()
     {
         // Arrange: Insert test data
-        await this._storage.UpsertAsync(new KernelMemory.Core.Storage.Models.UpsertRequest
-        {
-            Content = "Test document about Kubernetes orchestration",
-            MimeType = "text/plain"
-        }, CancellationToken.None).ConfigureAwait(false);
+        await _storage.UpsertAsync(new UpsertRequest
+                {
+                    Content = "Test document about Kubernetes orchestration",
+                    MimeType = "text/plain"
+                },
+                CancellationToken.None)
+            .ConfigureAwait(false);
 
-        var nodeService = new NodeSearchService("test-node", this._ftsIndex, this._storage);
+        var nodeService = new NodeSearchService("test-node", _ftsIndex, _storage);
         var nodeServices = new Dictionary<string, NodeSearchService> { ["test-node"] = nodeService };
 
         // Create SearchService WITHOUT custom index weights (should use defaults)
@@ -142,6 +154,7 @@ public sealed class SearchServiceIndexWeightsTests : IDisposable
             $"Expected relevance > 0.5 (using default 1.0 weight), got {result.Relevance}");
     }
 
+
     [Fact]
     public async Task SearchService_WithIndexWeightsForMultipleIndexes_UsesCorrectWeights()
     {
@@ -149,26 +162,28 @@ public sealed class SearchServiceIndexWeightsTests : IDisposable
         // each index uses its correct weight for reranking.
 
         // Arrange: Insert test data
-        await this._storage.UpsertAsync(new KernelMemory.Core.Storage.Models.UpsertRequest
-        {
-            Content = "Machine learning and artificial intelligence concepts",
-            MimeType = "text/plain"
-        }, CancellationToken.None).ConfigureAwait(false);
+        await _storage.UpsertAsync(new UpsertRequest
+                {
+                    Content = "Machine learning and artificial intelligence concepts",
+                    MimeType = "text/plain"
+                },
+                CancellationToken.None)
+            .ConfigureAwait(false);
 
         // Configure weights for multiple indexes
         var indexWeights = new Dictionary<string, Dictionary<string, float>>
         {
-            ["test-node"] = new Dictionary<string, float>
+            ["test-node"] = new()
             {
-                [Constants.SearchDefaults.DefaultFtsIndexId] = 0.7f,  // FTS index weight
-                ["vector-main"] = 0.3f  // Vector index weight (not used here, but configured)
+                [Constants.SearchDefaults.DefaultFtsIndexId] = 0.7f, // FTS index weight
+                ["vector-main"] = 0.3f // Vector index weight (not used here, but configured)
             }
         };
 
-        var nodeService = new NodeSearchService("test-node", this._ftsIndex, this._storage);
+        var nodeService = new NodeSearchService("test-node", _ftsIndex, _storage);
         var nodeServices = new Dictionary<string, NodeSearchService> { ["test-node"] = nodeService };
 
-        var searchService = new SearchService(nodeServices, indexWeights: indexWeights);
+        var searchService = new SearchService(nodeServices, indexWeights);
 
         var request = new SearchRequest
         {
@@ -188,6 +203,7 @@ public sealed class SearchServiceIndexWeightsTests : IDisposable
             $"Expected relevance <= 0.75 (due to 0.7 index weight), got {result.Relevance}");
     }
 
+
     [Fact]
     public async Task SearchService_WithMissingIndexWeight_UsesDefaultWeight()
     {
@@ -195,25 +211,27 @@ public sealed class SearchServiceIndexWeightsTests : IDisposable
         // the default weight is used.
 
         // Arrange: Insert test data
-        await this._storage.UpsertAsync(new KernelMemory.Core.Storage.Models.UpsertRequest
-        {
-            Content = "Database optimization techniques",
-            MimeType = "text/plain"
-        }, CancellationToken.None).ConfigureAwait(false);
+        await _storage.UpsertAsync(new UpsertRequest
+                {
+                    Content = "Database optimization techniques",
+                    MimeType = "text/plain"
+                },
+                CancellationToken.None)
+            .ConfigureAwait(false);
 
         // Configure weights but NOT for the FTS index used
         var indexWeights = new Dictionary<string, Dictionary<string, float>>
         {
-            ["test-node"] = new Dictionary<string, float>
+            ["test-node"] = new()
             {
-                ["some-other-index"] = 0.5f  // Different index, not the one used
+                ["some-other-index"] = 0.5f // Different index, not the one used
             }
         };
 
-        var nodeService = new NodeSearchService("test-node", this._ftsIndex, this._storage);
+        var nodeService = new NodeSearchService("test-node", _ftsIndex, _storage);
         var nodeServices = new Dictionary<string, NodeSearchService> { ["test-node"] = nodeService };
 
-        var searchService = new SearchService(nodeServices, indexWeights: indexWeights);
+        var searchService = new SearchService(nodeServices, indexWeights);
 
         var request = new SearchRequest
         {
@@ -233,31 +251,33 @@ public sealed class SearchServiceIndexWeightsTests : IDisposable
             $"Expected relevance > 0.5 (using default 1.0 weight for unconfigured index), got {result.Relevance}");
     }
 
+
     [Fact]
     public void SearchService_Constructor_AcceptsNullIndexWeights()
     {
         // Verify that SearchService can be created with null index weights
-        var nodeService = new NodeSearchService("test-node", this._ftsIndex, this._storage);
+        var nodeService = new NodeSearchService("test-node", _ftsIndex, _storage);
         var nodeServices = new Dictionary<string, NodeSearchService> { ["test-node"] = nodeService };
 
         // Act - should not throw
-        var searchService = new SearchService(nodeServices, indexWeights: null);
+        var searchService = new SearchService(nodeServices);
 
         // Assert - service was created successfully
         Assert.NotNull(searchService);
     }
 
+
     [Fact]
     public void SearchService_Constructor_AcceptsEmptyIndexWeights()
     {
         // Verify that SearchService works with empty index weights dictionary
-        var nodeService = new NodeSearchService("test-node", this._ftsIndex, this._storage);
+        var nodeService = new NodeSearchService("test-node", _ftsIndex, _storage);
         var nodeServices = new Dictionary<string, NodeSearchService> { ["test-node"] = nodeService };
 
         var emptyWeights = new Dictionary<string, Dictionary<string, float>>();
 
         // Act - should not throw
-        var searchService = new SearchService(nodeServices, indexWeights: emptyWeights);
+        var searchService = new SearchService(nodeServices, emptyWeights);
 
         // Assert - service was created successfully
         Assert.NotNull(searchService);

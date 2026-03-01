@@ -21,10 +21,11 @@ public sealed class PostgresContentIndexConfig : ContentIndexConfig
     [JsonPropertyName("connectionString")]
     public string ConnectionString { get; set; } = string.Empty;
 
+
     /// <inheritdoc />
     public override void Validate(string path)
     {
-        if (string.IsNullOrWhiteSpace(this.ConnectionString))
+        if (string.IsNullOrWhiteSpace(ConnectionString))
         {
             throw new ConfigException($"{path}.ConnectionString",
                 "PostgreSQL connection string is required");

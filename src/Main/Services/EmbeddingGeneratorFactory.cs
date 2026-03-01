@@ -29,9 +29,9 @@ public static class EmbeddingGeneratorFactory
         IEmbeddingCache? cache,
         ILoggerFactory loggerFactory)
     {
-        ArgumentNullException.ThrowIfNull(config, nameof(config));
-        ArgumentNullException.ThrowIfNull(httpClient, nameof(httpClient));
-        ArgumentNullException.ThrowIfNull(loggerFactory, nameof(loggerFactory));
+        ArgumentNullException.ThrowIfNull(config);
+        ArgumentNullException.ThrowIfNull(httpClient);
+        ArgumentNullException.ThrowIfNull(loggerFactory);
 
         IEmbeddingGenerator innerGenerator = config switch
         {
@@ -52,6 +52,7 @@ public static class EmbeddingGeneratorFactory
         return innerGenerator;
     }
 
+
     /// <summary>
     /// Creates an Ollama embedding generator.
     /// </summary>
@@ -63,13 +64,14 @@ public static class EmbeddingGeneratorFactory
         var logger = loggerFactory.CreateLogger<OllamaEmbeddingGenerator>();
 
         // Try to get known dimensions for the model
-        var dimensions = Constants.EmbeddingDefaults.KnownModelDimensions.GetValueOrDefault(config.Model, defaultValue: 0);
+        var dimensions = Constants.EmbeddingDefaults.KnownModelDimensions.GetValueOrDefault(config.Model, 0);
 
         if (dimensions == 0)
         {
             // Unknown model - we'll validate on first use
             dimensions = Constants.EmbeddingDefaults.KnownModelDimensions.GetValueOrDefault(
-                Constants.EmbeddingDefaults.DefaultOllamaModel, defaultValue: 1024);
+                Constants.EmbeddingDefaults.DefaultOllamaModel,
+                1024);
         }
 
         return new OllamaEmbeddingGenerator(
@@ -77,9 +79,10 @@ public static class EmbeddingGeneratorFactory
             config.BaseUrl,
             config.Model,
             dimensions,
-            isNormalized: true, // Ollama models typically return normalized vectors
+            true, // Ollama models typically return normalized vectors
             logger);
     }
+
 
     /// <summary>
     /// Creates an OpenAI embedding generator.
@@ -92,18 +95,19 @@ public static class EmbeddingGeneratorFactory
         var logger = loggerFactory.CreateLogger<OpenAIEmbeddingGenerator>();
 
         // Get known dimensions for the model
-        var dimensions = Constants.EmbeddingDefaults.KnownModelDimensions.GetValueOrDefault(config.Model, defaultValue: 1536);
+        var dimensions = Constants.EmbeddingDefaults.KnownModelDimensions.GetValueOrDefault(config.Model, 1536);
 
         return new OpenAIEmbeddingGenerator(
             httpClient,
             config.ApiKey,
             config.Model,
             dimensions,
-            isNormalized: true, // OpenAI embeddings are typically normalized
+            true, // OpenAI embeddings are typically normalized
             config.BaseUrl,
             logger,
-            batchSize: config.BatchSize);
+            config.BatchSize);
     }
+
 
     /// <summary>
     /// Creates an Azure OpenAI embedding generator.
@@ -117,7 +121,7 @@ public static class EmbeddingGeneratorFactory
         var logger = loggerFactory.CreateLogger<AzureOpenAIEmbeddingGenerator>();
 
         // Get known dimensions for the model
-        var dimensions = Constants.EmbeddingDefaults.KnownModelDimensions.GetValueOrDefault(config.Model, defaultValue: 1536);
+        var dimensions = Constants.EmbeddingDefaults.KnownModelDimensions.GetValueOrDefault(config.Model, 1536);
 
         return new AzureOpenAIEmbeddingGenerator(
             httpClient,
@@ -126,11 +130,12 @@ public static class EmbeddingGeneratorFactory
             config.Model,
             config.ApiKey,
             dimensions,
-            isNormalized: true, // Azure OpenAI embeddings are typically normalized
+            true, // Azure OpenAI embeddings are typically normalized
             logger,
-            batchSize: config.BatchSize,
-            useManagedIdentity: config.UseManagedIdentity);
+            config.BatchSize,
+            config.UseManagedIdentity);
     }
+
 
     /// <summary>
     /// Creates a HuggingFace embedding generator.
@@ -143,7 +148,7 @@ public static class EmbeddingGeneratorFactory
         var logger = loggerFactory.CreateLogger<HuggingFaceEmbeddingGenerator>();
 
         // Get known dimensions for the model
-        var dimensions = Constants.EmbeddingDefaults.KnownModelDimensions.GetValueOrDefault(config.Model, defaultValue: 384);
+        var dimensions = Constants.EmbeddingDefaults.KnownModelDimensions.GetValueOrDefault(config.Model, 384);
 
         var apiKey = config.ApiKey ?? throw new InvalidOperationException("HuggingFace API key is required");
 
@@ -152,9 +157,9 @@ public static class EmbeddingGeneratorFactory
             apiKey,
             config.Model,
             dimensions,
-            isNormalized: true, // Sentence-transformers models typically return normalized vectors
+            true, // Sentence-transformers models typically return normalized vectors
             config.BaseUrl,
             logger,
-            batchSize: config.BatchSize);
+            config.BatchSize);
     }
 }

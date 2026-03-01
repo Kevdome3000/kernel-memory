@@ -3,6 +3,7 @@ using System.Text.Json;
 using KernelMemory.Core.Config;
 using KernelMemory.Core.Config.ContentIndex;
 using KernelMemory.Main.CLI.Commands;
+using KernelMemory.Main.CLI.Infrastructure;
 using Microsoft.Extensions.Logging.Abstractions;
 using Spectre.Console.Cli;
 
@@ -19,53 +20,60 @@ public sealed class CliIntegrationTests : IDisposable
     private readonly string _configPath;
     private readonly string _dbPath;
 
+
     public CliIntegrationTests()
     {
         // Create temp directory for test database and config
-        this._tempDir = Path.Combine(Path.GetTempPath(), $"km-test-{Guid.NewGuid()}");
-        Directory.CreateDirectory(this._tempDir);
+        _tempDir = Path.Combine(Path.GetTempPath(), $"km-test-{Guid.NewGuid()}");
+        Directory.CreateDirectory(_tempDir);
 
-        this._dbPath = Path.Combine(this._tempDir, "test.db");
-        this._configPath = Path.Combine(this._tempDir, "config.json");
+        _dbPath = Path.Combine(_tempDir, "test.db");
+        _configPath = Path.Combine(_tempDir, "config.json");
 
         // Create test config
         var config = new AppConfig
         {
             Nodes = new Dictionary<string, NodeConfig>
             {
-                ["test-node"] = new NodeConfig
+                ["test-node"] = new()
                 {
                     Id = "test-node",
-                    ContentIndex = new SqliteContentIndexConfig { Path = this._dbPath }
+                    ContentIndex = new SqliteContentIndexConfig { Path = _dbPath }
                 }
             }
         };
 
         var json = JsonSerializer.Serialize(config, s_jsonOptions);
-        File.WriteAllText(this._configPath, json);
+        File.WriteAllText(_configPath, json);
     }
+
 
     public void Dispose()
     {
-        if (Directory.Exists(this._tempDir))
+        if (Directory.Exists(_tempDir))
         {
-            Directory.Delete(this._tempDir, recursive: true);
+            Directory.Delete(_tempDir, true);
         }
     }
 
+
     private static CommandContext CreateTestContext(string commandName)
     {
-        return new CommandContext([], new EmptyRemainingArguments(), commandName, null);
+        return new CommandContext([],
+            new EmptyRemainingArguments(),
+            commandName,
+            null);
     }
+
 
     [Fact]
     public async Task UpsertCommand_WithMinimalOptions_CreatesContent()
     {
         // Arrange
-        var config = ConfigParser.LoadFromFile(this._configPath);
+        var config = ConfigParser.LoadFromFile(_configPath);
         var settings = new UpsertCommandSettings
         {
-            ConfigPath = this._configPath,
+            ConfigPath = _configPath,
             Format = "json",
             Verbosity = "quiet",
             Content = "Test content"
@@ -81,15 +89,16 @@ public sealed class CliIntegrationTests : IDisposable
         Assert.Equal(Constants.App.ExitCodeSuccess, exitCode);
     }
 
+
     [Fact]
     public async Task UpsertCommand_WithCustomId_UsesProvidedId()
     {
         // Arrange
-        var config = ConfigParser.LoadFromFile(this._configPath);
+        var config = ConfigParser.LoadFromFile(_configPath);
         const string customId = "my-custom-id-123";
         var settings = new UpsertCommandSettings
         {
-            ConfigPath = this._configPath,
+            ConfigPath = _configPath,
             Format = "json",
             Verbosity = "normal",
             Content = "Test content",
@@ -108,7 +117,7 @@ public sealed class CliIntegrationTests : IDisposable
         // Verify content exists with custom ID
         var getSettings = new GetCommandSettings
         {
-            ConfigPath = this._configPath,
+            ConfigPath = _configPath,
             Format = "json",
             Id = customId
         };
@@ -118,14 +127,15 @@ public sealed class CliIntegrationTests : IDisposable
         Assert.Equal(Constants.App.ExitCodeSuccess, getExitCode);
     }
 
+
     [Fact]
     public async Task UpsertCommand_WithAllMetadata_StoresAllFields()
     {
         // Arrange
-        var config = ConfigParser.LoadFromFile(this._configPath);
+        var config = ConfigParser.LoadFromFile(_configPath);
         var settings = new UpsertCommandSettings
         {
-            ConfigPath = this._configPath,
+            ConfigPath = _configPath,
             Format = "json",
             Content = "Test content with metadata",
             Title = "Test Title",
@@ -144,15 +154,16 @@ public sealed class CliIntegrationTests : IDisposable
         Assert.Equal(Constants.App.ExitCodeSuccess, exitCode);
     }
 
+
     [Fact]
     public async Task GetCommand_ExistingId_ReturnsContent()
     {
         // Arrange - First upsert content
-        var config = ConfigParser.LoadFromFile(this._configPath);
+        var config = ConfigParser.LoadFromFile(_configPath);
         const string customId = "get-test-id";
         var upsertSettings = new UpsertCommandSettings
         {
-            ConfigPath = this._configPath,
+            ConfigPath = _configPath,
             Format = "json",
             Content = "Content to retrieve",
             Id = customId
@@ -165,7 +176,7 @@ public sealed class CliIntegrationTests : IDisposable
         // Act - Get the content
         var getSettings = new GetCommandSettings
         {
-            ConfigPath = this._configPath,
+            ConfigPath = _configPath,
             Format = "json",
             Id = customId
         };
@@ -177,16 +188,17 @@ public sealed class CliIntegrationTests : IDisposable
         Assert.Equal(Constants.App.ExitCodeSuccess, exitCode);
     }
 
+
     [Fact]
     public async Task GetCommand_NonExistentId_ReturnsUserError()
     {
         // Arrange - First create the database with some content
-        var config = ConfigParser.LoadFromFile(this._configPath);
+        var config = ConfigParser.LoadFromFile(_configPath);
 
         // Create DB by upserting content first
         var upsertSettings = new UpsertCommandSettings
         {
-            ConfigPath = this._configPath,
+            ConfigPath = _configPath,
             Format = "json",
             Content = "Some content to create the DB"
         };
@@ -196,7 +208,7 @@ public sealed class CliIntegrationTests : IDisposable
         // Now try to get non-existent ID from existing DB
         var settings = new GetCommandSettings
         {
-            ConfigPath = this._configPath,
+            ConfigPath = _configPath,
             Format = "json",
             Id = "non-existent-id-12345"
         };
@@ -211,15 +223,16 @@ public sealed class CliIntegrationTests : IDisposable
         Assert.Equal(Constants.App.ExitCodeUserError, exitCode);
     }
 
+
     [Fact]
     public async Task GetCommand_WithFullFlag_ReturnsAllDetails()
     {
         // Arrange - First upsert content
-        var config = ConfigParser.LoadFromFile(this._configPath);
+        var config = ConfigParser.LoadFromFile(_configPath);
         const string customId = "full-details-id";
         var upsertSettings = new UpsertCommandSettings
         {
-            ConfigPath = this._configPath,
+            ConfigPath = _configPath,
             Format = "json",
             Content = "Full details content",
             Id = customId,
@@ -233,7 +246,7 @@ public sealed class CliIntegrationTests : IDisposable
         // Act - Get with full flag
         var getSettings = new GetCommandSettings
         {
-            ConfigPath = this._configPath,
+            ConfigPath = _configPath,
             Format = "json",
             Id = customId,
             ShowFull = true
@@ -246,14 +259,15 @@ public sealed class CliIntegrationTests : IDisposable
         Assert.Equal(Constants.App.ExitCodeSuccess, exitCode);
     }
 
+
     [Fact]
     public async Task ListCommand_EmptyDatabase_ReturnsEmptyList()
     {
         // Arrange - First create the database by doing an upsert, then delete
-        var config = ConfigParser.LoadFromFile(this._configPath);
+        var config = ConfigParser.LoadFromFile(_configPath);
         var upsertSettings = new UpsertCommandSettings
         {
-            ConfigPath = this._configPath,
+            ConfigPath = _configPath,
             Format = "json",
             Content = "Temporary content to create database",
             Id = "temp-id"
@@ -265,7 +279,7 @@ public sealed class CliIntegrationTests : IDisposable
         // Delete the content to have empty database
         var deleteSettings = new DeleteCommandSettings
         {
-            ConfigPath = this._configPath,
+            ConfigPath = _configPath,
             Format = "json",
             Id = "temp-id"
         };
@@ -275,7 +289,7 @@ public sealed class CliIntegrationTests : IDisposable
         // Now test list on empty database
         var settings = new ListCommandSettings
         {
-            ConfigPath = this._configPath,
+            ConfigPath = _configPath,
             Format = "json"
         };
 
@@ -289,6 +303,7 @@ public sealed class CliIntegrationTests : IDisposable
         Assert.Equal(Constants.App.ExitCodeSuccess, exitCode);
     }
 
+
     [Fact]
     public async Task Bug3_ListCommand_EmptyDatabase_HumanFormat_ShouldHandleGracefully()
     {
@@ -297,10 +312,10 @@ public sealed class CliIntegrationTests : IDisposable
         // This test reproduces the bug by using human format with empty database
 
         // Arrange - First create the database by doing an upsert, then delete
-        var config = ConfigParser.LoadFromFile(this._configPath);
+        var config = ConfigParser.LoadFromFile(_configPath);
         var upsertSettings = new UpsertCommandSettings
         {
-            ConfigPath = this._configPath,
+            ConfigPath = _configPath,
             Format = "json",
             Content = "Temporary content to create database",
             Id = "temp-id-human"
@@ -312,7 +327,7 @@ public sealed class CliIntegrationTests : IDisposable
         // Delete the content to have empty database
         var deleteSettings = new DeleteCommandSettings
         {
-            ConfigPath = this._configPath,
+            ConfigPath = _configPath,
             Format = "json",
             Id = "temp-id-human"
         };
@@ -322,8 +337,8 @@ public sealed class CliIntegrationTests : IDisposable
         // Now test list on empty database with human format
         var settings = new ListCommandSettings
         {
-            ConfigPath = this._configPath,
-            Format = "human"  // Test human format, not just JSON
+            ConfigPath = _configPath,
+            Format = "human" // Test human format, not just JSON
         };
 
         var command = new ListCommand(config, NullLoggerFactory.Instance);
@@ -338,14 +353,15 @@ public sealed class CliIntegrationTests : IDisposable
         // Expected: A message like "No content found" instead of empty table
     }
 
+
     [Fact]
     public async Task ListCommand_WithContent_ReturnsList()
     {
         // Arrange - First upsert some content
-        var config = ConfigParser.LoadFromFile(this._configPath);
+        var config = ConfigParser.LoadFromFile(_configPath);
         var upsertSettings = new UpsertCommandSettings
         {
-            ConfigPath = this._configPath,
+            ConfigPath = _configPath,
             Format = "json",
             Content = "List test content"
         };
@@ -357,7 +373,7 @@ public sealed class CliIntegrationTests : IDisposable
         // Act - List content
         var listSettings = new ListCommandSettings
         {
-            ConfigPath = this._configPath,
+            ConfigPath = _configPath,
             Format = "json"
         };
 
@@ -368,11 +384,12 @@ public sealed class CliIntegrationTests : IDisposable
         Assert.Equal(Constants.App.ExitCodeSuccess, exitCode);
     }
 
+
     [Fact]
     public async Task ListCommand_WithPagination_RespectsSkipAndTake()
     {
         // Arrange - Insert multiple items
-        var config = ConfigParser.LoadFromFile(this._configPath);
+        var config = ConfigParser.LoadFromFile(_configPath);
         var upsertCommand = new UpsertCommand(config, NullLoggerFactory.Instance);
         var context = CreateTestContext("put");
 
@@ -380,7 +397,7 @@ public sealed class CliIntegrationTests : IDisposable
         {
             var upsertSettings = new UpsertCommandSettings
             {
-                ConfigPath = this._configPath,
+                ConfigPath = _configPath,
                 Format = "json",
                 Content = $"Content {i}"
             };
@@ -390,7 +407,7 @@ public sealed class CliIntegrationTests : IDisposable
         // Act - List with pagination
         var listSettings = new ListCommandSettings
         {
-            ConfigPath = this._configPath,
+            ConfigPath = _configPath,
             Format = "json",
             Skip = 2,
             Take = 2
@@ -403,15 +420,16 @@ public sealed class CliIntegrationTests : IDisposable
         Assert.Equal(Constants.App.ExitCodeSuccess, exitCode);
     }
 
+
     [Fact]
     public async Task DeleteCommand_ExistingId_DeletesSuccessfully()
     {
         // Arrange - First upsert content
-        var config = ConfigParser.LoadFromFile(this._configPath);
+        var config = ConfigParser.LoadFromFile(_configPath);
         const string customId = "delete-test-id";
         var upsertSettings = new UpsertCommandSettings
         {
-            ConfigPath = this._configPath,
+            ConfigPath = _configPath,
             Format = "json",
             Content = "Content to delete",
             Id = customId
@@ -424,7 +442,7 @@ public sealed class CliIntegrationTests : IDisposable
         // Act - Delete the content
         var deleteSettings = new DeleteCommandSettings
         {
-            ConfigPath = this._configPath,
+            ConfigPath = _configPath,
             Format = "json",
             Id = customId
         };
@@ -438,7 +456,7 @@ public sealed class CliIntegrationTests : IDisposable
         // Verify content is gone
         var getSettings = new GetCommandSettings
         {
-            ConfigPath = this._configPath,
+            ConfigPath = _configPath,
             Format = "json",
             Id = customId
         };
@@ -448,15 +466,16 @@ public sealed class CliIntegrationTests : IDisposable
         Assert.Equal(Constants.App.ExitCodeUserError, getExitCode);
     }
 
+
     [Fact]
     public async Task DeleteCommand_WithQuietVerbosity_SucceedsWithMinimalOutput()
     {
         // Arrange - First upsert content
-        var config = ConfigParser.LoadFromFile(this._configPath);
+        var config = ConfigParser.LoadFromFile(_configPath);
         const string customId = "quiet-delete-id";
         var upsertSettings = new UpsertCommandSettings
         {
-            ConfigPath = this._configPath,
+            ConfigPath = _configPath,
             Format = "json",
             Content = "Content to delete quietly",
             Id = customId
@@ -469,7 +488,7 @@ public sealed class CliIntegrationTests : IDisposable
         // Act - Delete with quiet verbosity
         var deleteSettings = new DeleteCommandSettings
         {
-            ConfigPath = this._configPath,
+            ConfigPath = _configPath,
             Format = "json",
             Verbosity = "quiet",
             Id = customId
@@ -482,18 +501,19 @@ public sealed class CliIntegrationTests : IDisposable
         Assert.Equal(Constants.App.ExitCodeSuccess, exitCode);
     }
 
+
     [Fact]
     public async Task EndToEndWorkflow_UpsertGetListDelete_AllSucceed()
     {
         // This test verifies the complete workflow works together
-        var config = ConfigParser.LoadFromFile(this._configPath);
+        var config = ConfigParser.LoadFromFile(_configPath);
         var context = CreateTestContext("test");
         const string testId = "e2e-workflow-id";
 
         // 1. Upsert
         var upsertSettings = new UpsertCommandSettings
         {
-            ConfigPath = this._configPath,
+            ConfigPath = _configPath,
             Format = "json",
             Content = "End-to-end test content",
             Id = testId,
@@ -506,7 +526,7 @@ public sealed class CliIntegrationTests : IDisposable
         // 2. Get
         var getSettings = new GetCommandSettings
         {
-            ConfigPath = this._configPath,
+            ConfigPath = _configPath,
             Format = "json",
             Id = testId
         };
@@ -517,7 +537,7 @@ public sealed class CliIntegrationTests : IDisposable
         // 3. List
         var listSettings = new ListCommandSettings
         {
-            ConfigPath = this._configPath,
+            ConfigPath = _configPath,
             Format = "json"
         };
         var listCommand = new ListCommand(config, NullLoggerFactory.Instance);
@@ -527,7 +547,7 @@ public sealed class CliIntegrationTests : IDisposable
         // 4. Delete
         var deleteSettings = new DeleteCommandSettings
         {
-            ConfigPath = this._configPath,
+            ConfigPath = _configPath,
             Format = "json",
             Id = testId
         };
@@ -540,14 +560,15 @@ public sealed class CliIntegrationTests : IDisposable
         Assert.Equal(Constants.App.ExitCodeUserError, verifyExitCode);
     }
 
+
     [Fact]
     public async Task NodesCommand_WithJsonFormat_ListsAllNodes()
     {
         // Arrange
-        var config = ConfigParser.LoadFromFile(this._configPath);
+        var config = ConfigParser.LoadFromFile(_configPath);
         var settings = new NodesCommandSettings
         {
-            ConfigPath = this._configPath,
+            ConfigPath = _configPath,
             Format = "json"
         };
 
@@ -561,14 +582,15 @@ public sealed class CliIntegrationTests : IDisposable
         Assert.Equal(Constants.App.ExitCodeSuccess, exitCode);
     }
 
+
     [Fact]
     public async Task NodesCommand_WithYamlFormat_ListsAllNodes()
     {
         // Arrange
-        var config = ConfigParser.LoadFromFile(this._configPath);
+        var config = ConfigParser.LoadFromFile(_configPath);
         var settings = new NodesCommandSettings
         {
-            ConfigPath = this._configPath,
+            ConfigPath = _configPath,
             Format = "yaml"
         };
 
@@ -582,18 +604,19 @@ public sealed class CliIntegrationTests : IDisposable
         Assert.Equal(Constants.App.ExitCodeSuccess, exitCode);
     }
 
+
     [Fact]
     public async Task ConfigCommand_Default_ShowsCurrentNode()
     {
         // Arrange
-        var config = ConfigParser.LoadFromFile(this._configPath);
+        var config = ConfigParser.LoadFromFile(_configPath);
         var settings = new ConfigCommandSettings
         {
-            ConfigPath = this._configPath,
+            ConfigPath = _configPath,
             Format = "json"
         };
 
-        var configPathService = new KernelMemory.Main.CLI.Infrastructure.ConfigPathService(this._configPath);
+        var configPathService = new ConfigPathService(_configPath);
         var command = new ConfigCommand(config, NullLoggerFactory.Instance, configPathService);
         var context = CreateTestContext("config");
 
@@ -603,20 +626,21 @@ public sealed class CliIntegrationTests : IDisposable
         // Assert
         Assert.Equal(Constants.App.ExitCodeSuccess, exitCode);
     }
+
 
     [Fact]
     public async Task ConfigCommand_WithShowNodes_ShowsAllNodes()
     {
         // Arrange
-        var config = ConfigParser.LoadFromFile(this._configPath);
+        var config = ConfigParser.LoadFromFile(_configPath);
         var settings = new ConfigCommandSettings
         {
-            ConfigPath = this._configPath,
+            ConfigPath = _configPath,
             Format = "json",
             ShowNodes = true
         };
 
-        var configPathService = new KernelMemory.Main.CLI.Infrastructure.ConfigPathService(this._configPath);
+        var configPathService = new ConfigPathService(_configPath);
         var command = new ConfigCommand(config, NullLoggerFactory.Instance, configPathService);
         var context = CreateTestContext("config");
 
@@ -626,20 +650,21 @@ public sealed class CliIntegrationTests : IDisposable
         // Assert
         Assert.Equal(Constants.App.ExitCodeSuccess, exitCode);
     }
+
 
     [Fact]
     public async Task ConfigCommand_WithShowCache_ShowsCacheConfig()
     {
         // Arrange
-        var config = ConfigParser.LoadFromFile(this._configPath);
+        var config = ConfigParser.LoadFromFile(_configPath);
         var settings = new ConfigCommandSettings
         {
-            ConfigPath = this._configPath,
+            ConfigPath = _configPath,
             Format = "json",
             ShowCache = true
         };
 
-        var configPathService = new KernelMemory.Main.CLI.Infrastructure.ConfigPathService(this._configPath);
+        var configPathService = new ConfigPathService(_configPath);
         var command = new ConfigCommand(config, NullLoggerFactory.Instance, configPathService);
         var context = CreateTestContext("config");
 
@@ -649,6 +674,7 @@ public sealed class CliIntegrationTests : IDisposable
         // Assert
         Assert.Equal(Constants.App.ExitCodeSuccess, exitCode);
     }
+
 
     [Fact]
     public void Bug4_IntegrationTests_ShouldNeverTouchUserData()
@@ -661,16 +687,17 @@ public sealed class CliIntegrationTests : IDisposable
         var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         var userKmDir = Path.Combine(homeDir, ".km");
 
-        Assert.StartsWith(Path.GetTempPath(), this._tempDir);
-        Assert.DoesNotContain(".km", this._tempDir);
-        Assert.DoesNotContain(userKmDir, this._tempDir);
-        Assert.DoesNotContain(userKmDir, this._dbPath);
-        Assert.DoesNotContain(userKmDir, this._configPath);
+        Assert.StartsWith(Path.GetTempPath(), _tempDir);
+        Assert.DoesNotContain(".km", _tempDir);
+        Assert.DoesNotContain(userKmDir, _tempDir);
+        Assert.DoesNotContain(userKmDir, _dbPath);
+        Assert.DoesNotContain(userKmDir, _configPath);
 
         // Verify the test database path is in temp, not user home
-        Assert.False(this._dbPath.Contains(userKmDir),
-            $"Test database path should not be in user .km directory. Path: {this._dbPath}");
+        Assert.False(_dbPath.Contains(userKmDir),
+            $"Test database path should not be in user .km directory. Path: {_dbPath}");
     }
+
 
     [Fact]
     public async Task Bug2_ConfigCommand_HumanFormat_ShouldNotLeakTypeNames()
@@ -685,14 +712,14 @@ public sealed class CliIntegrationTests : IDisposable
         // of actual formatted data. The fix formats unknown types as JSON instead.
 
         // Arrange
-        var config = ConfigParser.LoadFromFile(this._configPath);
+        var config = ConfigParser.LoadFromFile(_configPath);
         var settings = new ConfigCommandSettings
         {
-            ConfigPath = this._configPath,
+            ConfigPath = _configPath,
             Format = "human"
         };
 
-        var configPathService = new KernelMemory.Main.CLI.Infrastructure.ConfigPathService(this._configPath);
+        var configPathService = new ConfigPathService(_configPath);
         var command = new ConfigCommand(config, NullLoggerFactory.Instance, configPathService);
         var context = CreateTestContext("config");
 
@@ -707,6 +734,7 @@ public sealed class CliIntegrationTests : IDisposable
         // by formatting them as JSON instead of calling ToString() which leaks type names.
         // Manual verification: Run "km config" and verify output is JSON, not type name.
     }
+
 
     /// <summary>
     /// Simple test implementation of IRemainingArguments.

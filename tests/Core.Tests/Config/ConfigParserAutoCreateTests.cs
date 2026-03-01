@@ -13,19 +13,21 @@ public sealed class ConfigParserAutoCreateTests : IDisposable
 {
     private readonly string _tempDir;
 
+
     public ConfigParserAutoCreateTests()
     {
-        this._tempDir = Path.Combine(Path.GetTempPath(), $"km-autoconfig-test-{Guid.NewGuid():N}");
-        Directory.CreateDirectory(this._tempDir);
+        _tempDir = Path.Combine(Path.GetTempPath(), $"km-autoconfig-test-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(_tempDir);
     }
+
 
     public void Dispose()
     {
         try
         {
-            if (Directory.Exists(this._tempDir))
+            if (Directory.Exists(_tempDir))
             {
-                Directory.Delete(this._tempDir, recursive: true);
+                Directory.Delete(_tempDir, true);
             }
         }
         catch (IOException)
@@ -38,11 +40,12 @@ public sealed class ConfigParserAutoCreateTests : IDisposable
         }
     }
 
+
     [Fact]
     public void LoadFromFile_WhenFileDoesNotExist_CreatesConfigFile()
     {
         // Arrange
-        var configPath = Path.Combine(this._tempDir, "config.json");
+        var configPath = Path.Combine(_tempDir, "config.json");
         Assert.False(File.Exists(configPath), "Config file should not exist before test");
 
         // Act
@@ -54,11 +57,12 @@ public sealed class ConfigParserAutoCreateTests : IDisposable
         Assert.NotEmpty(config.Nodes);
     }
 
+
     [Fact]
     public void LoadFromFile_WhenFileDoesNotExist_ConfigHasPathsRelativeToConfigFile()
     {
         // Arrange
-        var configPath = Path.Combine(this._tempDir, "config.json");
+        var configPath = Path.Combine(_tempDir, "config.json");
 
         // Act
         var config = ConfigParser.LoadFromFile(configPath);
@@ -68,25 +72,32 @@ public sealed class ConfigParserAutoCreateTests : IDisposable
 
         // Content index should be SQLite
         var sqliteContent = Assert.IsType<SqliteContentIndexConfig>(personalNode.ContentIndex);
-        Assert.Contains(this._tempDir, sqliteContent.Path);
+        Assert.Contains(_tempDir, sqliteContent.Path);
 
         // Should follow structure: {tempDir}/nodes/personal/content.db
-        var expectedContentPath = Path.Combine(this._tempDir, "nodes", "personal", "content.db");
+        var expectedContentPath = Path.Combine(_tempDir,
+            "nodes",
+            "personal",
+            "content.db");
         Assert.Equal(expectedContentPath, sqliteContent.Path);
 
         // FTS index path should also be under temp dir
         var ftsIndex = Assert.IsType<FtsSearchIndexConfig>(personalNode.SearchIndexes.First());
-        Assert.Contains(this._tempDir, ftsIndex.Path!);
+        Assert.Contains(_tempDir, ftsIndex.Path!);
 
-        var expectedFtsPath = Path.Combine(this._tempDir, "nodes", "personal", "fts.db");
+        var expectedFtsPath = Path.Combine(_tempDir,
+            "nodes",
+            "personal",
+            "fts.db");
         Assert.Equal(expectedFtsPath, ftsIndex.Path);
     }
+
 
     [Fact]
     public void LoadFromFile_WhenFileDoesNotExist_CreatedConfigIsValid()
     {
         // Arrange
-        var configPath = Path.Combine(this._tempDir, "config.json");
+        var configPath = Path.Combine(_tempDir, "config.json");
 
         // Act
         var config = ConfigParser.LoadFromFile(configPath);
@@ -102,11 +113,12 @@ public sealed class ConfigParserAutoCreateTests : IDisposable
         Assert.Null(config.LLMCache);
     }
 
+
     [Fact]
     public void LoadFromFile_WhenFileDoesNotExist_CreatedJsonIsValidAndParseable()
     {
         // Arrange
-        var configPath = Path.Combine(this._tempDir, "config.json");
+        var configPath = Path.Combine(_tempDir, "config.json");
 
         // Act
         var config1 = ConfigParser.LoadFromFile(configPath);
@@ -120,11 +132,12 @@ public sealed class ConfigParserAutoCreateTests : IDisposable
         Assert.Equal(config1.Nodes["personal"].Id, config2.Nodes["personal"].Id);
     }
 
+
     [Fact]
     public void LoadFromFile_WhenFileDoesNotExist_CreatedJsonHasNoNullFields()
     {
         // Arrange
-        var configPath = Path.Combine(this._tempDir, "config.json");
+        var configPath = Path.Combine(_tempDir, "config.json");
 
         // Act
         ConfigParser.LoadFromFile(configPath);
@@ -138,11 +151,12 @@ public sealed class ConfigParserAutoCreateTests : IDisposable
         Assert.DoesNotContain("\"llmCache\": null", json);
     }
 
+
     [Fact]
     public void LoadFromFile_WhenDirectoryDoesNotExist_CreatesDirectory()
     {
         // Arrange
-        var subDir = Path.Combine(this._tempDir, "nested", "deep");
+        var subDir = Path.Combine(_tempDir, "nested", "deep");
         var configPath = Path.Combine(subDir, "config.json");
         Assert.False(Directory.Exists(subDir), "Directory should not exist before test");
 
@@ -154,11 +168,13 @@ public sealed class ConfigParserAutoCreateTests : IDisposable
         Assert.True(File.Exists(configPath), "Config file should be created");
         Assert.NotNull(config);
     }
+
+
     [Fact]
     public void LoadFromFile_WhenConfigDeletedBetweenLoads_RecreatesFile()
     {
         // Arrange
-        var configPath = Path.Combine(this._tempDir, "config.json");
+        var configPath = Path.Combine(_tempDir, "config.json");
 
         // First load - creates config
         var config1 = ConfigParser.LoadFromFile(configPath);
@@ -177,11 +193,12 @@ public sealed class ConfigParserAutoCreateTests : IDisposable
         Assert.Equal(config1.Nodes.Count, config2.Nodes.Count);
     }
 
+
     [Fact]
     public void LoadFromFile_WhenConfigDeletedAfterManyWrites_RecreatesFile()
     {
         // Arrange
-        var configPath = Path.Combine(this._tempDir, "config.json");
+        var configPath = Path.Combine(_tempDir, "config.json");
 
         // Simulate many operations
         for (int i = 0; i < 10; i++)

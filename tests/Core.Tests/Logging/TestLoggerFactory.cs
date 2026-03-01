@@ -36,9 +36,10 @@ public static class TestLoggerFactory
             .WriteTo.TestOutput(output, formatProvider: CultureInfo.InvariantCulture)
             .CreateLogger();
 
-        var factory = new SerilogLoggerFactory(serilogLogger, dispose: true);
+        var factory = new SerilogLoggerFactory(serilogLogger, true);
         return factory.CreateLogger<T>();
     }
+
 
     /// <summary>
     /// Creates an ILoggerFactory that writes to XUnit test output.
@@ -58,6 +59,6 @@ public static class TestLoggerFactory
             .WriteTo.TestOutput(output, formatProvider: CultureInfo.InvariantCulture)
             .CreateLogger();
 
-        return new SerilogLoggerFactory(serilogLogger, dispose: true);
+        return new SerilogLoggerFactory(serilogLogger, true);
     }
 }

@@ -37,25 +37,29 @@ public class GlobalOptions : CommandSettings
     [Description("Disable colored output")]
     public bool NoColor { get; init; }
 
+
     /// <summary>
     /// Validates the global options.
     /// </summary>
     public override ValidationResult Validate()
     {
         var validFormats = new[] { "human", "json", "yaml" };
-        if (!validFormats.Contains(this.Format.ToLowerInvariant()))
+
+        if (!validFormats.Contains(Format.ToLowerInvariant()))
         {
             return ValidationResult.Error("Format must be: human, json, or yaml");
         }
 
         var validVerbosities = new[] { "silent", "quiet", "normal", "verbose" };
-        if (!validVerbosities.Contains(this.Verbosity.ToLowerInvariant()))
+
+        if (!validVerbosities.Contains(Verbosity.ToLowerInvariant()))
         {
             return ValidationResult.Error("Verbosity must be: silent, quiet, normal, or verbose");
         }
 
         return ValidationResult.Success();
     }
+
 
     /// <summary>
     /// Maps the verbosity string to a Serilog LogEventLevel.
@@ -64,7 +68,7 @@ public class GlobalOptions : CommandSettings
     /// <returns>The corresponding Serilog LogEventLevel.</returns>
     public LogEventLevel GetLogLevel()
     {
-        return this.Verbosity.ToLowerInvariant() switch
+        return Verbosity.ToLowerInvariant() switch
         {
             "silent" => LogEventLevel.Fatal,
             "quiet" => LogEventLevel.Warning,

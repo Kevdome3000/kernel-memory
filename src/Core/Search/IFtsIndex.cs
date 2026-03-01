@@ -17,7 +17,13 @@ public interface IFtsIndex : ISearchIndex
     /// <param name="description">Optional description (FTS-indexed).</param>
     /// <param name="content">Main content body (FTS-indexed, required).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    Task IndexAsync(string contentId, string? title, string? description, string content, CancellationToken cancellationToken = default);
+    Task IndexAsync(
+        string contentId,
+        string? title,
+        string? description,
+        string content,
+        CancellationToken cancellationToken = default);
+
 
     /// <summary>
     /// Searches the full-text index for matching content.

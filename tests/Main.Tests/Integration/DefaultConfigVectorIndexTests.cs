@@ -59,6 +59,7 @@ public sealed class DefaultConfigVectorIndexTests
         Assert.Equal("http://localhost:11434", ollamaConfig.BaseUrl);
     }
 
+
     /// <summary>
     /// Verifies that the default configuration includes embeddings cache
     /// as specified in Feature 00001.
@@ -75,6 +76,7 @@ public sealed class DefaultConfigVectorIndexTests
         Assert.True(config.EmbeddingsCache.AllowRead);
         Assert.True(config.EmbeddingsCache.AllowWrite);
     }
+
 
     /// <summary>
     /// Verifies that when a node has multiple search indexes (20+ mixed types),
@@ -101,6 +103,7 @@ public sealed class DefaultConfigVectorIndexTests
 
         // Add 10 Vector indexes with different dimensions
         var dimensions = new[] { 384, 768, 1024, 1536, 3072 };
+
         for (int i = 0; i < 10; i++)
         {
             configs.Add(new VectorSearchIndexConfig
@@ -121,7 +124,10 @@ public sealed class DefaultConfigVectorIndexTests
         // Act
         using var httpClient = new HttpClient();
         using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-        var indexes = SearchIndexFactory.CreateIndexes(configs, httpClient, null, loggerFactory);
+        var indexes = SearchIndexFactory.CreateIndexes(configs,
+            httpClient,
+            null,
+            loggerFactory);
 
         // Assert - ALL 20 indexes should be created
         Assert.Equal(20, indexes.Count);
@@ -147,6 +153,7 @@ public sealed class DefaultConfigVectorIndexTests
         }
     }
 
+
     /// <summary>
     /// Verifies that upsert operations create steps for ALL configured indexes.
     /// This ensures the ingestion pipeline will update every index during km put.
@@ -166,7 +173,7 @@ public sealed class DefaultConfigVectorIndexTests
             {
                 Nodes = new Dictionary<string, NodeConfig>
                 {
-                    ["multi"] = new NodeConfig
+                    ["multi"] = new()
                     {
                         Id = "multi",
                         Access = NodeAccessLevels.Full,
@@ -223,10 +230,13 @@ public sealed class DefaultConfigVectorIndexTests
             var indexes = SearchIndexFactory.CreateIndexes(
                 config.Nodes["multi"].SearchIndexes,
                 httpClient,
-                embeddingCache: null,
+                null,
                 loggerFactory);
 
-            var storage = new ContentStorageService(context, cuidGenerator, storageLogger, indexes);
+            var storage = new ContentStorageService(context,
+                cuidGenerator,
+                storageLogger,
+                indexes);
 
             // Act - Queue an upsert operation
             var request = new UpsertRequest
@@ -239,7 +249,8 @@ public sealed class DefaultConfigVectorIndexTests
 
             // Assert - Verify operation was queued with steps for ALL 3 indexes
             var operation = await context.Operations
-                .FirstOrDefaultAsync(o => o.ContentId == result.Id).ConfigureAwait(false);
+                .FirstOrDefaultAsync(o => o.ContentId == result.Id)
+                .ConfigureAwait(false);
 
             Assert.NotNull(operation);
             Assert.Contains("upsert", operation.PlannedSteps);
@@ -259,7 +270,7 @@ public sealed class DefaultConfigVectorIndexTests
         {
             if (Directory.Exists(tempDir))
             {
-                Directory.Delete(tempDir, recursive: true);
+                Directory.Delete(tempDir, true);
             }
         }
     }

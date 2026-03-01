@@ -18,6 +18,7 @@ public sealed class SearchConstantsTests
         Assert.Equal(1.0f, Constants.SearchDefaults.DefaultIndexWeight);
     }
 
+
     [Fact]
     public void QueryComplexityLimits_AreReasonable()
     {
@@ -27,6 +28,7 @@ public sealed class SearchConstantsTests
         Assert.Equal(1000, Constants.SearchDefaults.MaxFieldValueLength);
         Assert.Equal(1000, Constants.SearchDefaults.QueryParseTimeoutMs);
     }
+
 
     [Fact]
     public void SnippetDefaults_AreConfigured()
@@ -38,6 +40,7 @@ public sealed class SearchConstantsTests
         Assert.Equal("<mark>", Constants.SearchDefaults.DefaultHighlightPrefix);
         Assert.Equal("</mark>", Constants.SearchDefaults.DefaultHighlightSuffix);
     }
+
 
     [Fact]
     public void DiminishingMultipliers_FollowPattern()
@@ -51,6 +54,7 @@ public sealed class SearchConstantsTests
         Assert.Equal(0.125f, multipliers[3]);
     }
 
+
     [Fact]
     public void RelevanceScoreBounds_AreCorrect()
     {
@@ -58,6 +62,7 @@ public sealed class SearchConstantsTests
         Assert.Equal(1.0f, Constants.SearchDefaults.MaxRelevanceScore);
         Assert.Equal(0.0f, Constants.SearchDefaults.MinRelevanceScore);
     }
+
 
     [Fact]
     public void AllNodesWildcard_IsAsterisk()

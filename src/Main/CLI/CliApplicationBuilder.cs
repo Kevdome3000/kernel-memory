@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved.
 
+using System.Diagnostics.CodeAnalysis;
 using KernelMemory.Core;
 using KernelMemory.Core.Config;
 using KernelMemory.Core.Logging;
@@ -45,6 +46,7 @@ public sealed class CliApplicationBuilder
     private static readonly string[] s_doctorExample1 = new[] { "doctor" };
     private static readonly string[] s_doctorExample2 = new[] { "doctor", "-f", "json" };
 
+
     /// <summary>
     /// Creates and configures a CommandApp with all CLI commands.
     /// Loads configuration early and injects it via DI.
@@ -57,25 +59,28 @@ public sealed class CliApplicationBuilder
     /// to the Spectre.Console.Cli framework integration. The short-lived nature of CLI
     /// commands makes this acceptable - logs are flushed when the process terminates.
     /// </remarks>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope",
+    [SuppressMessage("Reliability",
+        "CA2000:Dispose objects before losing scope",
         Justification = "ILoggerFactory lifetime is managed by DI container and must remain alive for duration of CLI execution. Process exit flushes Serilog sinks.")]
     public CommandApp Build(string[]? args = null)
     {
         var actualArgs = args ?? [];
 
         // 1. Determine config path from args early (before command execution)
-        string configPath = this.DetermineConfigPath(actualArgs);
+        string configPath = DetermineConfigPath(actualArgs);
 
         // 2. Load config ONCE (happens before any command runs)
         AppConfig config = ConfigParser.LoadFromFile(configPath);
 
         // 3. Parse logging options from args and config
-        var loggingConfig = this.BuildLoggingConfig(actualArgs, config);
+        var loggingConfig = BuildLoggingConfig(actualArgs, config);
 
         // 4. Create logger factory using Serilog
         ILoggerFactory loggerFactory = SerilogFactory.CreateLoggerFactory(loggingConfig);
         var bootstrapLogger = loggerFactory.CreateLogger<CliApplicationBuilder>();
-        var commandName = actualArgs.Length > 0 ? actualArgs[0] : "<none>";
+        var commandName = actualArgs.Length > 0
+            ? actualArgs[0]
+            : "<none>";
         bootstrapLogger.LogInformation(
             "km CLI starting. Command={CommandName}, ConfigPath={ConfigPath}, LogFile={LogFile}",
             commandName,
@@ -100,9 +105,10 @@ public sealed class CliApplicationBuilder
 
         // 7. Build CommandApp with DI support
         CommandApp app = new(registrar);
-        this.Configure(app);
+        Configure(app);
         return app;
     }
+
 
     /// <summary>
     /// Determines the configuration file path from command line arguments.
@@ -128,6 +134,7 @@ public sealed class CliApplicationBuilder
             Constants.ConfigDefaults.DefaultConfigFileName);
     }
 
+
     /// <summary>
     /// Builds logging configuration from CLI args and app config.
     /// CLI args take precedence over config file settings.
@@ -141,7 +148,8 @@ public sealed class CliApplicationBuilder
         var loggingConfig = config.Logging ?? new LoggingConfig();
 
         // Parse --verbosity / -v from args (takes precedence)
-        var verbosity = this.ParseArgValue(args, "--verbosity", "-v");
+        var verbosity = ParseArgValue(args, "--verbosity", "-v");
+
         if (verbosity != null)
         {
             loggingConfig.Level = verbosity.ToLowerInvariant() switch
@@ -154,7 +162,8 @@ public sealed class CliApplicationBuilder
         }
 
         // Parse --log-file from args (takes precedence)
-        var logFile = this.ParseArgValue(args, "--log-file", null);
+        var logFile = ParseArgValue(args, "--log-file", null);
+
         if (logFile != null)
         {
             loggingConfig.FilePath = logFile;
@@ -162,6 +171,7 @@ public sealed class CliApplicationBuilder
 
         return loggingConfig;
     }
+
 
     /// <summary>
     /// Parses a value for a command line argument.
@@ -174,7 +184,7 @@ public sealed class CliApplicationBuilder
     {
         for (int i = 0; i < args.Length; i++)
         {
-            if (args[i] == longName || (shortName != null && args[i] == shortName))
+            if (args[i] == longName || shortName != null && args[i] == shortName)
             {
                 // Check if there's a value following this argument
                 if (i + 1 < args.Length)
@@ -189,6 +199,7 @@ public sealed class CliApplicationBuilder
 
         return null;
     }
+
 
     /// <summary>
     /// Configures the CommandApp with all commands and examples.

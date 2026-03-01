@@ -47,21 +47,22 @@ public sealed class VectorSearchIndexConfig : SearchIndexConfig
     [JsonPropertyName("useSqliteVec")]
     public bool UseSqliteVec { get; set; } = false;
 
+
     /// <inheritdoc />
     public override void Validate(string path)
     {
         // Validate ID is provided
-        if (string.IsNullOrWhiteSpace(this.Id))
+        if (string.IsNullOrWhiteSpace(Id))
         {
             throw new ConfigException($"{path}.Id", "Search index ID is required");
         }
 
-        this.Embeddings?.Validate($"{path}.Embeddings");
+        Embeddings?.Validate($"{path}.Embeddings");
 
-        var isSqlite = this.Type == SearchIndexTypes.SqliteVector;
-        var isPostgres = this.Type == SearchIndexTypes.PostgresVector;
-        var hasPath = !string.IsNullOrWhiteSpace(this.Path);
-        var hasConnectionString = !string.IsNullOrWhiteSpace(this.ConnectionString);
+        var isSqlite = Type == SearchIndexTypes.SqliteVector;
+        var isPostgres = Type == SearchIndexTypes.PostgresVector;
+        var hasPath = !string.IsNullOrWhiteSpace(Path);
+        var hasConnectionString = !string.IsNullOrWhiteSpace(ConnectionString);
 
         if (isSqlite && !hasPath)
         {
@@ -80,15 +81,16 @@ public sealed class VectorSearchIndexConfig : SearchIndexConfig
                 "Vector index: specify either Path (SQLite) or ConnectionString (Postgres), not both");
         }
 
-        if (this.Dimensions <= 0)
+        if (Dimensions <= 0)
         {
             throw new ConfigException($"{path}.Dimensions",
-                $"Vector dimensions must be positive (got {this.Dimensions})");
+                $"Vector dimensions must be positive (got {Dimensions})");
         }
 
         // Common dimensions check (warning, not error)
         var commonDimensions = new[] { 384, 768, 1024, 1536, 3072 };
-        if (!commonDimensions.Contains(this.Dimensions))
+
+        if (!commonDimensions.Contains(Dimensions))
         {
             // Log warning: uncommon dimension size
             // This is acceptable, just informational

@@ -1,4 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved.
+using System.Diagnostics.CodeAnalysis;
+
 namespace KernelMemory.Core.Search.Models;
 
 /// <summary>
@@ -65,7 +67,7 @@ public sealed class SearchResult
     /// Tags for categorization.
     /// Filter-only field (NOT FTS-indexed).
     /// </summary>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
+    [SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
     public string[] Tags { get; init; } = [];
 
     /// <summary>

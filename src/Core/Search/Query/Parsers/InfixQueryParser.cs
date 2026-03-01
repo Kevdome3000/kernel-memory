@@ -25,12 +25,13 @@ public sealed class InfixQueryParser : IQueryParser
         try
         {
             // Simplified parser: use recursive descent parsing
-            var tokens = this.Tokenize(query);
+            var tokens = Tokenize(query);
             var parser = new InfixParser(tokens);
             var result = parser.ParseExpression();
 
             // Check for unmatched closing parenthesis (extra tokens after valid expression)
             var current = parser.CurrentToken();
+
             if (current?.Type == TokenType.RightParen)
             {
                 throw new QuerySyntaxException("Unexpected closing parenthesis");
@@ -48,6 +49,7 @@ public sealed class InfixQueryParser : IQueryParser
         }
     }
 
+
     /// <summary>
     /// Validate query syntax without full parsing.
     /// </summary>
@@ -55,7 +57,7 @@ public sealed class InfixQueryParser : IQueryParser
     {
         try
         {
-            this.Parse(query);
+            Parse(query);
             return true;
         }
         catch (QuerySyntaxException)
@@ -63,6 +65,7 @@ public sealed class InfixQueryParser : IQueryParser
             return false;
         }
     }
+
 
     /// <summary>
     /// Tokenize the query string into tokens.
@@ -111,6 +114,7 @@ public sealed class InfixQueryParser : IQueryParser
                 // Read array values
                 var arrayValues = new List<string>();
                 var arrayValue = string.Empty;
+
                 while (i < query.Length && query[i] != ']')
                 {
                     if (query[i] == ',')
@@ -146,6 +150,7 @@ public sealed class InfixQueryParser : IQueryParser
             if (i + 1 < query.Length)
             {
                 var twoChar = query.Substring(i, 2);
+
                 if (twoChar == "!=" || twoChar == ">=" || twoChar == "<=" || twoChar == "==")
                 {
                     tokens.Add(new Token { Type = TokenType.Operator, Value = twoChar });
@@ -167,12 +172,14 @@ public sealed class InfixQueryParser : IQueryParser
                 var quoteChar = query[i];
                 i++;
                 var start = i;
+
                 while (i < query.Length && query[i] != quoteChar)
                 {
                     i++;
                 }
 
                 tokens.Add(new Token { Type = TokenType.String, Value = query.Substring(start, i - start) });
+
                 if (i < query.Length)
                 {
                     i++; // Skip closing quote
@@ -182,12 +189,14 @@ public sealed class InfixQueryParser : IQueryParser
 
             // Identifier or keyword
             var startPos = i;
+
             while (i < query.Length && !char.IsWhiteSpace(query[i]) && query[i] != '(' && query[i] != ')' && query[i] != ':' && query[i] != '>' && query[i] != '<' && query[i] != '!' && query[i] != '=')
             {
                 i++;
             }
 
             var word = query.Substring(startPos, i - startPos);
+
             if (string.IsNullOrWhiteSpace(word))
             {
                 continue;
@@ -215,6 +224,7 @@ public sealed class InfixQueryParser : IQueryParser
         return tokens;
     }
 
+
     private enum TokenType
     {
         Identifier,
@@ -228,36 +238,41 @@ public sealed class InfixQueryParser : IQueryParser
         ArrayValue
     }
 
+
     private sealed class Token
     {
         public TokenType Type { get; set; }
         public string Value { get; set; } = string.Empty;
     }
 
+
     private sealed class InfixParser
     {
         private readonly List<Token> _tokens;
         private int _position;
 
+
         public InfixParser(List<Token> tokens)
         {
-            this._tokens = tokens;
-            this._position = 0;
+            _tokens = tokens;
+            _position = 0;
         }
+
 
         public QueryNode ParseExpression()
         {
-            return this.ParseOr();
+            return ParseOr();
         }
+
 
         private QueryNode ParseOr()
         {
-            var left = this.ParseAnd();
+            var left = ParseAnd();
 
-            while (this.CurrentToken()?.Type == TokenType.Or)
+            while (CurrentToken()?.Type == TokenType.Or)
             {
-                this._position++;
-                var right = this.ParseAnd();
+                _position++;
+                var right = ParseAnd();
                 left = new LogicalNode
                 {
                     Operator = LogicalOperator.Or,
@@ -268,14 +283,15 @@ public sealed class InfixQueryParser : IQueryParser
             return left;
         }
 
+
         private QueryNode ParseAnd()
         {
-            var left = this.ParseNot();
+            var left = ParseNot();
 
-            while (this.CurrentToken()?.Type == TokenType.And)
+            while (CurrentToken()?.Type == TokenType.And)
             {
-                this._position++;
-                var right = this.ParseNot();
+                _position++;
+                var right = ParseNot();
                 left = new LogicalNode
                 {
                     Operator = LogicalOperator.And,
@@ -286,12 +302,13 @@ public sealed class InfixQueryParser : IQueryParser
             return left;
         }
 
+
         private QueryNode ParseNot()
         {
-            if (this.CurrentToken()?.Type == TokenType.Not)
+            if (CurrentToken()?.Type == TokenType.Not)
             {
-                this._position++;
-                var operand = this.ParsePrimary();
+                _position++;
+                var operand = ParsePrimary();
                 return new LogicalNode
                 {
                     Operator = LogicalOperator.Not,
@@ -299,12 +316,14 @@ public sealed class InfixQueryParser : IQueryParser
                 };
             }
 
-            return this.ParsePrimary();
+            return ParsePrimary();
         }
+
 
         private QueryNode ParsePrimary()
         {
-            var token = this.CurrentToken();
+            var token = CurrentToken();
+
             if (token == null)
             {
                 throw new QuerySyntaxException("Unexpected end of query");
@@ -313,13 +332,14 @@ public sealed class InfixQueryParser : IQueryParser
             // Parentheses
             if (token.Type == TokenType.LeftParen)
             {
-                this._position++;
-                var expr = this.ParseExpression();
-                if (this.CurrentToken()?.Type != TokenType.RightParen)
+                _position++;
+                var expr = ParseExpression();
+
+                if (CurrentToken()?.Type != TokenType.RightParen)
                 {
                     throw new QuerySyntaxException("Expected closing parenthesis");
                 }
-                this._position++;
+                _position++;
                 return expr;
             }
 
@@ -327,31 +347,34 @@ public sealed class InfixQueryParser : IQueryParser
             if (token.Type == TokenType.Identifier)
             {
                 var field = token.Value;
-                this._position++;
+                _position++;
 
                 // Check if followed by operator
-                var opToken = this.CurrentToken();
+                var opToken = CurrentToken();
+
                 if (opToken?.Type == TokenType.Operator)
                 {
                     var op = opToken.Value;
-                    this._position++;
+                    _position++;
 
-                    var valueToken = this.CurrentToken();
+                    var valueToken = CurrentToken();
+
                     if (valueToken == null)
                     {
                         throw new QuerySyntaxException("Expected value after operator");
                     }
 
                     object value;
+
                     if (valueToken.Type == TokenType.ArrayValue)
                     {
                         value = valueToken.Value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-                        this._position++;
+                        _position++;
                     }
                     else if (valueToken.Type == TokenType.String || valueToken.Type == TokenType.Identifier)
                     {
                         value = valueToken.Value;
-                        this._position++;
+                        _position++;
                     }
                     else
                     {
@@ -361,7 +384,7 @@ public sealed class InfixQueryParser : IQueryParser
                     return new ComparisonNode
                     {
                         Field = new FieldNode { FieldPath = field.ToLowerInvariant() },
-                        Operator = this.MapOperator(op),
+                        Operator = MapOperator(op),
                         Value = new LiteralNode { Value = value }
                     };
                 }
@@ -377,7 +400,7 @@ public sealed class InfixQueryParser : IQueryParser
             // Quoted string - default search
             if (token.Type == TokenType.String)
             {
-                this._position++;
+                _position++;
                 return new TextSearchNode
                 {
                     SearchText = token.Value,
@@ -387,6 +410,7 @@ public sealed class InfixQueryParser : IQueryParser
 
             throw new QuerySyntaxException($"Unexpected token: {token.Value}");
         }
+
 
         private ComparisonOperator MapOperator(string op)
         {
@@ -404,9 +428,12 @@ public sealed class InfixQueryParser : IQueryParser
             };
         }
 
+
         public Token? CurrentToken()
         {
-            return this._position < this._tokens.Count ? this._tokens[this._position] : null;
+            return _position < _tokens.Count
+                ? _tokens[_position]
+                : null;
         }
     }
 }

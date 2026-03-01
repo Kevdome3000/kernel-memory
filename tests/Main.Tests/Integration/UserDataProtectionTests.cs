@@ -1,4 +1,5 @@
 // Copyright (c) Microsoft. All rights reserved.
+using System.Text.Json;
 using KernelMemory.Core.Config;
 using KernelMemory.Main.CLI.Commands;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -17,37 +18,42 @@ public sealed class UserDataProtectionTests : IDisposable
     private readonly string _userKmDir;
     private readonly string _userPersonalDbPath;
 
+
     public UserDataProtectionTests()
     {
-        this._tempDir = Path.Combine(Path.GetTempPath(), $"km-protection-test-{Guid.NewGuid()}");
-        Directory.CreateDirectory(this._tempDir);
+        _tempDir = Path.Combine(Path.GetTempPath(), $"km-protection-test-{Guid.NewGuid()}");
+        Directory.CreateDirectory(_tempDir);
 
-        this._configPath = Path.Combine(this._tempDir, "config.json");
+        _configPath = Path.Combine(_tempDir, "config.json");
 
         // Track user's actual ~/.km paths
-        this._userHomeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        this._userKmDir = Path.Combine(this._userHomeDir, ".km");
-        this._userPersonalDbPath = Path.Combine(this._userKmDir, "nodes", "personal", "content.db");
+        _userHomeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        _userKmDir = Path.Combine(_userHomeDir, ".km");
+        _userPersonalDbPath = Path.Combine(_userKmDir,
+            "nodes",
+            "personal",
+            "content.db");
 
         // Create test config pointing to temp directory
         var config = new AppConfig
         {
             Nodes = new Dictionary<string, NodeConfig>
             {
-                ["test"] = NodeConfig.CreateDefaultPersonalNode(Path.Combine(this._tempDir, "nodes", "test"))
+                ["test"] = NodeConfig.CreateDefaultPersonalNode(Path.Combine(_tempDir, "nodes", "test"))
             }
         };
-        var json = System.Text.Json.JsonSerializer.Serialize(config);
-        File.WriteAllText(this._configPath, json);
+        var json = JsonSerializer.Serialize(config);
+        File.WriteAllText(_configPath, json);
     }
+
 
     public void Dispose()
     {
         try
         {
-            if (Directory.Exists(this._tempDir))
+            if (Directory.Exists(_tempDir))
             {
-                Directory.Delete(this._tempDir, true);
+                Directory.Delete(_tempDir, true);
             }
         }
         catch (IOException)
@@ -60,6 +66,7 @@ public sealed class UserDataProtectionTests : IDisposable
         }
     }
 
+
     [Fact]
     public async Task CriticalBug_CommandExecutionTests_MustNotTouchUserData()
     {
@@ -67,20 +74,20 @@ public sealed class UserDataProtectionTests : IDisposable
         // Tests were writing to ~/.km because settings.ConfigPath was not set
 
         // Record if user has personal DB before test
-        var userDbExistedBefore = File.Exists(this._userPersonalDbPath);
+        var userDbExistedBefore = File.Exists(_userPersonalDbPath);
         long userDbSizeBefore = 0;
         DateTime userDbModifiedBefore = DateTime.MinValue;
 
         if (userDbExistedBefore)
         {
-            var fileInfo = new FileInfo(this._userPersonalDbPath);
+            var fileInfo = new FileInfo(_userPersonalDbPath);
             userDbSizeBefore = fileInfo.Length;
             userDbModifiedBefore = fileInfo.LastWriteTimeUtc;
         }
 
         // BUG REPRODUCTION: Settings without ConfigPath falls back to ~/.km
         // FIXED: Now config is injected, but this test demonstrates the old bug scenario
-        var config = ConfigParser.LoadFromFile(this._configPath);
+        var config = ConfigParser.LoadFromFile(_configPath);
 
         var settingsWithoutConfigPath = new UpsertCommandSettings
         {
@@ -91,7 +98,7 @@ public sealed class UserDataProtectionTests : IDisposable
 
         // This context has --config flag, but BaseCommand reads from settings.ConfigPath!
         var context = new CommandContext(
-            new[] { "--config", this._configPath },
+            new[] { "--config", _configPath },
             new EmptyRemainingArguments(),
             "put",
             null);
@@ -115,12 +122,12 @@ public sealed class UserDataProtectionTests : IDisposable
         }
 
         // Assert - User's personal DB must NOT be modified
-        var userDbExistsAfter = File.Exists(this._userPersonalDbPath);
+        var userDbExistsAfter = File.Exists(_userPersonalDbPath);
 
         if (userDbExistedBefore)
         {
             // If DB existed before, verify it wasn't modified
-            var fileInfo = new FileInfo(this._userPersonalDbPath);
+            var fileInfo = new FileInfo(_userPersonalDbPath);
             var userDbSizeAfter = fileInfo.Length;
             var userDbModifiedAfter = fileInfo.LastWriteTimeUtc;
 
@@ -131,25 +138,26 @@ public sealed class UserDataProtectionTests : IDisposable
         {
             // If DB didn't exist, verify it wasn't created
             Assert.False(userDbExistsAfter,
-                $"CRITICAL BUG: Test created user's personal database at {this._userPersonalDbPath}");
+                $"CRITICAL BUG: Test created user's personal database at {_userPersonalDbPath}");
         }
     }
+
 
     [Fact]
     public async Task Fixed_SettingsWithConfigPath_MustUseTestDirectory()
     {
         // This test shows the CORRECT way: Load config and inject it
-        var config = ConfigParser.LoadFromFile(this._configPath);
+        var config = ConfigParser.LoadFromFile(_configPath);
 
         var settingsWithConfigPath = new UpsertCommandSettings
         {
-            ConfigPath = this._configPath,
+            ConfigPath = _configPath,
             Content = "Test content in temp directory"
         };
 
         var command = new UpsertCommand(config, NullLoggerFactory.Instance);
         var context = new CommandContext(
-            new[] { "--config", this._configPath },
+            new[] { "--config", _configPath },
             new EmptyRemainingArguments(),
             "put",
             null);
@@ -161,14 +169,18 @@ public sealed class UserDataProtectionTests : IDisposable
         Assert.Equal(Constants.App.ExitCodeSuccess, exitCode);
 
         // Verify test used temp directory, not ~/.km
-        var testDbPath = Path.Combine(this._tempDir, "nodes", "test", "content.db");
+        var testDbPath = Path.Combine(_tempDir,
+            "nodes",
+            "test",
+            "content.db");
         Assert.True(File.Exists(testDbPath),
             $"Test should create database in temp directory: {testDbPath}");
 
         // Verify ~/.km was NOT touched
-        Assert.False(this._userPersonalDbPath.Contains(this._tempDir),
+        Assert.False(_userPersonalDbPath.Contains(_tempDir),
             "User's personal database path should not be in test temp directory");
     }
+
 
     /// <summary>
     /// Helper class to provide empty remaining arguments for CommandContext.

@@ -42,6 +42,7 @@ public static class LoggerExtensions
             param3);
     }
 
+
     /// <summary>
     /// Logs method exit at Debug level with automatic method name capture.
     /// Use this before returning from public methods for diagnostics.

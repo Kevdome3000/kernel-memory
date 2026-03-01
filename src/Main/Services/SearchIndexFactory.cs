@@ -1,4 +1,5 @@
 // Copyright (c) Microsoft. All rights reserved.
+using System.Diagnostics.CodeAnalysis;
 using KernelMemory.Core.Config.SearchIndex;
 using KernelMemory.Core.Embeddings.Cache;
 using KernelMemory.Core.Search;
@@ -36,7 +37,10 @@ public static class SearchIndexFactory
             }
             else if (config is VectorSearchIndexConfig vectorConfig)
             {
-                var vectorIndex = CreateVectorIndexFromConfig(vectorConfig, httpClient, embeddingCache, loggerFactory);
+                var vectorIndex = CreateVectorIndexFromConfig(vectorConfig,
+                    httpClient,
+                    embeddingCache,
+                    loggerFactory);
                 indexes[config.Id] = vectorIndex;
             }
             // Add other index types here (graph, hybrid, etc.)
@@ -44,6 +48,7 @@ public static class SearchIndexFactory
 
         return indexes;
     }
+
 
     /// <summary>
     /// Creates an FTS index from configuration.
@@ -60,6 +65,7 @@ public static class SearchIndexFactory
         var logger = loggerFactory.CreateLogger<SqliteFtsIndex>();
         return new SqliteFtsIndex(config.Path, config.EnableStemming, logger);
     }
+
 
     /// <summary>
     /// Creates a vector index from configuration.
@@ -98,13 +104,15 @@ public static class SearchIndexFactory
             logger);
     }
 
+
     /// <summary>
     /// Creates the first FTS index from configuration.
     /// Returns null if no FTS index is configured.
     /// </summary>
     /// <param name="configs">List of search index configurations.</param>
     /// <returns>The first FTS index, or null if none configured.</returns>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope",
+    [SuppressMessage("Reliability",
+        "CA2000:Dispose objects before losing scope",
         Justification = "LoggerFactory lifetime is managed by the logger infrastructure. Short-lived CLI commands don't require explicit disposal.")]
     public static IFtsIndex? CreateFtsIndex(List<SearchIndexConfig> configs)
     {

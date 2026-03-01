@@ -2,7 +2,7 @@
 <Project>
     <PropertyGroup>
         <IsPackable>false</IsPackable>
-        
+
         <!-- C# lang version, https://learn.microsoft.com/dotnet/csharp/whats-new -->
         <LangVersion>latest</LangVersion>
 
@@ -67,7 +67,7 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Roslynator.CSharp" />
+        <PackageReference Include="Roslynator.CSharp"/>
         <PackageReference Include="Roslynator.CodeFixes">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

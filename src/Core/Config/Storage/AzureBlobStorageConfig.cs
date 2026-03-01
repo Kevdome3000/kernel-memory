@@ -32,19 +32,29 @@ public sealed class AzureBlobStorageConfig : StorageConfig
     [JsonPropertyName("useManagedIdentity")]
     public bool UseManagedIdentity { get; set; }
 
+
     /// <inheritdoc />
     public override void Validate(string path)
     {
-        var hasConnectionString = !string.IsNullOrWhiteSpace(this.ConnectionString);
-        var hasApiKey = !string.IsNullOrWhiteSpace(this.ApiKey);
+        var hasConnectionString = !string.IsNullOrWhiteSpace(ConnectionString);
+        var hasApiKey = !string.IsNullOrWhiteSpace(ApiKey);
 
-        if (!hasConnectionString && !hasApiKey && !this.UseManagedIdentity)
+        if (!hasConnectionString && !hasApiKey && !UseManagedIdentity)
         {
             throw new ConfigException(path,
                 "Azure Blob storage requires one of: ConnectionString, ApiKey, or UseManagedIdentity");
         }
 
-        if ((hasConnectionString ? 1 : 0) + (hasApiKey ? 1 : 0) + (this.UseManagedIdentity ? 1 : 0) > 1)
+        if ((hasConnectionString
+                ? 1
+                : 0)
+            + (hasApiKey
+                ? 1
+                : 0)
+            + (UseManagedIdentity
+                ? 1
+                : 0)
+            > 1)
         {
             throw new ConfigException(path,
                 "Azure Blob storage: specify only one authentication method");

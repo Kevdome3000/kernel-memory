@@ -14,9 +14,11 @@ public class ContentStorageDbContext : DbContext
     public DbSet<ContentRecord> Content { get; set; } = null!;
     public DbSet<OperationRecord> Operations { get; set; } = null!;
 
+
     public ContentStorageDbContext(DbContextOptions<ContentStorageDbContext> options) : base(options)
     {
     }
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -135,8 +137,12 @@ public class ContentStorageDbContext : DbContext
             // Nullable DateTimeOffset for locking
             entity.Property(e => e.LastAttemptTimestamp)
                 .HasConversion(
-                    v => v.HasValue ? v.Value.ToString("O") : null,
-                    v => v == null ? (DateTimeOffset?)null : DateTimeOffset.Parse(v, CultureInfo.InvariantCulture));
+                    v => v.HasValue
+                        ? v.Value.ToString("O")
+                        : null,
+                    v => v == null
+                        ? null
+                        : DateTimeOffset.Parse(v, CultureInfo.InvariantCulture));
 
             // JSON fields - store as TEXT in SQLite
             entity.Property(e => e.PlannedStepsJson)

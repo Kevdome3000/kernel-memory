@@ -21,6 +21,7 @@ public sealed class HuggingFaceEmbeddingsConfigTests
         Assert.Equal(EmbeddingsTypes.HuggingFace, config.Type);
     }
 
+
     [Fact]
     public void DefaultModel_ShouldBeAllMiniLM()
     {
@@ -30,6 +31,7 @@ public sealed class HuggingFaceEmbeddingsConfigTests
         // Assert
         Assert.Equal("sentence-transformers/all-MiniLM-L6-v2", config.Model);
     }
+
 
     [Fact]
     public void DefaultBaseUrl_ShouldBeInferenceApi()
@@ -41,6 +43,7 @@ public sealed class HuggingFaceEmbeddingsConfigTests
         Assert.Equal("https://api-inference.huggingface.co", config.BaseUrl);
     }
 
+
     [Fact]
     public void ApiKey_ShouldDefaultToNull()
     {
@@ -50,6 +53,7 @@ public sealed class HuggingFaceEmbeddingsConfigTests
         // Assert
         Assert.Null(config.ApiKey);
     }
+
 
     [Fact]
     public void Validate_WithValidConfig_ShouldNotThrow()
@@ -66,6 +70,7 @@ public sealed class HuggingFaceEmbeddingsConfigTests
         config.Validate("test");
     }
 
+
     [Fact]
     public void Validate_WithEmptyModel_ShouldThrowConfigException()
     {
@@ -80,6 +85,7 @@ public sealed class HuggingFaceEmbeddingsConfigTests
         var ex = Assert.Throws<ConfigException>(() => config.Validate("test"));
         Assert.Contains("Model", ex.Message);
     }
+
 
     [Fact]
     public void Validate_WithEmptyApiKey_ShouldThrowConfigException()
@@ -96,6 +102,7 @@ public sealed class HuggingFaceEmbeddingsConfigTests
         Assert.Contains("API", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
+
     [Fact]
     public void Validate_WithNullApiKey_ShouldThrowConfigException()
     {
@@ -110,6 +117,7 @@ public sealed class HuggingFaceEmbeddingsConfigTests
         var ex = Assert.Throws<ConfigException>(() => config.Validate("test"));
         Assert.Contains("API", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
+
 
     [Fact]
     public void Validate_WithInvalidBaseUrl_ShouldThrowConfigException()
@@ -126,6 +134,7 @@ public sealed class HuggingFaceEmbeddingsConfigTests
         var ex = Assert.Throws<ConfigException>(() => config.Validate("test"));
         Assert.Contains("URL", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
+
 
     [Fact]
     public void LoadFromFile_WithHuggingFaceEmbeddings_ShouldDeserialize()

@@ -1,4 +1,5 @@
 // Copyright (c) Microsoft. All rights reserved.
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 
 namespace KernelMemory.Core.Storage.Entities;
@@ -28,13 +29,13 @@ public class OperationRecord
     /// <summary>
     /// Gets or sets the planned steps array. Not mapped to database - uses PlannedStepsJson for persistence.
     /// </summary>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
+    [SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
     public string[] PlannedSteps
     {
-        get => string.IsNullOrWhiteSpace(this.PlannedStepsJson)
+        get => string.IsNullOrWhiteSpace(PlannedStepsJson)
             ? []
-            : JsonSerializer.Deserialize<string[]>(this.PlannedStepsJson) ?? [];
-        set => this.PlannedStepsJson = JsonSerializer.Serialize(value);
+            : JsonSerializer.Deserialize<string[]>(PlannedStepsJson) ?? [];
+        set => PlannedStepsJson = JsonSerializer.Serialize(value);
     }
 
     public string CompletedStepsJson { get; set; } = "[]";
@@ -42,13 +43,13 @@ public class OperationRecord
     /// <summary>
     /// Gets or sets the completed steps array. Not mapped to database - uses CompletedStepsJson for persistence.
     /// </summary>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
+    [SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
     public string[] CompletedSteps
     {
-        get => string.IsNullOrWhiteSpace(this.CompletedStepsJson)
+        get => string.IsNullOrWhiteSpace(CompletedStepsJson)
             ? []
-            : JsonSerializer.Deserialize<string[]>(this.CompletedStepsJson) ?? [];
-        set => this.CompletedStepsJson = JsonSerializer.Serialize(value);
+            : JsonSerializer.Deserialize<string[]>(CompletedStepsJson) ?? [];
+        set => CompletedStepsJson = JsonSerializer.Serialize(value);
     }
 
     public string RemainingStepsJson { get; set; } = "[]";
@@ -56,13 +57,13 @@ public class OperationRecord
     /// <summary>
     /// Gets or sets the remaining steps array. Not mapped to database - uses RemainingStepsJson for persistence.
     /// </summary>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
+    [SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
     public string[] RemainingSteps
     {
-        get => string.IsNullOrWhiteSpace(this.RemainingStepsJson)
+        get => string.IsNullOrWhiteSpace(RemainingStepsJson)
             ? []
-            : JsonSerializer.Deserialize<string[]>(this.RemainingStepsJson) ?? [];
-        set => this.RemainingStepsJson = JsonSerializer.Serialize(value);
+            : JsonSerializer.Deserialize<string[]>(RemainingStepsJson) ?? [];
+        set => RemainingStepsJson = JsonSerializer.Serialize(value);
     }
 
     // Payload stored as JSON
@@ -73,9 +74,11 @@ public class OperationRecord
     /// </summary>
     public object? Payload
     {
-        get => string.IsNullOrWhiteSpace(this.PayloadJson)
+        get => string.IsNullOrWhiteSpace(PayloadJson)
             ? null
-            : JsonSerializer.Deserialize<object>(this.PayloadJson);
-        set => this.PayloadJson = value == null ? "{}" : JsonSerializer.Serialize(value);
+            : JsonSerializer.Deserialize<object>(PayloadJson);
+        set => PayloadJson = value == null
+            ? "{}"
+            : JsonSerializer.Serialize(value);
     }
 }

@@ -5,6 +5,7 @@ using KernelMemory.Core.Config;
 using KernelMemory.Core.Config.ContentIndex;
 using KernelMemory.Core.Config.Enums;
 using KernelMemory.Core.Config.SearchIndex;
+using KernelMemory.Core.Storage;
 using KernelMemory.Main.CLI.Commands;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -24,28 +25,37 @@ public sealed class NodeSelectionTests : IDisposable
     private readonly string _goodNodeDbPath;
     private readonly string _brokenNodeDbPath;
 
+
     public NodeSelectionTests()
     {
         // Create temp directory for test config
-        this._tempDir = Path.Combine(Path.GetTempPath(), $"km-node-selection-test-{Guid.NewGuid()}");
-        Directory.CreateDirectory(this._tempDir);
+        _tempDir = Path.Combine(Path.GetTempPath(), $"km-node-selection-test-{Guid.NewGuid()}");
+        Directory.CreateDirectory(_tempDir);
 
         // Good node: will have a valid database
-        this._goodNodeDbPath = Path.Combine(this._tempDir, "nodes", "good-node", "content.db");
+        _goodNodeDbPath = Path.Combine(_tempDir,
+            "nodes",
+            "good-node",
+            "content.db");
 
         // Broken node: will NOT have a database (simulating missing database)
-        this._brokenNodeDbPath = Path.Combine(this._tempDir, "nodes", "broken-node", "content.db");
+        _brokenNodeDbPath = Path.Combine(_tempDir,
+            "nodes",
+            "broken-node",
+            "content.db");
 
-        this._configPath = Path.Combine(this._tempDir, "config.json");
+        _configPath = Path.Combine(_tempDir, "config.json");
     }
+
 
     public void Dispose()
     {
-        if (Directory.Exists(this._tempDir))
+        if (Directory.Exists(_tempDir))
         {
-            Directory.Delete(this._tempDir, recursive: true);
+            Directory.Delete(_tempDir, true);
         }
     }
+
 
     /// <summary>
     /// Creates a test config with both good and broken nodes.
@@ -54,13 +64,13 @@ public sealed class NodeSelectionTests : IDisposable
     private AppConfig CreateTestConfigWithBothNodes()
     {
         // Create the good node with its database
-        var goodNodeDir = Path.GetDirectoryName(this._goodNodeDbPath)!;
+        var goodNodeDir = Path.GetDirectoryName(_goodNodeDbPath)!;
         Directory.CreateDirectory(goodNodeDir);
 
         // Create actual database for good node using the same setup as real commands
-        var optionsBuilder = new Microsoft.EntityFrameworkCore.DbContextOptionsBuilder<KernelMemory.Core.Storage.ContentStorageDbContext>();
-        optionsBuilder.UseSqlite("Data Source=" + this._goodNodeDbPath);
-        using var context = new KernelMemory.Core.Storage.ContentStorageDbContext(optionsBuilder.Options);
+        var optionsBuilder = new DbContextOptionsBuilder<ContentStorageDbContext>();
+        optionsBuilder.UseSqlite("Data Source=" + _goodNodeDbPath);
+        using var context = new ContentStorageDbContext(optionsBuilder.Options);
         context.Database.EnsureCreated();
 
         // Create FTS index database for good node
@@ -71,10 +81,10 @@ public sealed class NodeSelectionTests : IDisposable
         {
             Nodes = new Dictionary<string, NodeConfig>
             {
-                ["good-node"] = new NodeConfig
+                ["good-node"] = new()
                 {
                     Id = "good-node",
-                    ContentIndex = new SqliteContentIndexConfig { Path = this._goodNodeDbPath },
+                    ContentIndex = new SqliteContentIndexConfig { Path = _goodNodeDbPath },
                     SearchIndexes =
                     [
                         new FtsSearchIndexConfig
@@ -86,17 +96,20 @@ public sealed class NodeSelectionTests : IDisposable
                         }
                     ]
                 },
-                ["broken-node"] = new NodeConfig
+                ["broken-node"] = new()
                 {
                     Id = "broken-node",
-                    ContentIndex = new SqliteContentIndexConfig { Path = this._brokenNodeDbPath },
+                    ContentIndex = new SqliteContentIndexConfig { Path = _brokenNodeDbPath },
                     SearchIndexes =
                     [
                         new FtsSearchIndexConfig
                         {
                             Id = "fts",
                             Type = SearchIndexTypes.SqliteFTS,
-                            Path = Path.Combine(this._tempDir, "nodes", "broken-node", "fts.db"),
+                            Path = Path.Combine(_tempDir,
+                                "nodes",
+                                "broken-node",
+                                "fts.db"),
                             Weight = 1.0f
                         }
                     ]
@@ -105,10 +118,11 @@ public sealed class NodeSelectionTests : IDisposable
         };
 
         var json = JsonSerializer.Serialize(config, s_jsonOptions);
-        File.WriteAllText(this._configPath, json);
+        File.WriteAllText(_configPath, json);
 
         return config;
     }
+
 
     /// <summary>
     /// Creates a test config where the broken node is first (first in insertion order).
@@ -117,13 +131,13 @@ public sealed class NodeSelectionTests : IDisposable
     private AppConfig CreateTestConfigWithBrokenNodeFirst()
     {
         // Create the good node with its database
-        var goodNodeDir = Path.GetDirectoryName(this._goodNodeDbPath)!;
+        var goodNodeDir = Path.GetDirectoryName(_goodNodeDbPath)!;
         Directory.CreateDirectory(goodNodeDir);
 
         // Create actual database for good node
-        var optionsBuilder = new Microsoft.EntityFrameworkCore.DbContextOptionsBuilder<KernelMemory.Core.Storage.ContentStorageDbContext>();
-        optionsBuilder.UseSqlite("Data Source=" + this._goodNodeDbPath);
-        using var context = new KernelMemory.Core.Storage.ContentStorageDbContext(optionsBuilder.Options);
+        var optionsBuilder = new DbContextOptionsBuilder<ContentStorageDbContext>();
+        optionsBuilder.UseSqlite("Data Source=" + _goodNodeDbPath);
+        using var context = new ContentStorageDbContext(optionsBuilder.Options);
         context.Database.EnsureCreated();
 
         // FTS paths
@@ -134,25 +148,28 @@ public sealed class NodeSelectionTests : IDisposable
         {
             Nodes = new Dictionary<string, NodeConfig>
             {
-                ["broken-node"] = new NodeConfig
+                ["broken-node"] = new()
                 {
                     Id = "broken-node",
-                    ContentIndex = new SqliteContentIndexConfig { Path = this._brokenNodeDbPath },
+                    ContentIndex = new SqliteContentIndexConfig { Path = _brokenNodeDbPath },
                     SearchIndexes =
                     [
                         new FtsSearchIndexConfig
                         {
                             Id = "fts",
                             Type = SearchIndexTypes.SqliteFTS,
-                            Path = Path.Combine(this._tempDir, "nodes", "broken-node", "fts.db"),
+                            Path = Path.Combine(_tempDir,
+                                "nodes",
+                                "broken-node",
+                                "fts.db"),
                             Weight = 1.0f
                         }
                     ]
                 },
-                ["good-node"] = new NodeConfig
+                ["good-node"] = new()
                 {
                     Id = "good-node",
-                    ContentIndex = new SqliteContentIndexConfig { Path = this._goodNodeDbPath },
+                    ContentIndex = new SqliteContentIndexConfig { Path = _goodNodeDbPath },
                     SearchIndexes =
                     [
                         new FtsSearchIndexConfig
@@ -168,15 +185,20 @@ public sealed class NodeSelectionTests : IDisposable
         };
 
         var json = JsonSerializer.Serialize(config, s_jsonOptions);
-        File.WriteAllText(this._configPath, json);
+        File.WriteAllText(_configPath, json);
 
         return config;
     }
 
+
     private static CommandContext CreateTestContext(string commandName)
     {
-        return new CommandContext([], new EmptyRemainingArguments(), commandName, null);
+        return new CommandContext([],
+            new EmptyRemainingArguments(),
+            commandName,
+            null);
     }
+
 
     /// <summary>
     /// Tests that search command succeeds even when one node has a broken/missing database.
@@ -187,11 +209,11 @@ public sealed class NodeSelectionTests : IDisposable
     public async Task SearchCommand_WithBrokenNode_ShouldSkipBrokenNodeAndSucceed()
     {
         // Arrange: Create config with good node first, broken node second
-        var config = this.CreateTestConfigWithBothNodes();
+        var config = CreateTestConfigWithBothNodes();
 
         var settings = new SearchCommandSettings
         {
-            ConfigPath = this._configPath,
+            ConfigPath = _configPath,
             Format = "json",
             Query = "test",
             Limit = 20,
@@ -209,6 +231,7 @@ public sealed class NodeSelectionTests : IDisposable
         Assert.Equal(Constants.App.ExitCodeSuccess, exitCode);
     }
 
+
     /// <summary>
     /// Tests that search command succeeds even when the FIRST node in config is broken.
     /// This tests the scenario where iteration order could cause early failure.
@@ -217,11 +240,11 @@ public sealed class NodeSelectionTests : IDisposable
     public async Task SearchCommand_WithBrokenNodeFirst_ShouldSkipBrokenNodeAndSucceed()
     {
         // Arrange: Create config with BROKEN node first
-        var config = this.CreateTestConfigWithBrokenNodeFirst();
+        var config = CreateTestConfigWithBrokenNodeFirst();
 
         var settings = new SearchCommandSettings
         {
-            ConfigPath = this._configPath,
+            ConfigPath = _configPath,
             Format = "json",
             Query = "test",
             Limit = 20,
@@ -239,6 +262,7 @@ public sealed class NodeSelectionTests : IDisposable
         Assert.Equal(Constants.App.ExitCodeSuccess, exitCode);
     }
 
+
     /// <summary>
     /// Tests that search command shows first-run message when ALL nodes are broken.
     /// This is different from the partial failure case - if no nodes work at all,
@@ -252,32 +276,32 @@ public sealed class NodeSelectionTests : IDisposable
         {
             Nodes = new Dictionary<string, NodeConfig>
             {
-                ["broken1"] = new NodeConfig
+                ["broken1"] = new()
                 {
                     Id = "broken1",
-                    ContentIndex = new SqliteContentIndexConfig { Path = Path.Combine(this._tempDir, "nonexistent1.db") },
+                    ContentIndex = new SqliteContentIndexConfig { Path = Path.Combine(_tempDir, "nonexistent1.db") },
                     SearchIndexes =
                     [
                         new FtsSearchIndexConfig
                         {
                             Id = "fts",
                             Type = SearchIndexTypes.SqliteFTS,
-                            Path = Path.Combine(this._tempDir, "nonexistent1_fts.db"),
+                            Path = Path.Combine(_tempDir, "nonexistent1_fts.db"),
                             Weight = 1.0f
                         }
                     ]
                 },
-                ["broken2"] = new NodeConfig
+                ["broken2"] = new()
                 {
                     Id = "broken2",
-                    ContentIndex = new SqliteContentIndexConfig { Path = Path.Combine(this._tempDir, "nonexistent2.db") },
+                    ContentIndex = new SqliteContentIndexConfig { Path = Path.Combine(_tempDir, "nonexistent2.db") },
                     SearchIndexes =
                     [
                         new FtsSearchIndexConfig
                         {
                             Id = "fts",
                             Type = SearchIndexTypes.SqliteFTS,
-                            Path = Path.Combine(this._tempDir, "nonexistent2_fts.db"),
+                            Path = Path.Combine(_tempDir, "nonexistent2_fts.db"),
                             Weight = 1.0f
                         }
                     ]
@@ -287,7 +311,7 @@ public sealed class NodeSelectionTests : IDisposable
 
         var settings = new SearchCommandSettings
         {
-            ConfigPath = this._configPath,
+            ConfigPath = _configPath,
             Format = "json",
             Query = "test",
             Limit = 20,
@@ -305,6 +329,7 @@ public sealed class NodeSelectionTests : IDisposable
         Assert.Equal(Constants.App.ExitCodeSuccess, exitCode);
     }
 
+
     /// <summary>
     /// Tests that list command uses the first node in config file order.
     /// Issue 00006: km list uses wrong default node (dictionary order vs config order).
@@ -313,11 +338,11 @@ public sealed class NodeSelectionTests : IDisposable
     public async Task ListCommand_WithoutNodeFlag_ShouldUseFirstNodeInConfigOrder()
     {
         // Arrange: Create config with good node first
-        var config = this.CreateTestConfigWithBothNodes();
+        var config = CreateTestConfigWithBothNodes();
 
         var settings = new ListCommandSettings
         {
-            ConfigPath = this._configPath,
+            ConfigPath = _configPath,
             Format = "json",
             // NOTE: Not specifying NodeName - should use first node in config
             Skip = 0,
@@ -334,6 +359,7 @@ public sealed class NodeSelectionTests : IDisposable
         Assert.Equal(Constants.App.ExitCodeSuccess, exitCode);
     }
 
+
     /// <summary>
     /// Tests that the config preserves node order from JSON file.
     /// System.Text.Json should preserve property order since .NET 6+.
@@ -343,28 +369,28 @@ public sealed class NodeSelectionTests : IDisposable
     {
         // Arrange: Create config with specific order (must include type discriminators and all required fields)
         const string json = """
-            {
-                "nodes": {
-                    "alpha": {
-                        "id": "alpha",
-                        "contentIndex": { "type": "sqlite", "path": "/tmp/alpha.db" },
-                        "searchIndexes": [{ "type": "sqliteFTS", "id": "fts", "path": "/tmp/alpha_fts.db", "weight": 1.0 }]
-                    },
-                    "beta": {
-                        "id": "beta",
-                        "contentIndex": { "type": "sqlite", "path": "/tmp/beta.db" },
-                        "searchIndexes": [{ "type": "sqliteFTS", "id": "fts", "path": "/tmp/beta_fts.db", "weight": 1.0 }]
-                    },
-                    "gamma": {
-                        "id": "gamma",
-                        "contentIndex": { "type": "sqlite", "path": "/tmp/gamma.db" },
-                        "searchIndexes": [{ "type": "sqliteFTS", "id": "fts", "path": "/tmp/gamma_fts.db", "weight": 1.0 }]
-                    }
-                }
-            }
-            """;
+                            {
+                                "nodes": {
+                                    "alpha": {
+                                        "id": "alpha",
+                                        "contentIndex": { "type": "sqlite", "path": "/tmp/alpha.db" },
+                                        "searchIndexes": [{ "type": "sqliteFTS", "id": "fts", "path": "/tmp/alpha_fts.db", "weight": 1.0 }]
+                                    },
+                                    "beta": {
+                                        "id": "beta",
+                                        "contentIndex": { "type": "sqlite", "path": "/tmp/beta.db" },
+                                        "searchIndexes": [{ "type": "sqliteFTS", "id": "fts", "path": "/tmp/beta_fts.db", "weight": 1.0 }]
+                                    },
+                                    "gamma": {
+                                        "id": "gamma",
+                                        "contentIndex": { "type": "sqlite", "path": "/tmp/gamma.db" },
+                                        "searchIndexes": [{ "type": "sqliteFTS", "id": "fts", "path": "/tmp/gamma_fts.db", "weight": 1.0 }]
+                                    }
+                                }
+                            }
+                            """;
 
-        var configPath = Path.Combine(this._tempDir, "order-test-config.json");
+        var configPath = Path.Combine(_tempDir, "order-test-config.json");
         File.WriteAllText(configPath, json);
 
         // Act
@@ -373,10 +399,11 @@ public sealed class NodeSelectionTests : IDisposable
         // Assert: Order should be preserved (Dictionary.Keys preserves insertion order in .NET)
         var nodeIds = config.Nodes.Keys.ToList();
         Assert.Equal(3, nodeIds.Count);
-        Assert.Equal("alpha", nodeIds[0]);  // First in JSON = first in dictionary
-        Assert.Equal("beta", nodeIds[1]);   // Second in JSON = second in dictionary
-        Assert.Equal("gamma", nodeIds[2]);  // Third in JSON = third in dictionary
+        Assert.Equal("alpha", nodeIds[0]); // First in JSON = first in dictionary
+        Assert.Equal("beta", nodeIds[1]); // Second in JSON = second in dictionary
+        Assert.Equal("gamma", nodeIds[2]); // Third in JSON = third in dictionary
     }
+
 
     /// <summary>
     /// Simple test implementation of IRemainingArguments.

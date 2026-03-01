@@ -15,21 +15,23 @@ public sealed class FtsIndexPersistenceTest : IDisposable
     private readonly string _contentDbPath;
     private readonly string _ftsDbPath;
 
+
     public FtsIndexPersistenceTest()
     {
-        this._tempDir = Path.Combine(Path.GetTempPath(), $"km-fts-persist-test-{Guid.NewGuid():N}");
-        Directory.CreateDirectory(this._tempDir);
-        this._contentDbPath = Path.Combine(this._tempDir, "content.db");
-        this._ftsDbPath = Path.Combine(this._tempDir, "fts.db");
+        _tempDir = Path.Combine(Path.GetTempPath(), $"km-fts-persist-test-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(_tempDir);
+        _contentDbPath = Path.Combine(_tempDir, "content.db");
+        _ftsDbPath = Path.Combine(_tempDir, "fts.db");
     }
+
 
     public void Dispose()
     {
         try
         {
-            if (Directory.Exists(this._tempDir))
+            if (Directory.Exists(_tempDir))
             {
-                Directory.Delete(this._tempDir, true);
+                Directory.Delete(_tempDir, true);
             }
         }
         catch (IOException)
@@ -38,6 +40,7 @@ public sealed class FtsIndexPersistenceTest : IDisposable
         }
     }
 
+
     [Fact]
     public async Task IndexThenDisposeThenSearch_ShouldFindIndexedContent()
     {
@@ -45,10 +48,14 @@ public sealed class FtsIndexPersistenceTest : IDisposable
         string contentId;
         {
             var mockLogger = new Mock<ILogger<SqliteFtsIndex>>();
-            using var ftsIndex = new SqliteFtsIndex(this._ftsDbPath, enableStemming: true, mockLogger.Object);
+            using var ftsIndex = new SqliteFtsIndex(_ftsDbPath, true, mockLogger.Object);
 
             contentId = "test-id-123";
-            await ftsIndex.IndexAsync(contentId, "Test Title", "Test Description", "hello world").ConfigureAwait(false);
+            await ftsIndex.IndexAsync(contentId,
+                    "Test Title",
+                    "Test Description",
+                    "hello world")
+                .ConfigureAwait(false);
 
             // Dispose should checkpoint and persist data
         }
@@ -56,9 +63,9 @@ public sealed class FtsIndexPersistenceTest : IDisposable
         // Act: Create NEW FTS index instance and search (simulating search command)
         {
             var mockLogger = new Mock<ILogger<SqliteFtsIndex>>();
-            using var ftsIndex = new SqliteFtsIndex(this._ftsDbPath, enableStemming: true, mockLogger.Object);
+            using var ftsIndex = new SqliteFtsIndex(_ftsDbPath, true, mockLogger.Object);
 
-            var results = await ftsIndex.SearchAsync("hello", 10).ConfigureAwait(false);
+            var results = await ftsIndex.SearchAsync("hello").ConfigureAwait(false);
 
             // Assert: Should find the content indexed in the previous instance
             Assert.NotEmpty(results);

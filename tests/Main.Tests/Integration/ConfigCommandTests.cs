@@ -1,8 +1,10 @@
 // Copyright (c) Microsoft. All rights reserved.
 
+using System.Text.Json;
 using KernelMemory.Core.Config;
 using KernelMemory.Core.Config.Cache;
 using KernelMemory.Main.CLI.Commands;
+using KernelMemory.Main.CLI.Infrastructure;
 using Microsoft.Extensions.Logging.Abstractions;
 using Spectre.Console.Cli;
 
@@ -25,37 +27,39 @@ public sealed class ConfigCommandTests : IDisposable
     private readonly string _tempDir;
     private readonly string _configPath;
 
+
     public ConfigCommandTests()
     {
-        this._tempDir = Path.Combine(Path.GetTempPath(), $"km-config-test-{Guid.NewGuid():N}");
-        Directory.CreateDirectory(this._tempDir);
+        _tempDir = Path.Combine(Path.GetTempPath(), $"km-config-test-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(_tempDir);
 
-        this._configPath = Path.Combine(this._tempDir, "config.json");
+        _configPath = Path.Combine(_tempDir, "config.json");
 
         // Create test config with MULTIPLE nodes to verify entire config is shown
         var config = new AppConfig
         {
             Nodes = new Dictionary<string, NodeConfig>
             {
-                ["personal"] = NodeConfig.CreateDefaultPersonalNode(Path.Combine(this._tempDir, "nodes", "personal")),
-                ["work"] = NodeConfig.CreateDefaultPersonalNode(Path.Combine(this._tempDir, "nodes", "work")),
-                ["shared"] = NodeConfig.CreateDefaultPersonalNode(Path.Combine(this._tempDir, "nodes", "shared"))
+                ["personal"] = NodeConfig.CreateDefaultPersonalNode(Path.Combine(_tempDir, "nodes", "personal")),
+                ["work"] = NodeConfig.CreateDefaultPersonalNode(Path.Combine(_tempDir, "nodes", "work")),
+                ["shared"] = NodeConfig.CreateDefaultPersonalNode(Path.Combine(_tempDir, "nodes", "shared"))
             },
-            EmbeddingsCache = CacheConfig.CreateDefaultSqliteCache(Path.Combine(this._tempDir, "embeddings-cache.db")),
+            EmbeddingsCache = CacheConfig.CreateDefaultSqliteCache(Path.Combine(_tempDir, "embeddings-cache.db")),
             LLMCache = null
         };
 
-        var json = System.Text.Json.JsonSerializer.Serialize(config);
-        File.WriteAllText(this._configPath, json);
+        var json = JsonSerializer.Serialize(config);
+        File.WriteAllText(_configPath, json);
     }
+
 
     public void Dispose()
     {
         try
         {
-            if (Directory.Exists(this._tempDir))
+            if (Directory.Exists(_tempDir))
             {
-                Directory.Delete(this._tempDir, true);
+                Directory.Delete(_tempDir, true);
             }
         }
         catch (IOException)
@@ -68,24 +72,25 @@ public sealed class ConfigCommandTests : IDisposable
         }
     }
 
+
     [Fact]
     public void ConfigCommand_WithoutFlags_ShouldShowEntireConfiguration()
     {
         // This test verifies the bug: km config should show ALL nodes, not just the selected one
 
         // Arrange
-        var config = ConfigParser.LoadFromFile(this._configPath);
+        var config = ConfigParser.LoadFromFile(_configPath);
 
         var settings = new ConfigCommandSettings
         {
-            ConfigPath = this._configPath,
-            Format = "json"  // Use JSON format for easier assertion
+            ConfigPath = _configPath,
+            Format = "json" // Use JSON format for easier assertion
         };
 
-        var configPathService = new KernelMemory.Main.CLI.Infrastructure.ConfigPathService(this._configPath);
+        var configPathService = new ConfigPathService(_configPath);
         var command = new ConfigCommand(config, NullLoggerFactory.Instance, configPathService);
         var context = new CommandContext(
-            new[] { "--config", this._configPath },
+            new[] { "--config", _configPath },
             new EmptyRemainingArguments(),
             "config",
             null);
@@ -120,6 +125,7 @@ public sealed class ConfigCommandTests : IDisposable
         }
     }
 
+
     [Fact]
     public void ConfigCommand_OutputStructure_ShouldMatchAppConfigFormat()
     {
@@ -127,18 +133,18 @@ public sealed class ConfigCommandTests : IDisposable
         // so users can copy/paste the output back into their config file
 
         // Arrange
-        var config = ConfigParser.LoadFromFile(this._configPath);
+        var config = ConfigParser.LoadFromFile(_configPath);
 
         var settings = new ConfigCommandSettings
         {
-            ConfigPath = this._configPath,
+            ConfigPath = _configPath,
             Format = "json"
         };
 
-        var configPathService = new KernelMemory.Main.CLI.Infrastructure.ConfigPathService(this._configPath);
+        var configPathService = new ConfigPathService(_configPath);
         var command = new ConfigCommand(config, NullLoggerFactory.Instance, configPathService);
         var context = new CommandContext(
-            new[] { "--config", this._configPath },
+            new[] { "--config", _configPath },
             new EmptyRemainingArguments(),
             "config",
             null);
@@ -157,12 +163,12 @@ public sealed class ConfigCommandTests : IDisposable
             Assert.Equal(Constants.App.ExitCodeSuccess, exitCode);
 
             var output = outputCapture.ToString();
-            var outputJson = System.Text.Json.JsonDocument.Parse(output);
+            var outputJson = JsonDocument.Parse(output);
 
             // BUG: Current output has "nodes" as an array
             // EXPECTED: "nodes" should be an object/dictionary (like in config file)
             var nodesElement = outputJson.RootElement.GetProperty("nodes");
-            Assert.Equal(System.Text.Json.JsonValueKind.Object, nodesElement.ValueKind);
+            Assert.Equal(JsonValueKind.Object, nodesElement.ValueKind);
             // ^ This will FAIL with current code (it's an Array)
 
             // BUG: Current output has "embeddingsCache" nested under "cache"
@@ -180,23 +186,24 @@ public sealed class ConfigCommandTests : IDisposable
         }
     }
 
+
     [Fact]
     public void ConfigCommand_WithShowNodesFlag_ShouldShowAllNodesSummary()
     {
         // Arrange
-        var config = ConfigParser.LoadFromFile(this._configPath);
+        var config = ConfigParser.LoadFromFile(_configPath);
 
         var settings = new ConfigCommandSettings
         {
-            ConfigPath = this._configPath,
+            ConfigPath = _configPath,
             Format = "json",
             ShowNodes = true
         };
 
-        var configPathService = new KernelMemory.Main.CLI.Infrastructure.ConfigPathService(this._configPath);
+        var configPathService = new ConfigPathService(_configPath);
         var command = new ConfigCommand(config, NullLoggerFactory.Instance, configPathService);
         var context = new CommandContext(
-            new[] { "--config", this._configPath },
+            new[] { "--config", _configPath },
             new EmptyRemainingArguments(),
             "config",
             null);
@@ -227,15 +234,16 @@ public sealed class ConfigCommandTests : IDisposable
         }
     }
 
+
     [Fact]
     public void ConfigCommand_WithCreate_CreatesConfigFile()
     {
         // Arrange: Use a non-existent config path
-        var newConfigPath = Path.Combine(this._tempDir, "new-config.json");
+        var newConfigPath = Path.Combine(_tempDir, "new-config.json");
         Assert.False(File.Exists(newConfigPath));
 
-        var config = ConfigParser.LoadFromFile(this._configPath);
-        var configPathService = new KernelMemory.Main.CLI.Infrastructure.ConfigPathService(newConfigPath);
+        var config = ConfigParser.LoadFromFile(_configPath);
+        var configPathService = new ConfigPathService(newConfigPath);
         var command = new ConfigCommand(config, NullLoggerFactory.Instance, configPathService);
 
         var settings = new ConfigCommandSettings
@@ -260,29 +268,30 @@ public sealed class ConfigCommandTests : IDisposable
 
         // Verify the file content is valid JSON
         var createdJson = File.ReadAllText(newConfigPath);
-        var createdConfig = System.Text.Json.JsonDocument.Parse(createdJson);
+        var createdConfig = JsonDocument.Parse(createdJson);
         Assert.NotNull(createdConfig);
     }
+
 
     [Fact]
     public void ConfigCommand_WithCreate_WhenFileExists_ReturnsError()
     {
         // Arrange: Config file already exists (from constructor)
-        Assert.True(File.Exists(this._configPath));
+        Assert.True(File.Exists(_configPath));
 
-        var config = ConfigParser.LoadFromFile(this._configPath);
-        var configPathService = new KernelMemory.Main.CLI.Infrastructure.ConfigPathService(this._configPath);
+        var config = ConfigParser.LoadFromFile(_configPath);
+        var configPathService = new ConfigPathService(_configPath);
         var command = new ConfigCommand(config, NullLoggerFactory.Instance, configPathService);
 
         var settings = new ConfigCommandSettings
         {
-            ConfigPath = this._configPath,
+            ConfigPath = _configPath,
             Create = true,
             Format = "json"
         };
 
         var context = new CommandContext(
-            new[] { "--config", this._configPath, "--create" },
+            new[] { "--config", _configPath, "--create" },
             new EmptyRemainingArguments(),
             "config",
             null);
@@ -314,22 +323,23 @@ public sealed class ConfigCommandTests : IDisposable
         }
     }
 
+
     [Fact]
     public void ConfigCommand_WithoutConfigFile_StillSucceeds()
     {
         // Arrange: Use a non-existent config path (default config will be used)
-        var missingConfigPath = Path.Combine(this._tempDir, "missing-config.json");
+        var missingConfigPath = Path.Combine(_tempDir, "missing-config.json");
         Assert.False(File.Exists(missingConfigPath));
 
         var config = AppConfig.CreateDefault();
-        var configPathService = new KernelMemory.Main.CLI.Infrastructure.ConfigPathService(missingConfigPath);
+        var configPathService = new ConfigPathService(missingConfigPath);
         var command = new ConfigCommand(config, NullLoggerFactory.Instance, configPathService);
 
         var settings = new ConfigCommandSettings
         {
             ConfigPath = missingConfigPath,
             Format = "json",
-            NoColor = false  // Enable colors
+            NoColor = false // Enable colors
         };
 
         var context = new CommandContext(
@@ -354,7 +364,7 @@ public sealed class ConfigCommandTests : IDisposable
 
             // Should still output valid JSON config
             var output = outputCapture.ToString();
-            var json = System.Text.Json.JsonDocument.Parse(output);
+            var json = JsonDocument.Parse(output);
             Assert.NotNull(json);
             Assert.True(json.RootElement.TryGetProperty("nodes", out _));
         }
@@ -364,22 +374,23 @@ public sealed class ConfigCommandTests : IDisposable
         }
     }
 
+
     [Fact]
     public void ConfigCommand_OutputJson_DoesNotContainNullFields()
     {
         // Arrange
-        var config = ConfigParser.LoadFromFile(this._configPath);
-        var configPathService = new KernelMemory.Main.CLI.Infrastructure.ConfigPathService(this._configPath);
+        var config = ConfigParser.LoadFromFile(_configPath);
+        var configPathService = new ConfigPathService(_configPath);
         var command = new ConfigCommand(config, NullLoggerFactory.Instance, configPathService);
 
         var settings = new ConfigCommandSettings
         {
-            ConfigPath = this._configPath,
+            ConfigPath = _configPath,
             Format = "json"
         };
 
         var context = new CommandContext(
-            new[] { "--config", this._configPath },
+            new[] { "--config", _configPath },
             new EmptyRemainingArguments(),
             "config",
             null);
@@ -412,22 +423,23 @@ public sealed class ConfigCommandTests : IDisposable
         }
     }
 
+
     [Fact]
     public void ConfigCommand_OutputJson_ContainsCorrectDiscriminators()
     {
         // Arrange
-        var config = ConfigParser.LoadFromFile(this._configPath);
-        var configPathService = new KernelMemory.Main.CLI.Infrastructure.ConfigPathService(this._configPath);
+        var config = ConfigParser.LoadFromFile(_configPath);
+        var configPathService = new ConfigPathService(_configPath);
         var command = new ConfigCommand(config, NullLoggerFactory.Instance, configPathService);
 
         var settings = new ConfigCommandSettings
         {
-            ConfigPath = this._configPath,
+            ConfigPath = _configPath,
             Format = "json"
         };
 
         var context = new CommandContext(
-            new[] { "--config", this._configPath },
+            new[] { "--config", _configPath },
             new EmptyRemainingArguments(),
             "config",
             null);
@@ -446,7 +458,7 @@ public sealed class ConfigCommandTests : IDisposable
             Assert.Equal(Constants.App.ExitCodeSuccess, exitCode);
 
             var output = outputCapture.ToString();
-            var outputJson = System.Text.Json.JsonDocument.Parse(output);
+            var outputJson = JsonDocument.Parse(output);
 
             // Verify content index uses "sqlite" (not a generic name)
             var contentIndex = outputJson.RootElement.GetProperty("nodes").GetProperty("personal").GetProperty("contentIndex");
@@ -465,6 +477,7 @@ public sealed class ConfigCommandTests : IDisposable
             Console.SetOut(originalOutput);
         }
     }
+
 
     /// <summary>
     /// Helper class to provide empty remaining arguments for CommandContext.

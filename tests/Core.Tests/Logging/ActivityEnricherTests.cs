@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 
 using System.Diagnostics;
+using Serilog.Core;
 using Serilog.Events;
 
 namespace KernelMemory.Core.Tests.Logging;
@@ -13,14 +14,16 @@ public sealed class ActivityEnricherTests : IDisposable
 {
     private Activity? _activity;
 
+
     /// <summary>
     /// Cleans up activity after each test.
     /// </summary>
     public void Dispose()
     {
-        this._activity?.Dispose();
+        _activity?.Dispose();
         GC.SuppressFinalize(this);
     }
+
 
     /// <summary>
     /// Verifies TraceId property name constant is defined.
@@ -32,6 +35,7 @@ public sealed class ActivityEnricherTests : IDisposable
         Assert.Equal("TraceId", ActivityEnricher.TraceIdPropertyName);
     }
 
+
     /// <summary>
     /// Verifies SpanId property name constant is defined.
     /// </summary>
@@ -41,6 +45,7 @@ public sealed class ActivityEnricherTests : IDisposable
         // Assert
         Assert.Equal("SpanId", ActivityEnricher.SpanIdPropertyName);
     }
+
 
     /// <summary>
     /// Verifies Enrich does nothing when Activity.Current is null.
@@ -61,6 +66,7 @@ public sealed class ActivityEnricherTests : IDisposable
         Assert.Empty(logEvent.Properties);
     }
 
+
     /// <summary>
     /// Verifies Enrich adds TraceId and SpanId when Activity is present.
     /// </summary>
@@ -68,8 +74,8 @@ public sealed class ActivityEnricherTests : IDisposable
     public void Enrich_WhenActivityPresent_ShouldAddTraceAndSpanIds()
     {
         // Arrange
-        this._activity = new Activity("TestOperation");
-        this._activity.Start();
+        _activity = new Activity("TestOperation");
+        _activity.Start();
         var enricher = new ActivityEnricher();
         var logEvent = CreateLogEvent();
         var propertyFactory = new TestPropertyFactory();
@@ -82,6 +88,7 @@ public sealed class ActivityEnricherTests : IDisposable
         Assert.True(logEvent.Properties.ContainsKey(ActivityEnricher.SpanIdPropertyName));
     }
 
+
     /// <summary>
     /// Verifies TraceId property has correct value from Activity.
     /// </summary>
@@ -89,8 +96,8 @@ public sealed class ActivityEnricherTests : IDisposable
     public void Enrich_ShouldSetCorrectTraceId()
     {
         // Arrange
-        this._activity = new Activity("TestOperation");
-        this._activity.Start();
+        _activity = new Activity("TestOperation");
+        _activity.Start();
         var enricher = new ActivityEnricher();
         var logEvent = CreateLogEvent();
         var propertyFactory = new TestPropertyFactory();
@@ -101,8 +108,9 @@ public sealed class ActivityEnricherTests : IDisposable
         // Assert
         var traceIdProperty = logEvent.Properties[ActivityEnricher.TraceIdPropertyName] as ScalarValue;
         Assert.NotNull(traceIdProperty);
-        Assert.Equal(this._activity.TraceId.ToString(), traceIdProperty.Value);
+        Assert.Equal(_activity.TraceId.ToString(), traceIdProperty.Value);
     }
+
 
     /// <summary>
     /// Verifies SpanId property has correct value from Activity.
@@ -111,8 +119,8 @@ public sealed class ActivityEnricherTests : IDisposable
     public void Enrich_ShouldSetCorrectSpanId()
     {
         // Arrange
-        this._activity = new Activity("TestOperation");
-        this._activity.Start();
+        _activity = new Activity("TestOperation");
+        _activity.Start();
         var enricher = new ActivityEnricher();
         var logEvent = CreateLogEvent();
         var propertyFactory = new TestPropertyFactory();
@@ -123,8 +131,9 @@ public sealed class ActivityEnricherTests : IDisposable
         // Assert
         var spanIdProperty = logEvent.Properties[ActivityEnricher.SpanIdPropertyName] as ScalarValue;
         Assert.NotNull(spanIdProperty);
-        Assert.Equal(this._activity.SpanId.ToString(), spanIdProperty.Value);
+        Assert.Equal(_activity.SpanId.ToString(), spanIdProperty.Value);
     }
+
 
     /// <summary>
     /// Verifies existing properties are not overwritten.
@@ -133,8 +142,8 @@ public sealed class ActivityEnricherTests : IDisposable
     public void Enrich_WhenPropertyExists_ShouldNotOverwrite()
     {
         // Arrange
-        this._activity = new Activity("TestOperation");
-        this._activity.Start();
+        _activity = new Activity("TestOperation");
+        _activity.Start();
         var enricher = new ActivityEnricher();
         var logEvent = CreateLogEvent();
         var propertyFactory = new TestPropertyFactory();
@@ -152,6 +161,7 @@ public sealed class ActivityEnricherTests : IDisposable
         Assert.Equal(existingTraceId, traceIdProperty.Value);
     }
 
+
     /// <summary>
     /// Creates a test log event for enrichment testing.
     /// </summary>
@@ -165,10 +175,11 @@ public sealed class ActivityEnricherTests : IDisposable
             []);
     }
 
+
     /// <summary>
     /// Test implementation of ILogEventPropertyFactory for unit testing.
     /// </summary>
-    private sealed class TestPropertyFactory : Serilog.Core.ILogEventPropertyFactory
+    private sealed class TestPropertyFactory : ILogEventPropertyFactory
     {
         public LogEventProperty CreateProperty(string name, object? value, bool destructureObjects = false)
         {

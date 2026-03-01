@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved.
 using KernelMemory.Core.Config;
+using KernelMemory.Core.Config.Storage;
 using KernelMemory.Core.Config.Validation;
 
 namespace KernelMemory.Core.Tests.Config;
@@ -49,8 +50,8 @@ public sealed class StorageConfigTests
             Assert.NotNull(node.RepoStorage);
 
             var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            var fileStorage = Assert.IsType<KernelMemory.Core.Config.Storage.DiskStorageConfig>(node.FileStorage);
-            var repoStorage = Assert.IsType<KernelMemory.Core.Config.Storage.DiskStorageConfig>(node.RepoStorage);
+            var fileStorage = Assert.IsType<DiskStorageConfig>(node.FileStorage);
+            var repoStorage = Assert.IsType<DiskStorageConfig>(node.RepoStorage);
             Assert.StartsWith(homeDir, fileStorage.Path);
             Assert.StartsWith(homeDir, repoStorage.Path);
         }
@@ -62,6 +63,7 @@ public sealed class StorageConfigTests
             }
         }
     }
+
 
     [Fact]
     public void LoadFromFile_WithDiskStorageMissingPath_ShouldThrowConfigException()
@@ -101,6 +103,7 @@ public sealed class StorageConfigTests
             }
         }
     }
+
 
     [Fact]
     public void LoadFromFile_WithAzureBlobStorageConnectionString_ShouldValidate()
@@ -143,6 +146,7 @@ public sealed class StorageConfigTests
             }
         }
     }
+
 
     [Fact]
     public void LoadFromFile_WithAzureBlobStorageApiKey_ShouldValidate()
@@ -187,6 +191,7 @@ public sealed class StorageConfigTests
         }
     }
 
+
     [Fact]
     public void LoadFromFile_WithAzureBlobStorageNoAuth_ShouldThrowConfigException()
     {
@@ -225,6 +230,7 @@ public sealed class StorageConfigTests
             }
         }
     }
+
 
     [Fact]
     public void LoadFromFile_WithAzureBlobStorageMultipleAuth_ShouldThrowConfigException()

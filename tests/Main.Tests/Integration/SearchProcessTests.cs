@@ -16,33 +16,35 @@ public sealed class SearchProcessTests : IDisposable
     private readonly string _configPath;
     private readonly string _kmPath;
 
+
     public SearchProcessTests()
     {
-        this._tempDir = Path.Combine(Path.GetTempPath(), $"km-process-test-{Guid.NewGuid():N}");
-        Directory.CreateDirectory(this._tempDir);
+        _tempDir = Path.Combine(Path.GetTempPath(), $"km-process-test-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(_tempDir);
 
-        this._configPath = Path.Combine(this._tempDir, "config.json");
+        _configPath = Path.Combine(_tempDir, "config.json");
 
         // Find the km binary (from build output)
         // Get solution root by going up from test assembly location
         var testAssemblyPath = typeof(SearchProcessTests).Assembly.Location;
         var testBinDir = Path.GetDirectoryName(testAssemblyPath)!;
         var solutionRoot = Path.GetFullPath(Path.Combine(testBinDir, "../../../../.."));
-        this._kmPath = Path.Combine(solutionRoot, "src/Main/bin/Debug/net10.0/KernelMemory.Main.dll");
+        _kmPath = Path.Combine(solutionRoot, "src/Main/bin/Debug/net10.0/KernelMemory.Main.dll");
 
-        if (!File.Exists(this._kmPath))
+        if (!File.Exists(_kmPath))
         {
-            throw new FileNotFoundException($"KernelMemory.Main.dll not found at {this._kmPath}. Run dotnet build first.");
+            throw new FileNotFoundException($"KernelMemory.Main.dll not found at {_kmPath}. Run dotnet build first.");
         }
     }
+
 
     public void Dispose()
     {
         try
         {
-            if (Directory.Exists(this._tempDir))
+            if (Directory.Exists(_tempDir))
             {
-                Directory.Delete(this._tempDir, true);
+                Directory.Delete(_tempDir, true);
             }
         }
         catch (IOException)
@@ -50,6 +52,7 @@ public sealed class SearchProcessTests : IDisposable
             // Ignore cleanup errors
         }
     }
+
 
     /// <summary>
     /// Execute km command and return JSON output.
@@ -61,7 +64,7 @@ public sealed class SearchProcessTests : IDisposable
         var psi = new ProcessStartInfo
         {
             FileName = "dotnet",
-            Arguments = $"{this._kmPath} {args}",
+            Arguments = $"{_kmPath} {args}",
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
@@ -69,6 +72,7 @@ public sealed class SearchProcessTests : IDisposable
         };
 
         using var process = Process.Start(psi);
+
         if (process == null)
         {
             throw new InvalidOperationException("Failed to start km process");
@@ -86,18 +90,19 @@ public sealed class SearchProcessTests : IDisposable
         return output.Trim();
     }
 
+
     [OllamaFact]
     public async Task Process_PutThenSearch_FindsContent()
     {
         // Act: Insert content
-        var putOutput = await this.ExecuteKmAsync($"put \"ciao mondo\" --config {this._configPath}").ConfigureAwait(false);
+        var putOutput = await ExecuteKmAsync($"put \"ciao mondo\" --config {_configPath}").ConfigureAwait(false);
         var putResult = JsonSerializer.Deserialize<JsonElement>(putOutput);
         var insertedId = putResult.GetProperty("id").GetString();
         Assert.NotNull(insertedId);
         Assert.True(putResult.GetProperty("completed").GetBoolean());
 
         // Act: Search for content
-        var searchOutput = await this.ExecuteKmAsync($"search \"ciao\" --config {this._configPath} --format json").ConfigureAwait(false);
+        var searchOutput = await ExecuteKmAsync($"search \"ciao\" --config {_configPath} --format json").ConfigureAwait(false);
         var searchResult = JsonSerializer.Deserialize<JsonElement>(searchOutput);
 
         // Assert: Verify actual results
@@ -108,15 +113,16 @@ public sealed class SearchProcessTests : IDisposable
         Assert.Contains("ciao", results[0].GetProperty("content").GetString()!, StringComparison.OrdinalIgnoreCase);
     }
 
+
     [Fact]
     public async Task Process_BooleanAnd_FindsOnlyMatchingBoth()
     {
         // Arrange
-        await this.ExecuteKmAsync($"put \"docker and kubernetes\" --config {this._configPath}").ConfigureAwait(false);
-        await this.ExecuteKmAsync($"put \"only docker\" --config {this._configPath}").ConfigureAwait(false);
+        await ExecuteKmAsync($"put \"docker and kubernetes\" --config {_configPath}").ConfigureAwait(false);
+        await ExecuteKmAsync($"put \"only docker\" --config {_configPath}").ConfigureAwait(false);
 
         // Act
-        var output = await this.ExecuteKmAsync($"search \"docker AND kubernetes\" --config {this._configPath} --format json").ConfigureAwait(false);
+        var output = await ExecuteKmAsync($"search \"docker AND kubernetes\" --config {_configPath} --format json").ConfigureAwait(false);
         var result = JsonSerializer.Deserialize<JsonElement>(output);
 
         // Assert
@@ -126,16 +132,17 @@ public sealed class SearchProcessTests : IDisposable
         Assert.Contains("kubernetes", content, StringComparison.OrdinalIgnoreCase);
     }
 
+
     [Fact]
     public async Task Process_FieldSpecificStemming_FindsVariations()
     {
         // Arrange
-        var putOutput = await this.ExecuteKmAsync($"put \"summary findings\" --config {this._configPath}").ConfigureAwait(false);
+        var putOutput = await ExecuteKmAsync($"put \"summary findings\" --config {_configPath}").ConfigureAwait(false);
         var putResult = JsonSerializer.Deserialize<JsonElement>(putOutput);
         var id = putResult.GetProperty("id").GetString();
 
         // Act: Search for plural form in content field
-        var searchOutput = await this.ExecuteKmAsync($"search \"content:summaries\" --config {this._configPath} --format json").ConfigureAwait(false);
+        var searchOutput = await ExecuteKmAsync($"search \"content:summaries\" --config {_configPath} --format json").ConfigureAwait(false);
         var searchResult = JsonSerializer.Deserialize<JsonElement>(searchOutput);
 
         // Assert: Should find "summary" via stemming
@@ -143,19 +150,22 @@ public sealed class SearchProcessTests : IDisposable
         Assert.Equal(id, searchResult.GetProperty("results")[0].GetProperty("id").GetString());
     }
 
+
     [Fact]
     public async Task Process_MongoJsonQuery_FindsCorrectResults()
     {
         // Arrange
         var id1 = JsonSerializer.Deserialize<JsonElement>(
-            await this.ExecuteKmAsync($"put \"kubernetes guide\" --config {this._configPath}").ConfigureAwait(false)
-        ).GetProperty("id").GetString();
+                await ExecuteKmAsync($"put \"kubernetes guide\" --config {_configPath}").ConfigureAwait(false)
+            )
+            .GetProperty("id")
+            .GetString();
 
-        await this.ExecuteKmAsync($"put \"docker guide\" --config {this._configPath}").ConfigureAwait(false);
+        await ExecuteKmAsync($"put \"docker guide\" --config {_configPath}").ConfigureAwait(false);
 
         // Act: MongoDB JSON format - escape quotes for process arguments
         const string jsonQuery = "{\\\"content\\\": \\\"kubernetes\\\"}";
-        var output = await this.ExecuteKmAsync($"search \"{jsonQuery}\" --config {this._configPath} --format json").ConfigureAwait(false);
+        var output = await ExecuteKmAsync($"search \"{jsonQuery}\" --config {_configPath} --format json").ConfigureAwait(false);
         var result = JsonSerializer.Deserialize<JsonElement>(output);
 
         // Assert
@@ -163,16 +173,17 @@ public sealed class SearchProcessTests : IDisposable
         Assert.Equal(id1, result.GetProperty("results")[0].GetProperty("id").GetString());
     }
 
+
     [Fact]
     public async Task Process_DefaultMinRelevance_FindsResults()
     {
         // Regression test for BM25 normalization bug
 
         // Arrange
-        await this.ExecuteKmAsync($"put \"test content\" --config {this._configPath}").ConfigureAwait(false);
+        await ExecuteKmAsync($"put \"test content\" --config {_configPath}").ConfigureAwait(false);
 
         // Act: Don't specify min-relevance - use default 0.3
-        var output = await this.ExecuteKmAsync($"search \"test\" --config {this._configPath} --format json").ConfigureAwait(false);
+        var output = await ExecuteKmAsync($"search \"test\" --config {_configPath} --format json").ConfigureAwait(false);
         var result = JsonSerializer.Deserialize<JsonElement>(output);
 
         // Assert: Should find results despite default MinRelevance=0.3
@@ -182,27 +193,33 @@ public sealed class SearchProcessTests : IDisposable
         Assert.True(relevance >= 0.3f, $"Relevance {relevance} below 0.3 threshold");
     }
 
+
     [Fact]
     public async Task Process_ComplexNestedQuery_FindsCorrectMatches()
     {
         // Arrange
         var id1 = JsonSerializer.Deserialize<JsonElement>(
-            await this.ExecuteKmAsync($"put \"docker kubernetes guide\" --config {this._configPath}").ConfigureAwait(false)
-        ).GetProperty("id").GetString();
+                await ExecuteKmAsync($"put \"docker kubernetes guide\" --config {_configPath}").ConfigureAwait(false)
+            )
+            .GetProperty("id")
+            .GetString();
 
         var id2 = JsonSerializer.Deserialize<JsonElement>(
-            await this.ExecuteKmAsync($"put \"docker helm charts\" --config {this._configPath}").ConfigureAwait(false)
-        ).GetProperty("id").GetString();
+                await ExecuteKmAsync($"put \"docker helm charts\" --config {_configPath}").ConfigureAwait(false)
+            )
+            .GetProperty("id")
+            .GetString();
 
-        await this.ExecuteKmAsync($"put \"ansible automation\" --config {this._configPath}").ConfigureAwait(false);
+        await ExecuteKmAsync($"put \"ansible automation\" --config {_configPath}").ConfigureAwait(false);
 
         // Act: Nested query
-        var output = await this.ExecuteKmAsync($"search \"docker AND (kubernetes OR helm)\" --config {this._configPath} --format json").ConfigureAwait(false);
+        var output = await ExecuteKmAsync($"search \"docker AND (kubernetes OR helm)\" --config {_configPath} --format json").ConfigureAwait(false);
         var result = JsonSerializer.Deserialize<JsonElement>(output);
 
         // Assert
         Assert.Equal(2, result.GetProperty("totalResults").GetInt32());
-        var ids = result.GetProperty("results").EnumerateArray()
+        var ids = result.GetProperty("results")
+            .EnumerateArray()
             .Select(r => r.GetProperty("id").GetString())
             .ToHashSet();
 
@@ -210,13 +227,14 @@ public sealed class SearchProcessTests : IDisposable
         Assert.Contains(id2, ids);
     }
 
+
     private sealed class OllamaFactAttribute : FactAttribute
     {
         public OllamaFactAttribute()
         {
             if (string.Equals(Environment.GetEnvironmentVariable("OLLAMA_AVAILABLE"), "false", StringComparison.OrdinalIgnoreCase))
             {
-                this.Skip = "Skipping because OLLAMA_AVAILABLE=false (vector embeddings unavailable).";
+                Skip = "Skipping because OLLAMA_AVAILABLE=false (vector embeddings unavailable).";
             }
         }
     }

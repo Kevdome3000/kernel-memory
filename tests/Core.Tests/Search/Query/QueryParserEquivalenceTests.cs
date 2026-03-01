@@ -13,65 +13,72 @@ public sealed class QueryParserEquivalenceTests
     private readonly InfixQueryParser _infixParser = new();
     private readonly MongoJsonQueryParser _mongoParser = new();
 
+
     [Fact]
     public void Parse_SimpleEquality_ProducesEquivalentAST()
     {
-        var infixResult = this._infixParser.Parse("content:kubernetes");
-        var mongoResult = this._mongoParser.Parse("{\"content\": \"kubernetes\"}");
+        var infixResult = _infixParser.Parse("content:kubernetes");
+        var mongoResult = _mongoParser.Parse("{\"content\": \"kubernetes\"}");
 
         AssertNodesEquivalent(infixResult, mongoResult);
     }
+
 
     [Fact]
     public void Parse_NotEqual_ProducesEquivalentAST()
     {
-        var infixResult = this._infixParser.Parse("mimeType!=image/png");
-        var mongoResult = this._mongoParser.Parse("{\"mimeType\": {\"$ne\": \"image/png\"}}");
+        var infixResult = _infixParser.Parse("mimeType!=image/png");
+        var mongoResult = _mongoParser.Parse("{\"mimeType\": {\"$ne\": \"image/png\"}}");
 
         AssertNodesEquivalent(infixResult, mongoResult);
     }
+
 
     [Fact]
     public void Parse_GreaterThanOrEqual_ProducesEquivalentAST()
     {
-        var infixResult = this._infixParser.Parse("createdAt>=2024-01-01");
-        var mongoResult = this._mongoParser.Parse("{\"createdAt\": {\"$gte\": \"2024-01-01\"}}");
+        var infixResult = _infixParser.Parse("createdAt>=2024-01-01");
+        var mongoResult = _mongoParser.Parse("{\"createdAt\": {\"$gte\": \"2024-01-01\"}}");
 
         AssertNodesEquivalent(infixResult, mongoResult);
     }
+
 
     [Fact]
     public void Parse_LessThan_ProducesEquivalentAST()
     {
-        var infixResult = this._infixParser.Parse("createdAt<2024-02-01");
-        var mongoResult = this._mongoParser.Parse("{\"createdAt\": {\"$lt\": \"2024-02-01\"}}");
+        var infixResult = _infixParser.Parse("createdAt<2024-02-01");
+        var mongoResult = _mongoParser.Parse("{\"createdAt\": {\"$lt\": \"2024-02-01\"}}");
 
         AssertNodesEquivalent(infixResult, mongoResult);
     }
+
 
     [Fact]
     public void Parse_Contains_ProducesEquivalentAST()
     {
-        var infixResult = this._infixParser.Parse("content:~\"machine learning\"");
-        var mongoResult = this._mongoParser.Parse("{\"content\": {\"$regex\": \"machine learning\"}}");
+        var infixResult = _infixParser.Parse("content:~\"machine learning\"");
+        var mongoResult = _mongoParser.Parse("{\"content\": {\"$regex\": \"machine learning\"}}");
 
         AssertNodesEquivalent(infixResult, mongoResult);
     }
+
 
     [Fact]
     public void Parse_ArrayIn_ProducesEquivalentAST()
     {
-        var infixResult = this._infixParser.Parse("tags:[AI,ML]");
-        var mongoResult = this._mongoParser.Parse("{\"tags\": {\"$in\": [\"AI\", \"ML\"]}}");
+        var infixResult = _infixParser.Parse("tags:[AI,ML]");
+        var mongoResult = _mongoParser.Parse("{\"tags\": {\"$in\": [\"AI\", \"ML\"]}}");
 
         AssertNodesEquivalent(infixResult, mongoResult);
     }
 
+
     [Fact]
     public void Parse_SimpleAnd_ProducesEquivalentAST()
     {
-        var infixResult = this._infixParser.Parse("kubernetes AND docker");
-        var mongoResult = this._mongoParser.Parse("{\"$and\": [{\"$text\": {\"$search\": \"kubernetes\"}}, {\"$text\": {\"$search\": \"docker\"}}]}");
+        var infixResult = _infixParser.Parse("kubernetes AND docker");
+        var mongoResult = _mongoParser.Parse("{\"$and\": [{\"$text\": {\"$search\": \"kubernetes\"}}, {\"$text\": {\"$search\": \"docker\"}}]}");
 
         // Both should be LogicalNode with AND operator and 2 children
         var infixLogical = Assert.IsType<LogicalNode>(infixResult);
@@ -83,29 +90,32 @@ public sealed class QueryParserEquivalenceTests
         Assert.Equal(2, mongoLogical.Children.Length);
     }
 
+
     [Fact]
     public void Parse_SimpleOr_ProducesEquivalentAST()
     {
-        var infixResult = this._infixParser.Parse("tags:AI OR tags:ML");
-        var mongoResult = this._mongoParser.Parse("{\"$or\": [{\"tags\": \"AI\"}, {\"tags\": \"ML\"}]}");
+        var infixResult = _infixParser.Parse("tags:AI OR tags:ML");
+        var mongoResult = _mongoParser.Parse("{\"$or\": [{\"tags\": \"AI\"}, {\"tags\": \"ML\"}]}");
 
         AssertNodesEquivalent(infixResult, mongoResult);
     }
+
 
     [Fact]
     public void Parse_Not_ProducesEquivalentAST()
     {
-        var infixResult = this._infixParser.Parse("NOT mimeType:image/png");
-        var mongoResult = this._mongoParser.Parse("{\"$not\": {\"mimeType\": \"image/png\"}}");
+        var infixResult = _infixParser.Parse("NOT mimeType:image/png");
+        var mongoResult = _mongoParser.Parse("{\"$not\": {\"mimeType\": \"image/png\"}}");
 
         AssertNodesEquivalent(infixResult, mongoResult);
     }
 
+
     [Fact]
     public void Parse_ComplexBooleanExpression_ProducesEquivalentAST()
     {
-        var infixResult = this._infixParser.Parse("(tags:AI OR tags:ML) AND NOT mimeType:image/png");
-        var mongoResult = this._mongoParser.Parse("{\"$and\": [{\"$or\": [{\"tags\": \"AI\"}, {\"tags\": \"ML\"}]}, {\"$not\": {\"mimeType\": \"image/png\"}}]}");
+        var infixResult = _infixParser.Parse("(tags:AI OR tags:ML) AND NOT mimeType:image/png");
+        var mongoResult = _mongoParser.Parse("{\"$and\": [{\"$or\": [{\"tags\": \"AI\"}, {\"tags\": \"ML\"}]}, {\"$not\": {\"mimeType\": \"image/png\"}}]}");
 
         // Both should be AND nodes with 2 children
         var infixLogical = Assert.IsType<LogicalNode>(infixResult);
@@ -129,11 +139,12 @@ public sealed class QueryParserEquivalenceTests
         Assert.Equal(LogicalOperator.Not, mongoNot.Operator);
     }
 
+
     [Fact]
     public void Parse_DateRange_ProducesEquivalentAST()
     {
-        var infixResult = this._infixParser.Parse("createdAt>=2024-01-01 AND createdAt<2024-02-01");
-        var mongoResult = this._mongoParser.Parse("{\"createdAt\": {\"$gte\": \"2024-01-01\", \"$lt\": \"2024-02-01\"}}");
+        var infixResult = _infixParser.Parse("createdAt>=2024-01-01 AND createdAt<2024-02-01");
+        var mongoResult = _mongoParser.Parse("{\"createdAt\": {\"$gte\": \"2024-01-01\", \"$lt\": \"2024-02-01\"}}");
 
         // Both should be AND nodes with 2 comparison children
         var infixLogical = Assert.IsType<LogicalNode>(infixResult);
@@ -156,14 +167,16 @@ public sealed class QueryParserEquivalenceTests
         Assert.Equal(ComparisonOperator.LessThan, mongoRight.Operator);
     }
 
+
     [Fact]
     public void Parse_MetadataFields_ProducesEquivalentAST()
     {
-        var infixResult = this._infixParser.Parse("metadata.author:John");
-        var mongoResult = this._mongoParser.Parse("{\"metadata.author\": \"John\"}");
+        var infixResult = _infixParser.Parse("metadata.author:John");
+        var mongoResult = _mongoParser.Parse("{\"metadata.author\": \"John\"}");
 
         AssertNodesEquivalent(infixResult, mongoResult);
     }
+
 
     private static void AssertNodesEquivalent(QueryNode node1, QueryNode node2)
     {

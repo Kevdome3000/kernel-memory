@@ -15,6 +15,7 @@ public interface IEmbeddingCache
     /// </summary>
     CacheModes Mode { get; }
 
+
     /// <summary>
     /// Try to retrieve a cached embedding by key.
     /// Returns null if not found or if mode is WriteOnly.
@@ -24,6 +25,7 @@ public interface IEmbeddingCache
     /// <returns>The cached embedding if found, null otherwise.</returns>
     Task<CachedEmbedding?> TryGetAsync(EmbeddingCacheKey key, CancellationToken ct = default);
 
+
     /// <summary>
     /// Store an embedding in the cache with optional token count.
     /// Does nothing if mode is ReadOnly.
@@ -32,5 +34,9 @@ public interface IEmbeddingCache
     /// <param name="vector">The embedding vector to store.</param>
     /// <param name="tokenCount">Optional token count if provider reports it.</param>
     /// <param name="ct">Cancellation token.</param>
-    Task StoreAsync(EmbeddingCacheKey key, float[] vector, int? tokenCount, CancellationToken ct = default);
+    Task StoreAsync(
+        EmbeddingCacheKey key,
+        float[] vector,
+        int? tokenCount,
+        CancellationToken ct = default);
 }
