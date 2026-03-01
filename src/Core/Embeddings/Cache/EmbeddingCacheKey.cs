@@ -43,6 +43,7 @@ public sealed class EmbeddingCacheKey
     /// </summary>
     public required string TextHash { get; init; }
 
+
     /// <summary>
     /// Creates a cache key from the given parameters.
     /// The text is hashed using SHA256 and not stored.
@@ -62,9 +63,9 @@ public sealed class EmbeddingCacheKey
         bool isNormalized,
         string? text)
     {
-        ArgumentNullException.ThrowIfNull(provider, nameof(provider));
-        ArgumentNullException.ThrowIfNull(model, nameof(model));
-        ArgumentOutOfRangeException.ThrowIfLessThan(vectorDimensions, 1, nameof(vectorDimensions));
+        ArgumentNullException.ThrowIfNull(provider);
+        ArgumentNullException.ThrowIfNull(model);
+        ArgumentOutOfRangeException.ThrowIfLessThan(vectorDimensions, 1);
 
         // Normalize null to empty string for consistent hashing
         text ??= string.Empty;
@@ -80,6 +81,7 @@ public sealed class EmbeddingCacheKey
         };
     }
 
+
     /// <summary>
     /// Generates a composite key string for use as a database primary key.
     /// Format: Provider|Model|Dimensions|IsNormalized|TextLength|TextHash
@@ -87,8 +89,9 @@ public sealed class EmbeddingCacheKey
     /// <returns>A string suitable for use as a cache key.</returns>
     public string ToCompositeKey()
     {
-        return $"{this.Provider}|{this.Model}|{this.VectorDimensions}|{this.IsNormalized}|{this.TextLength}|{this.TextHash}";
+        return $"{Provider}|{Model}|{VectorDimensions}|{IsNormalized}|{TextLength}|{TextHash}";
     }
+
 
     /// <summary>
     /// Computes SHA256 hash of the input text and returns as lowercase hex string.

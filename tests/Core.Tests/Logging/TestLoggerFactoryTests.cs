@@ -13,14 +13,16 @@ public sealed class TestLoggerFactoryTests
 {
     private readonly ITestOutputHelper _output;
 
+
     /// <summary>
     /// Initializes test with XUnit output helper.
     /// </summary>
     /// <param name="output">XUnit test output helper.</param>
     public TestLoggerFactoryTests(ITestOutputHelper output)
     {
-        this._output = output;
+        _output = output;
     }
+
 
     /// <summary>
     /// Verifies Create returns non-null typed logger.
@@ -29,11 +31,12 @@ public sealed class TestLoggerFactoryTests
     public void Create_ShouldReturnTypedLogger()
     {
         // Act
-        var logger = TestLoggerFactory.Create<TestLoggerFactoryTests>(this._output);
+        var logger = TestLoggerFactory.Create<TestLoggerFactoryTests>(_output);
 
         // Assert
         Assert.NotNull(logger);
     }
+
 
     /// <summary>
     /// Verifies logger can log messages without throwing.
@@ -42,7 +45,7 @@ public sealed class TestLoggerFactoryTests
     public void Create_ShouldCreateFunctionalLogger()
     {
         // Arrange
-        var logger = TestLoggerFactory.Create<TestLoggerFactoryTests>(this._output);
+        var logger = TestLoggerFactory.Create<TestLoggerFactoryTests>(_output);
 
         // Act
         var exception = Record.Exception(() =>
@@ -57,6 +60,7 @@ public sealed class TestLoggerFactoryTests
         Assert.Null(exception);
     }
 
+
     /// <summary>
     /// Verifies logger enables Debug level by default for detailed test output.
     /// </summary>
@@ -64,11 +68,12 @@ public sealed class TestLoggerFactoryTests
     public void Create_ShouldEnableDebugLevel()
     {
         // Arrange
-        var logger = TestLoggerFactory.Create<TestLoggerFactoryTests>(this._output);
+        var logger = TestLoggerFactory.Create<TestLoggerFactoryTests>(_output);
 
         // Assert
         Assert.True(logger.IsEnabled(LogLevel.Debug));
     }
+
 
     /// <summary>
     /// Verifies logger enables Trace level for maximum verbosity in tests.
@@ -77,11 +82,12 @@ public sealed class TestLoggerFactoryTests
     public void Create_ShouldEnableTraceLevel()
     {
         // Arrange
-        var logger = TestLoggerFactory.Create<TestLoggerFactoryTests>(this._output);
+        var logger = TestLoggerFactory.Create<TestLoggerFactoryTests>(_output);
 
         // Assert
         Assert.True(logger.IsEnabled(LogLevel.Trace));
     }
+
 
     /// <summary>
     /// Verifies logger can log structured data.
@@ -90,7 +96,7 @@ public sealed class TestLoggerFactoryTests
     public void Create_ShouldSupportStructuredLogging()
     {
         // Arrange
-        var logger = TestLoggerFactory.Create<TestLoggerFactoryTests>(this._output);
+        var logger = TestLoggerFactory.Create<TestLoggerFactoryTests>(_output);
 
         // Act - log with structured parameters
         var exception = Record.Exception(() =>
@@ -102,6 +108,7 @@ public sealed class TestLoggerFactoryTests
         Assert.Null(exception);
     }
 
+
     /// <summary>
     /// Verifies logger can log exceptions with stack traces.
     /// </summary>
@@ -109,7 +116,7 @@ public sealed class TestLoggerFactoryTests
     public void Create_ShouldLogExceptionsWithStackTrace()
     {
         // Arrange
-        var logger = TestLoggerFactory.Create<TestLoggerFactoryTests>(this._output);
+        var logger = TestLoggerFactory.Create<TestLoggerFactoryTests>(_output);
         var testException = new InvalidOperationException("Test exception");
 
         // Act
@@ -122,6 +129,7 @@ public sealed class TestLoggerFactoryTests
         Assert.Null(exception);
     }
 
+
     /// <summary>
     /// Verifies CreateLoggerFactory returns functional factory.
     /// </summary>
@@ -129,7 +137,7 @@ public sealed class TestLoggerFactoryTests
     public void CreateLoggerFactory_ShouldReturnFunctionalFactory()
     {
         // Act
-        using var factory = TestLoggerFactory.CreateLoggerFactory(this._output);
+        using var factory = TestLoggerFactory.CreateLoggerFactory(_output);
 
         // Assert
         Assert.NotNull(factory);
@@ -138,6 +146,7 @@ public sealed class TestLoggerFactoryTests
         Assert.NotNull(logger);
     }
 
+
     /// <summary>
     /// Verifies factory can create multiple loggers for different types.
     /// </summary>
@@ -145,7 +154,7 @@ public sealed class TestLoggerFactoryTests
     public void CreateLoggerFactory_ShouldCreateMultipleLoggers()
     {
         // Arrange
-        using var factory = TestLoggerFactory.CreateLoggerFactory(this._output);
+        using var factory = TestLoggerFactory.CreateLoggerFactory(_output);
 
         // Act
         var logger1 = factory.CreateLogger<TestLoggerFactoryTests>();
@@ -157,6 +166,7 @@ public sealed class TestLoggerFactoryTests
         Assert.NotSame(logger1, logger2);
     }
 
+
     /// <summary>
     /// Verifies logger output includes class name from ILogger of T.
     /// </summary>
@@ -164,7 +174,7 @@ public sealed class TestLoggerFactoryTests
     public void Create_ShouldIncludeClassName()
     {
         // Arrange
-        var logger = TestLoggerFactory.Create<TestLoggerFactoryTests>(this._output);
+        var logger = TestLoggerFactory.Create<TestLoggerFactoryTests>(_output);
 
         // Act - the logger should automatically include the class name
         // This test passes if no exception occurs and output is visible
@@ -173,6 +183,7 @@ public sealed class TestLoggerFactoryTests
         // Assert - logging works (class name visible in output)
         Assert.True(true);
     }
+
 
     /// <summary>
     /// Verifies null output helper throws appropriate exception.
@@ -184,6 +195,7 @@ public sealed class TestLoggerFactoryTests
         Assert.Throws<ArgumentNullException>(() =>
             TestLoggerFactory.Create<TestLoggerFactoryTests>(null!));
     }
+
 
     /// <summary>
     /// Verifies CreateLoggerFactory with null output throws.

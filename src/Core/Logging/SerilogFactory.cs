@@ -37,9 +37,9 @@ public static class SerilogFactory
 
         // Configure console output (stderr) for warnings and errors
         loggerConfig = loggerConfig.WriteTo.Console(
-            restrictedToMinimumLevel: Constants.LoggingDefaults.DefaultConsoleLogLevel,
-            outputTemplate: Constants.LoggingDefaults.ConsoleOutputTemplate,
-            formatProvider: CultureInfo.InvariantCulture,
+            Constants.LoggingDefaults.DefaultConsoleLogLevel,
+            Constants.LoggingDefaults.ConsoleOutputTemplate,
+            CultureInfo.InvariantCulture,
             standardErrorFromLevel: LogEventLevel.Verbose);
 
         // Configure file output if path is specified
@@ -51,8 +51,9 @@ public static class SerilogFactory
         var serilogLogger = loggerConfig.CreateLogger();
 
         // Create Microsoft.Extensions.Logging factory backed by Serilog
-        return new SerilogLoggerFactory(serilogLogger, dispose: true);
+        return new SerilogLoggerFactory(serilogLogger, true);
     }
+
 
     /// <summary>
     /// Configures file logging with rotation settings.
@@ -68,6 +69,7 @@ public static class SerilogFactory
         // Ensure directory exists for the log file
         var filePath = config.FilePath!;
         var directory = Path.GetDirectoryName(filePath);
+
         if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
         {
             Directory.CreateDirectory(directory);

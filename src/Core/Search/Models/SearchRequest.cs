@@ -1,4 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved.
+using System.Diagnostics.CodeAnalysis;
+
 namespace KernelMemory.Core.Search.Models;
 
 /// <summary>
@@ -20,14 +22,14 @@ public sealed class SearchRequest
     /// Specific nodes to search.
     /// Empty = use config defaultNodes.
     /// </summary>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
+    [SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
     public string[] Nodes { get; set; } = [];
 
     /// <summary>
     /// Nodes to exclude from search.
     /// Applies after Nodes selection.
     /// </summary>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
+    [SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
     public string[] ExcludeNodes { get; set; } = [];
 
     // Index selection (Requirements #8)
@@ -37,14 +39,14 @@ public sealed class SearchRequest
     /// Empty = all indexes.
     /// Supports "indexId" and "nodeId:indexId" syntax.
     /// </summary>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
+    [SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
     public string[] SearchIndexes { get; set; } = [];
 
     /// <summary>
     /// Indexes to exclude from search.
     /// Same syntax as SearchIndexes.
     /// </summary>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
+    [SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
     public string[] ExcludeIndexes { get; set; } = [];
 
     // Result control (Q3, Q12)

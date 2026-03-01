@@ -41,15 +41,17 @@ public class UpsertCommandSettings : GlobalOptions
     [Description("Optional tags (comma-separated)")]
     public string? Tags { get; init; }
 
+
     public override ValidationResult Validate()
     {
         var baseResult = base.Validate();
+
         if (!baseResult.Successful)
         {
             return baseResult;
         }
 
-        if (string.IsNullOrWhiteSpace(this.Content))
+        if (string.IsNullOrWhiteSpace(Content))
         {
             return ValidationResult.Error("Content cannot be empty");
         }
@@ -57,6 +59,7 @@ public class UpsertCommandSettings : GlobalOptions
         return ValidationResult.Success();
     }
 }
+
 
 /// <summary>
 /// Command to upsert (create or update) content.
@@ -72,6 +75,7 @@ public class UpsertCommand : BaseCommand<UpsertCommandSettings>
     {
     }
 
+
     public override async Task<int> ExecuteAsync(
         CommandContext context,
         UpsertCommandSettings settings,
@@ -79,8 +83,8 @@ public class UpsertCommand : BaseCommand<UpsertCommandSettings>
     {
         try
         {
-            var (config, node, formatter) = this.Initialize(settings);
-            using var service = this.CreateContentService(node);
+            var (config, node, formatter) = Initialize(settings);
+            using var service = CreateContentService(node);
 
             // Parse tags if provided
             var tags = string.IsNullOrWhiteSpace(settings.Tags)
@@ -115,7 +119,9 @@ public class UpsertCommand : BaseCommand<UpsertCommandSettings>
                     node = node.Id,
                     completed = result.Completed,
                     queued = result.Queued,
-                    error = string.IsNullOrEmpty(result.Error) ? null : result.Error
+                    error = string.IsNullOrEmpty(result.Error)
+                        ? null
+                        : result.Error
                 });
             }
 
@@ -124,7 +130,7 @@ public class UpsertCommand : BaseCommand<UpsertCommandSettings>
         catch (Exception ex)
         {
             var formatter = OutputFormatterFactory.Create(settings);
-            return this.HandleError(ex, formatter);
+            return HandleError(ex, formatter);
         }
     }
 }

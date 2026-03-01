@@ -18,6 +18,7 @@ public static class EnvironmentDetector
     {
         // Check DOTNET_ENVIRONMENT first (takes precedence)
         var dotNetEnv = Environment.GetEnvironmentVariable(Constants.LoggingDefaults.DotNetEnvironmentVariable);
+
         if (!string.IsNullOrWhiteSpace(dotNetEnv))
         {
             return dotNetEnv;
@@ -25,6 +26,7 @@ public static class EnvironmentDetector
 
         // Fall back to ASPNETCORE_ENVIRONMENT
         var aspNetEnv = Environment.GetEnvironmentVariable(Constants.LoggingDefaults.AspNetCoreEnvironmentVariable);
+
         if (!string.IsNullOrWhiteSpace(aspNetEnv))
         {
             return aspNetEnv;
@@ -33,6 +35,7 @@ public static class EnvironmentDetector
         // Default to Development for safety (full logging)
         return Constants.LoggingDefaults.DefaultEnvironment;
     }
+
 
     /// <summary>
     /// Checks if the current environment is Production.
@@ -46,6 +49,7 @@ public static class EnvironmentDetector
             Constants.LoggingDefaults.ProductionEnvironment,
             StringComparison.OrdinalIgnoreCase);
     }
+
 
     /// <summary>
     /// Checks if the current environment is Development.

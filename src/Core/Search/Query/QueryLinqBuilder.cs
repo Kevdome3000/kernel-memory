@@ -13,15 +13,17 @@ public sealed class QueryLinqBuilder : IQueryNodeVisitor<Expression>
     private readonly ParameterExpression _parameter;
     private readonly Type _recordType;
 
+
     /// <summary>
     /// Initialize a new QueryLinqBuilder.
     /// </summary>
     /// <param name="recordType">The record type to build expressions for (ContentRecord).</param>
     public QueryLinqBuilder(Type recordType)
     {
-        this._recordType = recordType;
-        this._parameter = Expression.Parameter(recordType, "x");
+        _recordType = recordType;
+        _parameter = Expression.Parameter(recordType, "x");
     }
+
 
     /// <summary>
     /// Build a LINQ expression from a query AST.
@@ -30,14 +32,15 @@ public sealed class QueryLinqBuilder : IQueryNodeVisitor<Expression>
     /// <returns>A LINQ expression tree: Expression&lt;Func&lt;ContentRecord, bool&gt;&gt;</returns>
     public Expression<Func<T, bool>> Build<T>(QueryNode queryNode) where T : class
     {
-        if (this._recordType != typeof(T))
+        if (_recordType != typeof(T))
         {
-            throw new ArgumentException($"Type mismatch: builder is for {this._recordType.Name}, requested {typeof(T).Name}");
+            throw new ArgumentException($"Type mismatch: builder is for {_recordType.Name}, requested {typeof(T).Name}");
         }
 
         var body = queryNode.Accept(this);
-        return (Expression<Func<T, bool>>)Expression.Lambda(body, this._parameter);
+        return (Expression<Func<T, bool>>)Expression.Lambda(body, _parameter);
     }
+
 
     /// <summary>
     /// Visit a logical node (AND, OR, NOT, NOR).
@@ -51,13 +54,14 @@ public sealed class QueryLinqBuilder : IQueryNodeVisitor<Expression>
 
         return node.Operator switch
         {
-            LogicalOperator.And => this.BuildAnd(node.Children),
-            LogicalOperator.Or => this.BuildOr(node.Children),
-            LogicalOperator.Not => this.BuildNot(node.Children[0]),
-            LogicalOperator.Nor => this.BuildNor(node.Children),
+            LogicalOperator.And => BuildAnd(node.Children),
+            LogicalOperator.Or => BuildOr(node.Children),
+            LogicalOperator.Not => BuildNot(node.Children[0]),
+            LogicalOperator.Nor => BuildNor(node.Children),
             _ => throw new ArgumentException($"Unknown logical operator: {node.Operator}")
         };
     }
+
 
     /// <summary>
     /// Visit a comparison node (==, !=, >=, etc.).
@@ -69,12 +73,12 @@ public sealed class QueryLinqBuilder : IQueryNodeVisitor<Expression>
         var value = node.Value;
 
         // Get the field expression (property access)
-        Expression fieldExpr = this.GetFieldExpression(field);
+        Expression fieldExpr = GetFieldExpression(field);
 
         // Special handling for Exists operator
         if (op == ComparisonOperator.Exists)
         {
-            return this.BuildExistsCheck(field, value?.Value is true);
+            return BuildExistsCheck(field, value?.Value is true);
         }
 
         if (value == null)
@@ -85,30 +89,31 @@ public sealed class QueryLinqBuilder : IQueryNodeVisitor<Expression>
         // Handle metadata fields specially
         if (field.IsMetadataField)
         {
-            return this.BuildMetadataComparison(field, op, value);
+            return BuildMetadataComparison(field, op, value);
         }
 
         // Handle In operator
         if (op == ComparisonOperator.In || op == ComparisonOperator.NotIn)
         {
-            return this.BuildInComparison(fieldExpr, op, value);
+            return BuildInComparison(fieldExpr, op, value);
         }
 
         // Handle Contains operator (regex/FTS)
         if (op == ComparisonOperator.Contains)
         {
-            return this.BuildContainsComparison(fieldExpr, value);
+            return BuildContainsComparison(fieldExpr, value);
         }
 
         // For FTS-indexed fields (content, title, description), Equal operator uses Contains (FTS semantics)
-        if (op == ComparisonOperator.Equal && this.IsFtsField(field.FieldPath))
+        if (op == ComparisonOperator.Equal && IsFtsField(field.FieldPath))
         {
-            return this.BuildContainsComparison(fieldExpr, value);
+            return BuildContainsComparison(fieldExpr, value);
         }
 
         // Standard comparison operators
-        return this.BuildStandardComparison(fieldExpr, op, value);
+        return BuildStandardComparison(fieldExpr, op, value);
     }
+
 
     /// <summary>
     /// Visit a text search node (FTS search across all fields).
@@ -118,14 +123,14 @@ public sealed class QueryLinqBuilder : IQueryNodeVisitor<Expression>
         // If specific field, search that field only
         if (node.Field != null)
         {
-            var fieldExpr = this.GetFieldExpression(node.Field);
-            return this.BuildContainsComparison(fieldExpr, new LiteralNode { Value = node.SearchText });
+            var fieldExpr = GetFieldExpression(node.Field);
+            return BuildContainsComparison(fieldExpr, new LiteralNode { Value = node.SearchText });
         }
 
         // Default field behavior: search across all FTS-indexed fields (title, description, content)
-        var titleProp = Expression.Property(this._parameter, "Title");
-        var descProp = Expression.Property(this._parameter, "Description");
-        var contentProp = Expression.Property(this._parameter, "Content");
+        var titleProp = Expression.Property(_parameter, "Title");
+        var descProp = Expression.Property(_parameter, "Description");
+        var contentProp = Expression.Property(_parameter, "Content");
 
         var searchValue = node.SearchText.ToLowerInvariant();
         var searchExpr = Expression.Constant(searchValue);
@@ -152,13 +157,15 @@ public sealed class QueryLinqBuilder : IQueryNodeVisitor<Expression>
         return Expression.OrElse(Expression.OrElse(titleMatch, descMatch), contentMatch);
     }
 
+
     /// <summary>
     /// Visit a field node (not used directly, but required by interface).
     /// </summary>
     public Expression Visit(FieldNode node)
     {
-        return this.GetFieldExpression(node);
+        return GetFieldExpression(node);
     }
+
 
     /// <summary>
     /// Visit a literal node (not used directly, but required by interface).
@@ -168,7 +175,9 @@ public sealed class QueryLinqBuilder : IQueryNodeVisitor<Expression>
         return Expression.Constant(node.Value);
     }
 
+
     // Helper methods for building expressions
+
 
     private Expression BuildAnd(QueryNode[] children)
     {
@@ -176,41 +185,46 @@ public sealed class QueryLinqBuilder : IQueryNodeVisitor<Expression>
         return exprs.Aggregate((left, right) => Expression.AndAlso(left, right));
     }
 
+
     private Expression BuildOr(QueryNode[] children)
     {
         var exprs = children.Select(c => c.Accept(this)).ToArray();
         return exprs.Aggregate((left, right) => Expression.OrElse(left, right));
     }
 
+
     private Expression BuildNot(QueryNode child)
     {
         return Expression.Not(child.Accept(this));
     }
 
+
     private Expression BuildNor(QueryNode[] children)
     {
         // NOR = NOT (child1 OR child2 OR ...)
-        return Expression.Not(this.BuildOr(children));
+        return Expression.Not(BuildOr(children));
     }
+
 
     private Expression GetFieldExpression(FieldNode field)
     {
         // Simple field: direct property access
         if (!field.FieldPath.Contains('.'))
         {
-            return Expression.Property(this._parameter, this.GetPropertyName(field.FieldPath));
+            return Expression.Property(_parameter, GetPropertyName(field.FieldPath));
         }
 
         // Dot notation: handle metadata access
         if (field.IsMetadataField)
         {
             // For metadata, we'll handle it specially in BuildMetadataComparison
-            return Expression.Property(this._parameter, "Metadata");
+            return Expression.Property(_parameter, "Metadata");
         }
 
         // Nested field (not metadata): not supported
         throw new NotSupportedException($"Nested field access not supported: {field.FieldPath}");
     }
+
 
     private string GetPropertyName(string fieldPath)
     {
@@ -229,12 +243,13 @@ public sealed class QueryLinqBuilder : IQueryNodeVisitor<Expression>
         };
     }
 
+
     private Expression BuildMetadataComparison(FieldNode field, ComparisonOperator op, LiteralNode value)
     {
         var metadataKey = field.MetadataKey ?? throw new InvalidOperationException("Metadata key cannot be null");
 
         // Get Metadata dictionary property
-        var metadataProp = Expression.Property(this._parameter, "Metadata");
+        var metadataProp = Expression.Property(_parameter, "Metadata");
 
         // Check if key exists: Metadata.ContainsKey(key)
         var containsKeyMethod = typeof(Dictionary<string, string>).GetMethod("ContainsKey")!;
@@ -273,32 +288,35 @@ public sealed class QueryLinqBuilder : IQueryNodeVisitor<Expression>
             var hasKeyAndDiffers = Expression.AndAlso(containsKey, comparison);
             return Expression.OrElse(notHasKey, hasKeyAndDiffers);
         }
-        else
-        {
-            // Has key AND comparison succeeds
-            return Expression.AndAlso(containsKey, comparison);
-        }
+        // Has key AND comparison succeeds
+        return Expression.AndAlso(containsKey, comparison);
     }
+
 
     private Expression BuildExistsCheck(FieldNode field, bool shouldExist)
     {
         if (!field.IsMetadataField)
         {
             // For regular fields, check if not null
-            var fieldExpr = this.GetFieldExpression(field);
+            var fieldExpr = GetFieldExpression(field);
             var notNull = Expression.NotEqual(fieldExpr, Expression.Constant(null));
-            return shouldExist ? notNull : Expression.Not(notNull);
+            return shouldExist
+                ? notNull
+                : Expression.Not(notNull);
         }
 
         // For metadata, check dictionary key
         var metadataKey = field.MetadataKey ?? throw new InvalidOperationException("Metadata key cannot be null");
-        var metadataProp = Expression.Property(this._parameter, "Metadata");
+        var metadataProp = Expression.Property(_parameter, "Metadata");
         var containsKeyMethod = typeof(Dictionary<string, string>).GetMethod("ContainsKey")!;
         var keyExpr = Expression.Constant(metadataKey);
         var containsKey = Expression.Call(metadataProp, containsKeyMethod, keyExpr);
 
-        return shouldExist ? containsKey : Expression.Not(containsKey);
+        return shouldExist
+            ? containsKey
+            : Expression.Not(containsKey);
     }
+
 
     private Expression BuildInComparison(Expression fieldExpr, ComparisonOperator op, LiteralNode value)
     {
@@ -322,7 +340,9 @@ public sealed class QueryLinqBuilder : IQueryNodeVisitor<Expression>
             var predicate = Expression.Lambda<Func<string, bool>>(inArray, tagParam);
             var anyCall = Expression.Call(anyMethod, fieldExpr, predicate);
 
-            return op == ComparisonOperator.In ? anyCall : Expression.Not(anyCall);
+            return op == ComparisonOperator.In
+                ? anyCall
+                : Expression.Not(anyCall);
         }
 
         // For regular string fields, check if value is in array
@@ -334,8 +354,11 @@ public sealed class QueryLinqBuilder : IQueryNodeVisitor<Expression>
             .MakeGenericMethod(typeof(string));
         var contains = Expression.Call(containsMethodSingle, arrayExpr, fieldLower);
 
-        return op == ComparisonOperator.In ? contains : Expression.Not(contains);
+        return op == ComparisonOperator.In
+            ? contains
+            : Expression.Not(contains);
     }
+
 
     private Expression BuildContainsComparison(Expression fieldExpr, LiteralNode value)
     {
@@ -353,6 +376,7 @@ public sealed class QueryLinqBuilder : IQueryNodeVisitor<Expression>
 
         return Expression.AndAlso(notNull, contains);
     }
+
 
     private Expression BuildStandardComparison(Expression fieldExpr, ComparisonOperator op, LiteralNode value)
     {
@@ -387,6 +411,7 @@ public sealed class QueryLinqBuilder : IQueryNodeVisitor<Expression>
             _ => throw new NotSupportedException($"Operator {op} not supported for standard comparison")
         };
     }
+
 
     /// <summary>
     /// Check if a field is FTS-indexed (uses full-text search semantics).

@@ -11,10 +11,11 @@ public sealed class MongoJsonQueryParserTests
 {
     private readonly MongoJsonQueryParser _parser = new();
 
+
     [Fact]
     public void Parse_SimpleEquality_ReturnsComparisonNode()
     {
-        var result = this._parser.Parse("{\"content\": \"kubernetes\"}");
+        var result = _parser.Parse("{\"content\": \"kubernetes\"}");
 
         var compNode = Assert.IsType<ComparisonNode>(result);
         Assert.Equal("content", compNode.Field!.FieldPath);
@@ -22,10 +23,11 @@ public sealed class MongoJsonQueryParserTests
         Assert.Equal("kubernetes", compNode.Value!.AsString());
     }
 
+
     [Fact]
     public void Parse_EqOperator_ReturnsComparisonNode()
     {
-        var result = this._parser.Parse("{\"tags\": {\"$eq\": \"production\"}}");
+        var result = _parser.Parse("{\"tags\": {\"$eq\": \"production\"}}");
 
         var compNode = Assert.IsType<ComparisonNode>(result);
         Assert.Equal("tags", compNode.Field!.FieldPath);
@@ -33,10 +35,11 @@ public sealed class MongoJsonQueryParserTests
         Assert.Equal("production", compNode.Value!.AsString());
     }
 
+
     [Fact]
     public void Parse_NeOperator_ReturnsComparisonNode()
     {
-        var result = this._parser.Parse("{\"mimeType\": {\"$ne\": \"image/png\"}}");
+        var result = _parser.Parse("{\"mimeType\": {\"$ne\": \"image/png\"}}");
 
         var compNode = Assert.IsType<ComparisonNode>(result);
         Assert.Equal("mimetype", compNode.Field!.FieldPath);
@@ -44,10 +47,11 @@ public sealed class MongoJsonQueryParserTests
         Assert.Equal("image/png", compNode.Value!.AsString());
     }
 
+
     [Fact]
     public void Parse_GtOperator_ReturnsComparisonNode()
     {
-        var result = this._parser.Parse("{\"createdAt\": {\"$gt\": \"2024-01-01\"}}");
+        var result = _parser.Parse("{\"createdAt\": {\"$gt\": \"2024-01-01\"}}");
 
         var compNode = Assert.IsType<ComparisonNode>(result);
         Assert.Equal("createdat", compNode.Field!.FieldPath);
@@ -55,10 +59,11 @@ public sealed class MongoJsonQueryParserTests
         Assert.Equal("2024-01-01", compNode.Value!.AsString());
     }
 
+
     [Fact]
     public void Parse_GteOperator_ReturnsComparisonNode()
     {
-        var result = this._parser.Parse("{\"createdAt\": {\"$gte\": \"2024-01-01\"}}");
+        var result = _parser.Parse("{\"createdAt\": {\"$gte\": \"2024-01-01\"}}");
 
         var compNode = Assert.IsType<ComparisonNode>(result);
         Assert.Equal("createdat", compNode.Field!.FieldPath);
@@ -66,10 +71,11 @@ public sealed class MongoJsonQueryParserTests
         Assert.Equal("2024-01-01", compNode.Value!.AsString());
     }
 
+
     [Fact]
     public void Parse_LtOperator_ReturnsComparisonNode()
     {
-        var result = this._parser.Parse("{\"createdAt\": {\"$lt\": \"2024-02-01\"}}");
+        var result = _parser.Parse("{\"createdAt\": {\"$lt\": \"2024-02-01\"}}");
 
         var compNode = Assert.IsType<ComparisonNode>(result);
         Assert.Equal("createdat", compNode.Field!.FieldPath);
@@ -77,10 +83,11 @@ public sealed class MongoJsonQueryParserTests
         Assert.Equal("2024-02-01", compNode.Value!.AsString());
     }
 
+
     [Fact]
     public void Parse_LteOperator_ReturnsComparisonNode()
     {
-        var result = this._parser.Parse("{\"createdAt\": {\"$lte\": \"2024-02-01\"}}");
+        var result = _parser.Parse("{\"createdAt\": {\"$lte\": \"2024-02-01\"}}");
 
         var compNode = Assert.IsType<ComparisonNode>(result);
         Assert.Equal("createdat", compNode.Field!.FieldPath);
@@ -88,10 +95,11 @@ public sealed class MongoJsonQueryParserTests
         Assert.Equal("2024-02-01", compNode.Value!.AsString());
     }
 
+
     [Fact]
     public void Parse_InOperator_ReturnsComparisonNode()
     {
-        var result = this._parser.Parse("{\"tags\": {\"$in\": [\"AI\", \"ML\", \"research\"]}}");
+        var result = _parser.Parse("{\"tags\": {\"$in\": [\"AI\", \"ML\", \"research\"]}}");
 
         var compNode = Assert.IsType<ComparisonNode>(result);
         Assert.Equal("tags", compNode.Field!.FieldPath);
@@ -103,10 +111,11 @@ public sealed class MongoJsonQueryParserTests
         Assert.Contains("research", array);
     }
 
+
     [Fact]
     public void Parse_NinOperator_ReturnsComparisonNode()
     {
-        var result = this._parser.Parse("{\"tags\": {\"$nin\": [\"deprecated\", \"archived\"]}}");
+        var result = _parser.Parse("{\"tags\": {\"$nin\": [\"deprecated\", \"archived\"]}}");
 
         var compNode = Assert.IsType<ComparisonNode>(result);
         Assert.Equal("tags", compNode.Field!.FieldPath);
@@ -117,10 +126,11 @@ public sealed class MongoJsonQueryParserTests
         Assert.Contains("archived", array);
     }
 
+
     [Fact]
     public void Parse_RegexOperator_ReturnsComparisonNode()
     {
-        var result = this._parser.Parse("{\"content\": {\"$regex\": \"kubernetes\"}}");
+        var result = _parser.Parse("{\"content\": {\"$regex\": \"kubernetes\"}}");
 
         var compNode = Assert.IsType<ComparisonNode>(result);
         Assert.Equal("content", compNode.Field!.FieldPath);
@@ -128,10 +138,11 @@ public sealed class MongoJsonQueryParserTests
         Assert.Equal("kubernetes", compNode.Value!.AsString());
     }
 
+
     [Fact]
     public void Parse_ExistsOperator_ReturnsComparisonNode()
     {
-        var result = this._parser.Parse("{\"metadata.category\": {\"$exists\": true}}");
+        var result = _parser.Parse("{\"metadata.category\": {\"$exists\": true}}");
 
         var compNode = Assert.IsType<ComparisonNode>(result);
         Assert.Equal("metadata.category", compNode.Field!.FieldPath);
@@ -139,10 +150,11 @@ public sealed class MongoJsonQueryParserTests
         Assert.True((bool)compNode.Value!.Value);
     }
 
+
     [Fact]
     public void Parse_ExistsFalse_ReturnsLogicalNotNode()
     {
-        var result = this._parser.Parse("{\"metadata.category\": {\"$exists\": false}}");
+        var result = _parser.Parse("{\"metadata.category\": {\"$exists\": false}}");
 
         var notNode = Assert.IsType<LogicalNode>(result);
         Assert.Equal(LogicalOperator.Not, notNode.Operator);
@@ -153,20 +165,22 @@ public sealed class MongoJsonQueryParserTests
         Assert.Equal(ComparisonOperator.Exists, compNode.Operator);
     }
 
+
     [Fact]
     public void Parse_TextOperator_ReturnsTextSearchNode()
     {
-        var result = this._parser.Parse("{\"$text\": {\"$search\": \"kubernetes\"}}");
+        var result = _parser.Parse("{\"$text\": {\"$search\": \"kubernetes\"}}");
 
         var textNode = Assert.IsType<TextSearchNode>(result);
         Assert.Equal("kubernetes", textNode.SearchText);
         Assert.Null(textNode.Field);
     }
 
+
     [Fact]
     public void Parse_AndOperator_ReturnsLogicalNode()
     {
-        var result = this._parser.Parse("{\"$and\": [{\"tags\": \"AI\"}, {\"createdAt\": {\"$gte\": \"2024-01-01\"}}]}");
+        var result = _parser.Parse("{\"$and\": [{\"tags\": \"AI\"}, {\"createdAt\": {\"$gte\": \"2024-01-01\"}}]}");
 
         var logicalNode = Assert.IsType<LogicalNode>(result);
         Assert.Equal(LogicalOperator.And, logicalNode.Operator);
@@ -179,20 +193,22 @@ public sealed class MongoJsonQueryParserTests
         Assert.Equal("createdat", right.Field.FieldPath);
     }
 
+
     [Fact]
     public void Parse_OrOperator_ReturnsLogicalNode()
     {
-        var result = this._parser.Parse("{\"$or\": [{\"tags\": \"AI\"}, {\"tags\": \"ML\"}]}");
+        var result = _parser.Parse("{\"$or\": [{\"tags\": \"AI\"}, {\"tags\": \"ML\"}]}");
 
         var logicalNode = Assert.IsType<LogicalNode>(result);
         Assert.Equal(LogicalOperator.Or, logicalNode.Operator);
         Assert.Equal(2, logicalNode.Children.Length);
     }
 
+
     [Fact]
     public void Parse_NotOperator_ReturnsLogicalNode()
     {
-        var result = this._parser.Parse("{\"$not\": {\"mimeType\": \"image/png\"}}");
+        var result = _parser.Parse("{\"$not\": {\"mimeType\": \"image/png\"}}");
 
         var logicalNode = Assert.IsType<LogicalNode>(result);
         Assert.Equal(LogicalOperator.Not, logicalNode.Operator);
@@ -202,15 +218,17 @@ public sealed class MongoJsonQueryParserTests
         Assert.Equal("mimetype", compNode.Field!.FieldPath);
     }
 
+
     [Fact]
     public void Parse_NorOperator_ReturnsLogicalNode()
     {
-        var result = this._parser.Parse("{\"$nor\": [{\"tags\": \"deprecated\"}, {\"tags\": \"archived\"}]}");
+        var result = _parser.Parse("{\"$nor\": [{\"tags\": \"deprecated\"}, {\"tags\": \"archived\"}]}");
 
         var logicalNode = Assert.IsType<LogicalNode>(result);
         Assert.Equal(LogicalOperator.Nor, logicalNode.Operator);
         Assert.Equal(2, logicalNode.Children.Length);
     }
+
 
     [Fact]
     public void Parse_ComplexNestedQuery_ReturnsLogicalNode()
@@ -222,7 +240,7 @@ public sealed class MongoJsonQueryParserTests
             ]
         }";
 
-        var result = this._parser.Parse(query);
+        var result = _parser.Parse(query);
 
         var rootAnd = Assert.IsType<LogicalNode>(result);
         Assert.Equal(LogicalOperator.And, rootAnd.Operator);
@@ -237,10 +255,11 @@ public sealed class MongoJsonQueryParserTests
         Assert.Equal(LogicalOperator.Not, notNode.Operator);
     }
 
+
     [Fact]
     public void Parse_MetadataField_ReturnsComparisonNode()
     {
-        var result = this._parser.Parse("{\"metadata.author\": \"John\"}");
+        var result = _parser.Parse("{\"metadata.author\": \"John\"}");
 
         var compNode = Assert.IsType<ComparisonNode>(result);
         Assert.Equal("metadata.author", compNode.Field!.FieldPath);
@@ -248,10 +267,11 @@ public sealed class MongoJsonQueryParserTests
         Assert.Equal("John", compNode.Value!.AsString());
     }
 
+
     [Fact]
     public void Parse_MultipleFieldsAtRoot_ReturnsLogicalAndNode()
     {
-        var result = this._parser.Parse("{\"metadata.author\": \"John\", \"metadata.department\": \"AI\"}");
+        var result = _parser.Parse("{\"metadata.author\": \"John\", \"metadata.department\": \"AI\"}");
 
         var logicalNode = Assert.IsType<LogicalNode>(result);
         Assert.Equal(LogicalOperator.And, logicalNode.Operator);
@@ -264,10 +284,11 @@ public sealed class MongoJsonQueryParserTests
         Assert.Equal("metadata.department", right.Field.FieldPath);
     }
 
+
     [Fact]
     public void Parse_DateRangeQuery_ReturnsLogicalAndNode()
     {
-        var result = this._parser.Parse("{\"createdAt\": {\"$gte\": \"2024-01-01\", \"$lt\": \"2024-02-01\"}}");
+        var result = _parser.Parse("{\"createdAt\": {\"$gte\": \"2024-01-01\", \"$lt\": \"2024-02-01\"}}");
 
         var logicalNode = Assert.IsType<LogicalNode>(result);
         Assert.Equal(LogicalOperator.And, logicalNode.Operator);
@@ -280,44 +301,50 @@ public sealed class MongoJsonQueryParserTests
         Assert.Equal(ComparisonOperator.LessThan, right.Operator);
     }
 
+
     [Fact]
     public void Parse_EmptyQuery_ThrowsException()
     {
-        Assert.Throws<QuerySyntaxException>(() => this._parser.Parse(""));
-        Assert.Throws<QuerySyntaxException>(() => this._parser.Parse("   "));
+        Assert.Throws<QuerySyntaxException>(() => _parser.Parse(""));
+        Assert.Throws<QuerySyntaxException>(() => _parser.Parse("   "));
     }
+
 
     [Fact]
     public void Parse_InvalidJson_ThrowsException()
     {
-        Assert.Throws<QuerySyntaxException>(() => this._parser.Parse("{invalid json}"));
-        Assert.Throws<QuerySyntaxException>(() => this._parser.Parse("{\"field\": unclosed"));
+        Assert.Throws<QuerySyntaxException>(() => _parser.Parse("{invalid json}"));
+        Assert.Throws<QuerySyntaxException>(() => _parser.Parse("{\"field\": unclosed"));
     }
+
 
     [Fact]
     public void Parse_UnknownOperator_ThrowsException()
     {
-        Assert.Throws<QuerySyntaxException>(() => this._parser.Parse("{\"field\": {\"$unknown\": \"value\"}}"));
+        Assert.Throws<QuerySyntaxException>(() => _parser.Parse("{\"field\": {\"$unknown\": \"value\"}}"));
     }
+
 
     [Fact]
     public void Parse_EmptyObject_ThrowsException()
     {
-        Assert.Throws<QuerySyntaxException>(() => this._parser.Parse("{}"));
+        Assert.Throws<QuerySyntaxException>(() => _parser.Parse("{}"));
     }
+
 
     [Fact]
     public void Validate_ValidQuery_ReturnsTrue()
     {
-        Assert.True(this._parser.Validate("{\"content\": \"kubernetes\"}"));
-        Assert.True(this._parser.Validate("{\"$and\": [{\"tags\": \"AI\"}, {\"tags\": \"ML\"}]}"));
+        Assert.True(_parser.Validate("{\"content\": \"kubernetes\"}"));
+        Assert.True(_parser.Validate("{\"$and\": [{\"tags\": \"AI\"}, {\"tags\": \"ML\"}]}"));
     }
+
 
     [Fact]
     public void Validate_InvalidQuery_ReturnsFalse()
     {
-        Assert.False(this._parser.Validate(""));
-        Assert.False(this._parser.Validate("{invalid}"));
-        Assert.False(this._parser.Validate("{}"));
+        Assert.False(_parser.Validate(""));
+        Assert.False(_parser.Validate("{invalid}"));
+        Assert.False(_parser.Validate("{}"));
     }
 }

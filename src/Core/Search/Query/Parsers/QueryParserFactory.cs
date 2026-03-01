@@ -22,6 +22,7 @@ public static class QueryParserFactory
         return parser.Parse(query);
     }
 
+
     /// <summary>
     /// Detect query format and return appropriate parser.
     /// </summary>

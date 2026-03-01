@@ -12,15 +12,17 @@ public sealed class EnvironmentDetectorTests : IDisposable
     private readonly string? _originalDotNetEnv;
     private readonly string? _originalAspNetEnv;
 
+
     /// <summary>
     /// Initializes a new instance capturing original environment variables.
     /// </summary>
     public EnvironmentDetectorTests()
     {
         // Capture original values to restore after tests
-        this._originalDotNetEnv = Environment.GetEnvironmentVariable(Constants.LoggingDefaults.DotNetEnvironmentVariable);
-        this._originalAspNetEnv = Environment.GetEnvironmentVariable(Constants.LoggingDefaults.AspNetCoreEnvironmentVariable);
+        _originalDotNetEnv = Environment.GetEnvironmentVariable(Constants.LoggingDefaults.DotNetEnvironmentVariable);
+        _originalAspNetEnv = Environment.GetEnvironmentVariable(Constants.LoggingDefaults.AspNetCoreEnvironmentVariable);
     }
+
 
     /// <summary>
     /// Restores original environment variables after test.
@@ -28,18 +30,18 @@ public sealed class EnvironmentDetectorTests : IDisposable
     public void Dispose()
     {
         // Restore original environment variables
-        if (this._originalDotNetEnv != null)
+        if (_originalDotNetEnv != null)
         {
-            Environment.SetEnvironmentVariable(Constants.LoggingDefaults.DotNetEnvironmentVariable, this._originalDotNetEnv);
+            Environment.SetEnvironmentVariable(Constants.LoggingDefaults.DotNetEnvironmentVariable, _originalDotNetEnv);
         }
         else
         {
             Environment.SetEnvironmentVariable(Constants.LoggingDefaults.DotNetEnvironmentVariable, null);
         }
 
-        if (this._originalAspNetEnv != null)
+        if (_originalAspNetEnv != null)
         {
-            Environment.SetEnvironmentVariable(Constants.LoggingDefaults.AspNetCoreEnvironmentVariable, this._originalAspNetEnv);
+            Environment.SetEnvironmentVariable(Constants.LoggingDefaults.AspNetCoreEnvironmentVariable, _originalAspNetEnv);
         }
         else
         {
@@ -48,6 +50,7 @@ public sealed class EnvironmentDetectorTests : IDisposable
 
         GC.SuppressFinalize(this);
     }
+
 
     /// <summary>
     /// Verifies GetEnvironment returns DOTNET_ENVIRONMENT when set.
@@ -67,6 +70,7 @@ public sealed class EnvironmentDetectorTests : IDisposable
         Assert.Equal("Production", result);
     }
 
+
     /// <summary>
     /// Verifies GetEnvironment falls back to ASPNETCORE_ENVIRONMENT.
     /// When DOTNET_ENVIRONMENT is not set, use ASPNETCORE_ENVIRONMENT.
@@ -84,6 +88,7 @@ public sealed class EnvironmentDetectorTests : IDisposable
         // Assert
         Assert.Equal("Staging", result);
     }
+
 
     /// <summary>
     /// Verifies GetEnvironment returns Development by default.
@@ -103,6 +108,7 @@ public sealed class EnvironmentDetectorTests : IDisposable
         Assert.Equal("Development", result);
     }
 
+
     /// <summary>
     /// Verifies IsProduction returns true when Production environment is set.
     /// </summary>
@@ -119,6 +125,7 @@ public sealed class EnvironmentDetectorTests : IDisposable
         // Assert
         Assert.True(result);
     }
+
 
     /// <summary>
     /// Verifies IsProduction is case-insensitive.
@@ -138,6 +145,7 @@ public sealed class EnvironmentDetectorTests : IDisposable
         Assert.True(result);
     }
 
+
     /// <summary>
     /// Verifies IsProduction is case-insensitive (uppercase).
     /// </summary>
@@ -154,6 +162,7 @@ public sealed class EnvironmentDetectorTests : IDisposable
         // Assert
         Assert.True(result);
     }
+
 
     /// <summary>
     /// Verifies IsProduction returns false for Development.
@@ -173,6 +182,7 @@ public sealed class EnvironmentDetectorTests : IDisposable
         Assert.False(result);
     }
 
+
     /// <summary>
     /// Verifies IsProduction returns false for Staging.
     /// </summary>
@@ -189,6 +199,7 @@ public sealed class EnvironmentDetectorTests : IDisposable
         // Assert
         Assert.False(result);
     }
+
 
     /// <summary>
     /// Verifies IsProduction returns false when no environment is set.
@@ -208,6 +219,7 @@ public sealed class EnvironmentDetectorTests : IDisposable
         Assert.False(result);
     }
 
+
     /// <summary>
     /// Verifies IsDevelopment returns true for Development environment.
     /// </summary>
@@ -224,6 +236,7 @@ public sealed class EnvironmentDetectorTests : IDisposable
         // Assert
         Assert.True(result);
     }
+
 
     /// <summary>
     /// Verifies IsDevelopment returns true when no environment is set.
@@ -242,6 +255,7 @@ public sealed class EnvironmentDetectorTests : IDisposable
         Assert.True(result);
     }
 
+
     /// <summary>
     /// Verifies IsDevelopment returns false for Production.
     /// </summary>
@@ -259,6 +273,7 @@ public sealed class EnvironmentDetectorTests : IDisposable
         Assert.False(result);
     }
 
+
     /// <summary>
     /// Verifies empty environment variable is treated as not set.
     /// </summary>
@@ -275,6 +290,7 @@ public sealed class EnvironmentDetectorTests : IDisposable
         // Assert
         Assert.Equal("Staging", result);
     }
+
 
     /// <summary>
     /// Verifies whitespace environment variable is treated as not set.

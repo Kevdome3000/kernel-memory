@@ -23,7 +23,7 @@ public sealed class WriteResult
     /// True if operation was queued but not fully completed.
     /// Inverse of Completed for convenience.
     /// </summary>
-    public bool Queued => !this.Completed;
+    public bool Queued => !Completed;
 
     /// <summary>
     /// Error message if any step failed.
@@ -31,26 +31,34 @@ public sealed class WriteResult
     /// </summary>
     public string Error { get; init; } = string.Empty;
 
+
     /// <summary>
     /// Creates a successful result (all steps completed).
     /// </summary>
     /// <param name="id">The content ID.</param>
-    public static WriteResult Success(string id) => new()
+    public static WriteResult Success(string id)
     {
-        Id = id,
-        Completed = true,
-        Error = string.Empty
-    };
+        return new WriteResult
+        {
+            Id = id,
+            Completed = true,
+            Error = string.Empty
+        };
+    }
+
 
     /// <summary>
     /// Creates a queued result (operation accepted but not fully completed).
     /// </summary>
     /// <param name="id">The content ID.</param>
     /// <param name="error">Optional error message describing what failed.</param>
-    public static WriteResult QueuedOnly(string id, string error = "") => new()
+    public static WriteResult QueuedOnly(string id, string error = "")
     {
-        Id = id,
-        Completed = false,
-        Error = error
-    };
+        return new WriteResult
+        {
+            Id = id,
+            Completed = false,
+            Error = error
+        };
+    }
 }

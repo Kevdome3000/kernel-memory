@@ -22,13 +22,14 @@ public class QuerySyntaxException : Exception
     /// </summary>
     public string? ActualToken { get; init; }
 
+
     /// <summary>
     /// Initialize a new QuerySyntaxException.
     /// </summary>
     public QuerySyntaxException()
-        : base()
     {
     }
+
 
     /// <summary>
     /// Initialize a new QuerySyntaxException with a message.
@@ -37,13 +38,15 @@ public class QuerySyntaxException : Exception
     {
     }
 
+
     /// <summary>
     /// Initialize a new QuerySyntaxException with position.
     /// </summary>
     public QuerySyntaxException(string message, int position) : base(message)
     {
-        this.Position = position;
+        Position = position;
     }
+
 
     /// <summary>
     /// Initialize a new QuerySyntaxException with position and expected/actual tokens.
@@ -54,10 +57,11 @@ public class QuerySyntaxException : Exception
         string? expectedToken,
         string? actualToken) : base(message)
     {
-        this.Position = position;
-        this.ExpectedToken = expectedToken;
-        this.ActualToken = actualToken;
+        Position = position;
+        ExpectedToken = expectedToken;
+        ActualToken = actualToken;
     }
+
 
     /// <summary>
     /// Initialize a new QuerySyntaxException with inner exception.

@@ -21,6 +21,7 @@ public interface IContentStorage
     /// <exception cref="ContentStorageException">Thrown only if queueing the operation fails.</exception>
     Task<WriteResult> UpsertAsync(UpsertRequest request, CancellationToken cancellationToken = default);
 
+
     /// <summary>
     /// Deletes content by ID. Idempotent - no error if record doesn't exist.
     /// Operation is queued and processed synchronously (best-effort).
@@ -32,6 +33,7 @@ public interface IContentStorage
     /// <exception cref="ContentStorageException">Thrown only if queueing the operation fails.</exception>
     Task<WriteResult> DeleteAsync(string id, CancellationToken cancellationToken = default);
 
+
     /// <summary>
     /// Retrieves content by ID.
     /// </summary>
@@ -40,12 +42,14 @@ public interface IContentStorage
     /// <returns>The content DTO, or null if not found.</returns>
     Task<ContentDto?> GetByIdAsync(string id, CancellationToken cancellationToken = default);
 
+
     /// <summary>
     /// Counts total number of content records.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Total count of content records.</returns>
     Task<long> CountAsync(CancellationToken cancellationToken = default);
+
 
     /// <summary>
     /// Lists content records with pagination support.

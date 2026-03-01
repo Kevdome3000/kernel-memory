@@ -10,8 +10,9 @@ public sealed class ConfigPathService
 {
     public ConfigPathService(string path)
     {
-        this.Path = path;
+        Path = path;
     }
+
 
     public string Path { get; }
 }

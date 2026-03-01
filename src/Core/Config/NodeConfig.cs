@@ -61,39 +61,40 @@ public sealed class NodeConfig : IValidatable
     [JsonPropertyName("searchIndexes")]
     public List<SearchIndexConfig> SearchIndexes { get; set; } = new();
 
+
     /// <summary>
     /// Validates the node configuration
     /// </summary>
     /// <param name="path"></param>
     public void Validate(string path)
     {
-        if (string.IsNullOrWhiteSpace(this.Id))
+        if (string.IsNullOrWhiteSpace(Id))
         {
             throw new ConfigException(path, "Node ID is required");
         }
 
-        if (this.Weight < 0.0f)
+        if (Weight < 0.0f)
         {
             throw new ConfigException($"{path}.Weight", "Weight must be non-negative (0.0 or higher)");
         }
 
-        if (this.ContentIndex == null)
+        if (ContentIndex == null)
         {
             throw new ConfigException($"{path}.ContentIndex", "ContentIndex is required");
         }
 
-        this.ContentIndex.Validate($"{path}.ContentIndex");
-        this.FileStorage?.Validate($"{path}.FileStorage");
-        this.RepoStorage?.Validate($"{path}.RepoStorage");
+        ContentIndex.Validate($"{path}.ContentIndex");
+        FileStorage?.Validate($"{path}.FileStorage");
+        RepoStorage?.Validate($"{path}.RepoStorage");
 
         // Validate search indexes
-        for (int i = 0; i < this.SearchIndexes.Count; i++)
+        for (int i = 0; i < SearchIndexes.Count; i++)
         {
-            this.SearchIndexes[i].Validate($"{path}.SearchIndexes[{i}]");
+            SearchIndexes[i].Validate($"{path}.SearchIndexes[{i}]");
         }
 
         // Ensure all search index IDs are unique within this node
-        var duplicateIds = this.SearchIndexes
+        var duplicateIds = SearchIndexes
             .GroupBy(idx => idx.Id)
             .Where(g => g.Count() > 1)
             .Select(g => g.Key)
@@ -105,6 +106,7 @@ public sealed class NodeConfig : IValidatable
                 $"Duplicate search index IDs found: {string.Join(", ", duplicateIds)}. Each search index must have a unique ID within a node.");
         }
     }
+
 
     /// <summary>
     /// Creates a default "personal" node configuration with FTS and vector search.

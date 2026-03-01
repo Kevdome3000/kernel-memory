@@ -13,6 +13,7 @@ public sealed class DatabaseNotFoundException : Exception
     /// </summary>
     public string DatabasePath { get; }
 
+
     /// <summary>
     /// Initializes a new instance of the <see cref="DatabaseNotFoundException"/> class.
     /// </summary>
@@ -20,8 +21,9 @@ public sealed class DatabaseNotFoundException : Exception
     public DatabaseNotFoundException(string dbPath)
         : base($"No content database found at '{dbPath}'. This is your first run.")
     {
-        this.DatabasePath = dbPath ?? throw new ArgumentNullException(nameof(dbPath));
+        DatabasePath = dbPath ?? throw new ArgumentNullException(nameof(dbPath));
     }
+
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DatabaseNotFoundException"/> class.
@@ -29,8 +31,9 @@ public sealed class DatabaseNotFoundException : Exception
     public DatabaseNotFoundException()
         : base("No content database found.")
     {
-        this.DatabasePath = string.Empty;
+        DatabasePath = string.Empty;
     }
+
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DatabaseNotFoundException"/> class.
@@ -40,6 +43,6 @@ public sealed class DatabaseNotFoundException : Exception
     public DatabaseNotFoundException(string? message, Exception? innerException)
         : base(message, innerException)
     {
-        this.DatabasePath = string.Empty;
+        DatabasePath = string.Empty;
     }
 }

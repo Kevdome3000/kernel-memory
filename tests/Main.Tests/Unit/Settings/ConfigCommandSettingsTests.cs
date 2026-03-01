@@ -21,6 +21,7 @@ public sealed class ConfigCommandSettingsTests
         Assert.True(result.Successful);
     }
 
+
     [Fact]
     public void Validate_WithShowNodes_ReturnsSuccess()
     {
@@ -37,6 +38,7 @@ public sealed class ConfigCommandSettingsTests
         Assert.True(result.Successful);
     }
 
+
     [Fact]
     public void Validate_WithShowCache_ReturnsSuccess()
     {
@@ -52,6 +54,7 @@ public sealed class ConfigCommandSettingsTests
         // Assert
         Assert.True(result.Successful);
     }
+
 
     [Fact]
     public void Validate_WithBothFlags_ReturnsSuccess()
@@ -70,6 +73,7 @@ public sealed class ConfigCommandSettingsTests
         Assert.True(result.Successful);
     }
 
+
     [Fact]
     public void Validate_WithInvalidBaseOptions_ReturnsError()
     {
@@ -85,6 +89,7 @@ public sealed class ConfigCommandSettingsTests
         // Assert
         Assert.False(result.Successful);
     }
+
 
     [Fact]
     public void DefaultFlags_AreFalse()

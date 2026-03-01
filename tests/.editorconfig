@@ -25,14 +25,14 @@ insert_final_newline = true
 trim_trailing_whitespace = true
 tab_width = 4
 indent_size = 4
-file_header_template = Copyright (c) Microsoft. All rights reserved.
+file_header_template = Copyright (c) Microsoft.All rights reserved.
 
 
 ###############################
 # .NET Coding Conventions     #
 ###############################
 [*.{cs,vb}]
-file_header_template = Copyright (c) Microsoft. All rights reserved.
+file_header_template = Copyright (c) Microsoft.All rights reserved.
 # Organize usings
 dotnet_sort_system_directives_first = true
 # this. preferences

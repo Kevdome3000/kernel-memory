@@ -21,6 +21,7 @@ public sealed class GlobalOptionsTests
         Assert.True(result.Successful);
     }
 
+
     [Fact]
     public void Validate_WithValidJsonFormat_ReturnsSuccess()
     {
@@ -33,6 +34,7 @@ public sealed class GlobalOptionsTests
         // Assert
         Assert.True(result.Successful);
     }
+
 
     [Fact]
     public void Validate_WithValidYamlFormat_ReturnsSuccess()
@@ -47,6 +49,7 @@ public sealed class GlobalOptionsTests
         Assert.True(result.Successful);
     }
 
+
     [Fact]
     public void Validate_WithUpperCaseFormat_ReturnsSuccess()
     {
@@ -59,6 +62,7 @@ public sealed class GlobalOptionsTests
         // Assert
         Assert.True(result.Successful);
     }
+
 
     [Fact]
     public void Validate_WithInvalidFormat_ReturnsError()
@@ -74,6 +78,7 @@ public sealed class GlobalOptionsTests
         Assert.Contains("Format must be", result.Message ?? string.Empty);
     }
 
+
     [Fact]
     public void Validate_WithValidSilentVerbosity_ReturnsSuccess()
     {
@@ -86,6 +91,7 @@ public sealed class GlobalOptionsTests
         // Assert
         Assert.True(result.Successful);
     }
+
 
     [Fact]
     public void Validate_WithValidQuietVerbosity_ReturnsSuccess()
@@ -100,6 +106,7 @@ public sealed class GlobalOptionsTests
         Assert.True(result.Successful);
     }
 
+
     [Fact]
     public void Validate_WithValidNormalVerbosity_ReturnsSuccess()
     {
@@ -112,6 +119,7 @@ public sealed class GlobalOptionsTests
         // Assert
         Assert.True(result.Successful);
     }
+
 
     [Fact]
     public void Validate_WithValidVerboseVerbosity_ReturnsSuccess()
@@ -126,6 +134,7 @@ public sealed class GlobalOptionsTests
         Assert.True(result.Successful);
     }
 
+
     [Fact]
     public void Validate_WithUpperCaseVerbosity_ReturnsSuccess()
     {
@@ -138,6 +147,7 @@ public sealed class GlobalOptionsTests
         // Assert
         Assert.True(result.Successful);
     }
+
 
     [Fact]
     public void Validate_WithInvalidVerbosity_ReturnsError()
@@ -152,6 +162,7 @@ public sealed class GlobalOptionsTests
         Assert.False(result.Successful);
         Assert.Contains("Verbosity must be", result.Message ?? string.Empty);
     }
+
 
     [Fact]
     public void Validate_WithAllValidOptions_ReturnsSuccess()
@@ -172,6 +183,7 @@ public sealed class GlobalOptionsTests
         // Assert
         Assert.True(result.Successful);
     }
+
 
     [Fact]
     public void DefaultValues_AreSetCorrectly()

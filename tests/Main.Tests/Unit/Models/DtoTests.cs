@@ -23,6 +23,7 @@ public sealed class DtoTests
         Assert.Equal("/path/to/cache", dto.Path);
     }
 
+
     [Fact]
     public void CacheConfigDto_WithNullValues_HandlesCorrectly()
     {
@@ -37,6 +38,7 @@ public sealed class DtoTests
         Assert.Null(dto.Type);
         Assert.Null(dto.Path);
     }
+
 
     [Fact]
     public void CacheInfoDto_InitializesCorrectly()
@@ -55,6 +57,7 @@ public sealed class DtoTests
         Assert.Equal("Type2", dto.LlmCache.Type);
     }
 
+
     [Fact]
     public void CacheInfoDto_WithNullCaches_HandlesCorrectly()
     {
@@ -70,6 +73,7 @@ public sealed class DtoTests
         Assert.Null(dto.LlmCache);
     }
 
+
     [Fact]
     public void ContentIndexConfigDto_InitializesCorrectly()
     {
@@ -84,6 +88,7 @@ public sealed class DtoTests
         Assert.Equal("SqliteContentIndex", dto.Type);
         Assert.Equal("/db/path.db", dto.Path);
     }
+
 
     [Fact]
     public void NodeDetailsDto_InitializesCorrectly()
@@ -111,6 +116,7 @@ public sealed class DtoTests
         Assert.Single(dto.SearchIndexes);
     }
 
+
     [Fact]
     public void NodeDetailsDto_WithNullOptionalFields_HandlesCorrectly()
     {
@@ -131,6 +137,7 @@ public sealed class DtoTests
         Assert.Null(dto.RepoStorage);
         Assert.Empty(dto.SearchIndexes);
     }
+
 
     [Fact]
     public void NodeSummaryDto_InitializesCorrectly()
@@ -155,6 +162,7 @@ public sealed class DtoTests
         Assert.Equal(2, dto.SearchIndexCount);
     }
 
+
     [Fact]
     public void SearchIndexDto_InitializesCorrectly()
     {
@@ -167,6 +175,7 @@ public sealed class DtoTests
         // Assert
         Assert.Equal("SimpleSearch", dto.Type);
     }
+
 
     [Fact]
     public void SearchIndexDto_WithNullType_HandlesCorrectly()
@@ -181,6 +190,7 @@ public sealed class DtoTests
         Assert.Null(dto.Type);
     }
 
+
     [Fact]
     public void StorageConfigDto_InitializesCorrectly()
     {
@@ -193,6 +203,7 @@ public sealed class DtoTests
         // Assert
         Assert.Equal("AzureBlobStorage", dto.Type);
     }
+
 
     [Fact]
     public void StorageConfigDto_WithNullType_HandlesCorrectly()

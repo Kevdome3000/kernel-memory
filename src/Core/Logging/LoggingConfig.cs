@@ -41,5 +41,5 @@ public sealed class LoggingConfig
     /// Gets a value indicating whether file logging is enabled.
     /// Returns true when FilePath is set to a non-empty value.
     /// </summary>
-    public bool IsFileLoggingEnabled => !string.IsNullOrWhiteSpace(this.FilePath);
+    public bool IsFileLoggingEnabled => !string.IsNullOrWhiteSpace(FilePath);
 }

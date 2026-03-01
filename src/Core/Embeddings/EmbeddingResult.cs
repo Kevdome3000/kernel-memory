@@ -12,7 +12,8 @@ public sealed class EmbeddingResult
     /// <summary>
     /// The generated embedding vector.
     /// </summary>
-    [SuppressMessage("Performance", "CA1819:Properties should not return arrays",
+    [SuppressMessage("Performance",
+        "CA1819:Properties should not return arrays",
         Justification = "Embedding vectors are read-only after creation")]
     public required float[] Vector { get; init; }
 
@@ -22,6 +23,7 @@ public sealed class EmbeddingResult
     /// </summary>
     public int? TokenCount { get; init; }
 
+
     /// <summary>
     /// Creates an EmbeddingResult with just a vector (no token count).
     /// </summary>
@@ -29,6 +31,7 @@ public sealed class EmbeddingResult
     {
         return new EmbeddingResult { Vector = vector, TokenCount = null };
     }
+
 
     /// <summary>
     /// Creates an EmbeddingResult with vector and token count.

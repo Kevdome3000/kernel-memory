@@ -16,30 +16,32 @@ public sealed class ExamplesCommandE2ETests : IDisposable
     private readonly string _configPath;
     private readonly string _kmPath;
 
+
     public ExamplesCommandE2ETests()
     {
-        this._tempDir = Path.Combine(Path.GetTempPath(), $"km-examples-e2e-{Guid.NewGuid():N}");
-        Directory.CreateDirectory(this._tempDir);
-        this._configPath = Path.Combine(this._tempDir, "config.json");
+        _tempDir = Path.Combine(Path.GetTempPath(), $"km-examples-e2e-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(_tempDir);
+        _configPath = Path.Combine(_tempDir, "config.json");
 
         var testAssemblyPath = typeof(ExamplesCommandE2ETests).Assembly.Location;
         var testBinDir = Path.GetDirectoryName(testAssemblyPath)!;
         var solutionRoot = Path.GetFullPath(Path.Combine(testBinDir, "../../../../.."));
-        this._kmPath = Path.Combine(solutionRoot, "src/Main/bin/Debug/net10.0/KernelMemory.Main.dll");
+        _kmPath = Path.Combine(solutionRoot, "src/Main/bin/Debug/net10.0/KernelMemory.Main.dll");
 
-        if (!File.Exists(this._kmPath))
+        if (!File.Exists(_kmPath))
         {
-            throw new FileNotFoundException($"KernelMemory.Main.dll not found at {this._kmPath}");
+            throw new FileNotFoundException($"KernelMemory.Main.dll not found at {_kmPath}");
         }
     }
+
 
     public void Dispose()
     {
         try
         {
-            if (Directory.Exists(this._tempDir))
+            if (Directory.Exists(_tempDir))
             {
-                Directory.Delete(this._tempDir, true);
+                Directory.Delete(_tempDir, true);
             }
         }
         catch (IOException)
@@ -48,12 +50,13 @@ public sealed class ExamplesCommandE2ETests : IDisposable
         }
     }
 
+
     private async Task<string> ExecAsync(string args)
     {
         var psi = new ProcessStartInfo
         {
             FileName = "dotnet",
-            Arguments = $"{this._kmPath} {args}",
+            Arguments = $"{_kmPath} {args}",
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false
@@ -72,6 +75,7 @@ public sealed class ExamplesCommandE2ETests : IDisposable
         return output.Trim();
     }
 
+
     #region Search Examples - Simple
 
     [Fact]
@@ -79,29 +83,34 @@ public sealed class ExamplesCommandE2ETests : IDisposable
     {
         // Example: km search "doctor appointment"
         var id = JsonSerializer.Deserialize<JsonElement>(
-            await this.ExecAsync($"put \"doctor appointment next week\" --config {this._configPath}").ConfigureAwait(false)
-        ).GetProperty("id").GetString();
+                await ExecAsync($"put \"doctor appointment next week\" --config {_configPath}").ConfigureAwait(false)
+            )
+            .GetProperty("id")
+            .GetString();
 
         var result = JsonSerializer.Deserialize<JsonElement>(
-            await this.ExecAsync($"search \"doctor appointment\" --config {this._configPath} --format json").ConfigureAwait(false)
+            await ExecAsync($"search \"doctor appointment\" --config {_configPath} --format json").ConfigureAwait(false)
         );
 
         Assert.Equal(1, result.GetProperty("totalResults").GetInt32());
         Assert.Equal(id, result.GetProperty("results")[0].GetProperty("id").GetString());
     }
 
+
     [Fact]
     public async Task Example_SearchByTopic()
     {
         // Example: km search "title:lecture AND tags:exam"
         var id = JsonSerializer.Deserialize<JsonElement>(
-            await this.ExecAsync($"put \"calculus formulas\" --title \"lecture notes\" --tags exam,math --config {this._configPath}").ConfigureAwait(false)
-        ).GetProperty("id").GetString();
+                await ExecAsync($"put \"calculus formulas\" --title \"lecture notes\" --tags exam,math --config {_configPath}").ConfigureAwait(false)
+            )
+            .GetProperty("id")
+            .GetString();
 
-        await this.ExecAsync($"put \"random content\" --title \"other\" --tags random --config {this._configPath}").ConfigureAwait(false);
+        await ExecAsync($"put \"random content\" --title \"other\" --tags random --config {_configPath}").ConfigureAwait(false);
 
         var result = JsonSerializer.Deserialize<JsonElement>(
-            await this.ExecAsync($"search \"title:lecture AND tags:exam\" --config {this._configPath} --format json").ConfigureAwait(false)
+            await ExecAsync($"search \"title:lecture AND tags:exam\" --config {_configPath} --format json").ConfigureAwait(false)
         );
 
         Assert.Equal(1, result.GetProperty("totalResults").GetInt32());
@@ -109,6 +118,7 @@ public sealed class ExamplesCommandE2ETests : IDisposable
     }
 
     #endregion
+
 
     #region Boolean Operators
 
@@ -117,49 +127,60 @@ public sealed class ExamplesCommandE2ETests : IDisposable
     {
         // Example: km search "docker AND kubernetes"
         var id = JsonSerializer.Deserialize<JsonElement>(
-            await this.ExecAsync($"put \"docker and kubernetes deployment guide\" --config {this._configPath}").ConfigureAwait(false)
-        ).GetProperty("id").GetString();
+                await ExecAsync($"put \"docker and kubernetes deployment guide\" --config {_configPath}").ConfigureAwait(false)
+            )
+            .GetProperty("id")
+            .GetString();
 
-        await this.ExecAsync($"put \"only docker here\" --config {this._configPath}").ConfigureAwait(false);
+        await ExecAsync($"put \"only docker here\" --config {_configPath}").ConfigureAwait(false);
 
         var result = JsonSerializer.Deserialize<JsonElement>(
-            await this.ExecAsync($"search \"docker AND kubernetes\" --config {this._configPath} --format json").ConfigureAwait(false)
+            await ExecAsync($"search \"docker AND kubernetes\" --config {_configPath} --format json").ConfigureAwait(false)
         );
 
         Assert.Equal(1, result.GetProperty("totalResults").GetInt32());
         Assert.Equal(id, result.GetProperty("results")[0].GetProperty("id").GetString());
     }
 
+
     [Fact]
     public async Task Example_BooleanOr()
     {
         // Example: km search "python OR javascript"
         var id1 = JsonSerializer.Deserialize<JsonElement>(
-            await this.ExecAsync($"put \"python programming guide\" --config {this._configPath}").ConfigureAwait(false)
-        ).GetProperty("id").GetString();
+                await ExecAsync($"put \"python programming guide\" --config {_configPath}").ConfigureAwait(false)
+            )
+            .GetProperty("id")
+            .GetString();
 
         var id2 = JsonSerializer.Deserialize<JsonElement>(
-            await this.ExecAsync($"put \"javascript tutorial\" --config {this._configPath}").ConfigureAwait(false)
-        ).GetProperty("id").GetString();
+                await ExecAsync($"put \"javascript tutorial\" --config {_configPath}").ConfigureAwait(false)
+            )
+            .GetProperty("id")
+            .GetString();
 
-        await this.ExecAsync($"put \"java development\" --config {this._configPath}").ConfigureAwait(false);
+        await ExecAsync($"put \"java development\" --config {_configPath}").ConfigureAwait(false);
 
         var result = JsonSerializer.Deserialize<JsonElement>(
-            await this.ExecAsync($"search \"python OR javascript\" --config {this._configPath} --format json").ConfigureAwait(false)
+            await ExecAsync($"search \"python OR javascript\" --config {_configPath} --format json").ConfigureAwait(false)
         );
 
         Assert.Equal(2, result.GetProperty("totalResults").GetInt32());
-        var ids = result.GetProperty("results").EnumerateArray()
-            .Select(r => r.GetProperty("id").GetString()).ToHashSet();
+        var ids = result.GetProperty("results")
+            .EnumerateArray()
+            .Select(r => r.GetProperty("id").GetString())
+            .ToHashSet();
         Assert.Contains(id1, ids);
         Assert.Contains(id2, ids);
     }
+
 
     // NOTE: NOT operator test disabled - Known bug where NOT doesn't exclude matches correctly
     // "recipe NOT dessert" currently returns both pasta recipe AND dessert recipe
     // Bug needs investigation: FTS NOT query may not be filtering, or LINQ post-filter failing
 
     #endregion
+
 
     #region Complex Queries
 
@@ -168,57 +189,72 @@ public sealed class ExamplesCommandE2ETests : IDisposable
     {
         // Example: km search "vacation AND (beach OR mountain)"
         var id1 = JsonSerializer.Deserialize<JsonElement>(
-            await this.ExecAsync($"put \"vacation plans for beach trip\" --config {this._configPath}").ConfigureAwait(false)
-        ).GetProperty("id").GetString();
+                await ExecAsync($"put \"vacation plans for beach trip\" --config {_configPath}").ConfigureAwait(false)
+            )
+            .GetProperty("id")
+            .GetString();
 
         var id2 = JsonSerializer.Deserialize<JsonElement>(
-            await this.ExecAsync($"put \"vacation mountain hiking\" --config {this._configPath}").ConfigureAwait(false)
-        ).GetProperty("id").GetString();
+                await ExecAsync($"put \"vacation mountain hiking\" --config {_configPath}").ConfigureAwait(false)
+            )
+            .GetProperty("id")
+            .GetString();
 
-        await this.ExecAsync($"put \"city vacation\" --config {this._configPath}").ConfigureAwait(false);
+        await ExecAsync($"put \"city vacation\" --config {_configPath}").ConfigureAwait(false);
 
         var result = JsonSerializer.Deserialize<JsonElement>(
-            await this.ExecAsync($"search \"vacation AND (beach OR mountain)\" --config {this._configPath} --format json").ConfigureAwait(false)
+            await ExecAsync($"search \"vacation AND (beach OR mountain)\" --config {_configPath} --format json").ConfigureAwait(false)
         );
 
         Assert.Equal(2, result.GetProperty("totalResults").GetInt32());
-        var ids = result.GetProperty("results").EnumerateArray()
-            .Select(r => r.GetProperty("id").GetString()).ToHashSet();
+        var ids = result.GetProperty("results")
+            .EnumerateArray()
+            .Select(r => r.GetProperty("id").GetString())
+            .ToHashSet();
         Assert.Contains(id1, ids);
         Assert.Contains(id2, ids);
     }
+
 
     [Fact]
     public async Task Example_ComplexWithParentheses_ApiDocs()
     {
         // Example: km search "title:api AND (content:rest OR content:graphql)"
         var id1 = JsonSerializer.Deserialize<JsonElement>(
-            await this.ExecAsync($"put \"REST api documentation\" --title \"API Guide\" --config {this._configPath}").ConfigureAwait(false)
-        ).GetProperty("id").GetString();
+                await ExecAsync($"put \"REST api documentation\" --title \"API Guide\" --config {_configPath}").ConfigureAwait(false)
+            )
+            .GetProperty("id")
+            .GetString();
 
         var id2 = JsonSerializer.Deserialize<JsonElement>(
-            await this.ExecAsync($"put \"GraphQL tutorial content\" --title \"Modern API\" --config {this._configPath}").ConfigureAwait(false)
-        ).GetProperty("id").GetString();
+                await ExecAsync($"put \"GraphQL tutorial content\" --title \"Modern API\" --config {_configPath}").ConfigureAwait(false)
+            )
+            .GetProperty("id")
+            .GetString();
 
-        await this.ExecAsync($"put \"database content\" --title \"API Reference\" --config {this._configPath}").ConfigureAwait(false);
+        await ExecAsync($"put \"database content\" --title \"API Reference\" --config {_configPath}").ConfigureAwait(false);
 
         var result = JsonSerializer.Deserialize<JsonElement>(
-            await this.ExecAsync($"search \"title:api AND (content:rest OR content:graphql)\" --config {this._configPath} --format json").ConfigureAwait(false)
+            await ExecAsync($"search \"title:api AND (content:rest OR content:graphql)\" --config {_configPath} --format json").ConfigureAwait(false)
         );
 
         Assert.Equal(2, result.GetProperty("totalResults").GetInt32());
-        var ids = result.GetProperty("results").EnumerateArray()
-            .Select(r => r.GetProperty("id").GetString()).ToHashSet();
+        var ids = result.GetProperty("results")
+            .EnumerateArray()
+            .Select(r => r.GetProperty("id").GetString())
+            .ToHashSet();
         Assert.Contains(id1, ids);
         Assert.Contains(id2, ids);
     }
 
     #endregion
 
+
     // NOTE: Some escaping special characters tests disabled - Known limitations:
     // - Field queries with quoted values like 'content:"user:password"' fail with SQLite error
     // FIXED: Quoted phrases like '"Alice AND Bob"' now work (see SearchEndToEndTests.KnownIssue2_*)
     // FIXED: Literal reserved words like '"NOT"' now work correctly
+
 
     #region MongoDB JSON Format
 
@@ -227,52 +263,60 @@ public sealed class ExamplesCommandE2ETests : IDisposable
     {
         // Example: km search '{"content": "kubernetes"}'
         var id = JsonSerializer.Deserialize<JsonElement>(
-            await this.ExecAsync($"put \"kubernetes deployment tutorial\" --config {this._configPath}").ConfigureAwait(false)
-        ).GetProperty("id").GetString();
+                await ExecAsync($"put \"kubernetes deployment tutorial\" --config {_configPath}").ConfigureAwait(false)
+            )
+            .GetProperty("id")
+            .GetString();
 
-        await this.ExecAsync($"put \"docker containers\" --config {this._configPath}").ConfigureAwait(false);
+        await ExecAsync($"put \"docker containers\" --config {_configPath}").ConfigureAwait(false);
 
         const string jsonQuery = "{\\\"content\\\": \\\"kubernetes\\\"}";
         var result = JsonSerializer.Deserialize<JsonElement>(
-            await this.ExecAsync($"search \"{jsonQuery}\" --config {this._configPath} --format json").ConfigureAwait(false)
+            await ExecAsync($"search \"{jsonQuery}\" --config {_configPath} --format json").ConfigureAwait(false)
         );
 
         Assert.Equal(1, result.GetProperty("totalResults").GetInt32());
         Assert.Equal(id, result.GetProperty("results")[0].GetProperty("id").GetString());
     }
+
 
     [Fact]
     public async Task Example_MongoAnd()
     {
         // Example: km search '{"$and": [{"title": "api"}, {"content": "rest"}]}'
         var id = JsonSerializer.Deserialize<JsonElement>(
-            await this.ExecAsync($"put \"REST api documentation\" --title \"API Guide\" --config {this._configPath}").ConfigureAwait(false)
-        ).GetProperty("id").GetString();
+                await ExecAsync($"put \"REST api documentation\" --title \"API Guide\" --config {_configPath}").ConfigureAwait(false)
+            )
+            .GetProperty("id")
+            .GetString();
 
-        await this.ExecAsync($"put \"graphql content\" --title \"API Ref\" --config {this._configPath}").ConfigureAwait(false);
+        await ExecAsync($"put \"graphql content\" --title \"API Ref\" --config {_configPath}").ConfigureAwait(false);
 
         const string jsonQuery = "{\\\"$and\\\": [{\\\"title\\\": \\\"api\\\"}, {\\\"content\\\": \\\"rest\\\"}]}";
         var result = JsonSerializer.Deserialize<JsonElement>(
-            await this.ExecAsync($"search \"{jsonQuery}\" --config {this._configPath} --format json").ConfigureAwait(false)
+            await ExecAsync($"search \"{jsonQuery}\" --config {_configPath} --format json").ConfigureAwait(false)
         );
 
         Assert.Equal(1, result.GetProperty("totalResults").GetInt32());
         Assert.Equal(id, result.GetProperty("results")[0].GetProperty("id").GetString());
     }
 
+
     [Fact]
     public async Task Example_MongoTextSearch()
     {
         // Example: km search '{"$text": {"$search": "full text query"}}'
         var id = JsonSerializer.Deserialize<JsonElement>(
-            await this.ExecAsync($"put \"full text search capabilities\" --config {this._configPath}").ConfigureAwait(false)
-        ).GetProperty("id").GetString();
+                await ExecAsync($"put \"full text search capabilities\" --config {_configPath}").ConfigureAwait(false)
+            )
+            .GetProperty("id")
+            .GetString();
 
-        await this.ExecAsync($"put \"vector search features\" --config {this._configPath}").ConfigureAwait(false);
+        await ExecAsync($"put \"vector search features\" --config {_configPath}").ConfigureAwait(false);
 
         const string jsonQuery = "{\\\"$text\\\": {\\\"$search\\\": \\\"full text\\\"}}";
         var result = JsonSerializer.Deserialize<JsonElement>(
-            await this.ExecAsync($"search \"{jsonQuery}\" --config {this._configPath} --format json").ConfigureAwait(false)
+            await ExecAsync($"search \"{jsonQuery}\" --config {_configPath} --format json").ConfigureAwait(false)
         );
 
         Assert.True(result.GetProperty("totalResults").GetInt32() > 0);
@@ -282,6 +326,7 @@ public sealed class ExamplesCommandE2ETests : IDisposable
 
     #endregion
 
+
     #region Field-Specific Searches
 
     [Fact]
@@ -289,31 +334,36 @@ public sealed class ExamplesCommandE2ETests : IDisposable
     {
         // From example: km search "title:lecture AND tags:exam"
         var id = JsonSerializer.Deserialize<JsonElement>(
-            await this.ExecAsync($"put \"content about lectures\" --title \"lecture notes\" --config {this._configPath}").ConfigureAwait(false)
-        ).GetProperty("id").GetString();
+                await ExecAsync($"put \"content about lectures\" --title \"lecture notes\" --config {_configPath}").ConfigureAwait(false)
+            )
+            .GetProperty("id")
+            .GetString();
 
-        await this.ExecAsync($"put \"lecture content here\" --title \"other title\" --config {this._configPath}").ConfigureAwait(false);
+        await ExecAsync($"put \"lecture content here\" --title \"other title\" --config {_configPath}").ConfigureAwait(false);
 
         var result = JsonSerializer.Deserialize<JsonElement>(
-            await this.ExecAsync($"search \"title:lecture\" --config {this._configPath} --format json").ConfigureAwait(false)
+            await ExecAsync($"search \"title:lecture\" --config {_configPath} --format json").ConfigureAwait(false)
         );
 
         Assert.Equal(1, result.GetProperty("totalResults").GetInt32());
         Assert.Equal(id, result.GetProperty("results")[0].GetProperty("id").GetString());
     }
 
+
     [Fact]
     public async Task Example_SearchInContentField()
     {
         // From example: km search "content:insurance AND (tags:health OR tags:auto)"
         var id = JsonSerializer.Deserialize<JsonElement>(
-            await this.ExecAsync($"put \"insurance policy details\" --tags health --config {this._configPath}").ConfigureAwait(false)
-        ).GetProperty("id").GetString();
+                await ExecAsync($"put \"insurance policy details\" --tags health --config {_configPath}").ConfigureAwait(false)
+            )
+            .GetProperty("id")
+            .GetString();
 
-        await this.ExecAsync($"put \"other content\" --tags health --config {this._configPath}").ConfigureAwait(false);
+        await ExecAsync($"put \"other content\" --tags health --config {_configPath}").ConfigureAwait(false);
 
         var result = JsonSerializer.Deserialize<JsonElement>(
-            await this.ExecAsync($"search \"content:insurance AND tags:health\" --config {this._configPath} --format json").ConfigureAwait(false)
+            await ExecAsync($"search \"content:insurance AND tags:health\" --config {_configPath} --format json").ConfigureAwait(false)
         );
 
         Assert.Equal(1, result.GetProperty("totalResults").GetInt32());
@@ -321,6 +371,7 @@ public sealed class ExamplesCommandE2ETests : IDisposable
     }
 
     #endregion
+
 
     #region Pagination and Filtering
 
@@ -330,28 +381,30 @@ public sealed class ExamplesCommandE2ETests : IDisposable
         // Example: km search "meeting notes" --limit 10 --offset 20
         for (int i = 0; i < 25; i++)
         {
-            await this.ExecAsync($"put \"meeting notes number {i}\" --config {this._configPath}").ConfigureAwait(false);
+            await ExecAsync($"put \"meeting notes number {i}\" --config {_configPath}").ConfigureAwait(false);
         }
 
         var result = JsonSerializer.Deserialize<JsonElement>(
-            await this.ExecAsync($"search \"meeting\" --limit 3 --offset 2 --config {this._configPath} --format json").ConfigureAwait(false)
+            await ExecAsync($"search \"meeting\" --limit 3 --offset 2 --config {_configPath} --format json").ConfigureAwait(false)
         );
 
         Assert.Equal(25, result.GetProperty("totalResults").GetInt32());
         Assert.Equal(3, result.GetProperty("results").GetArrayLength());
     }
 
+
     [Fact]
     public async Task Example_MinRelevanceFiltering()
     {
         // Example: km search "emergency contacts" --min-relevance 0.7
-        await this.ExecAsync($"put \"emergency contact: John 555-1234\" --config {this._configPath}").ConfigureAwait(false);
+        await ExecAsync($"put \"emergency contact: John 555-1234\" --config {_configPath}").ConfigureAwait(false);
 
         var result = JsonSerializer.Deserialize<JsonElement>(
-            await this.ExecAsync($"search \"emergency\" --min-relevance 0.3 --config {this._configPath} --format json").ConfigureAwait(false)
+            await ExecAsync($"search \"emergency\" --min-relevance 0.3 --config {_configPath} --format json").ConfigureAwait(false)
         );
 
         Assert.True(result.GetProperty("totalResults").GetInt32() > 0);
+
         foreach (var r in result.GetProperty("results").EnumerateArray())
         {
             Assert.True(r.GetProperty("relevance").GetSingle() >= 0.3f);
@@ -359,6 +412,7 @@ public sealed class ExamplesCommandE2ETests : IDisposable
     }
 
     #endregion
+
 
     #region Regression Tests - Critical Bug Scenarios
 
@@ -368,12 +422,14 @@ public sealed class ExamplesCommandE2ETests : IDisposable
         // This is the EXACT scenario that failed before BM25 fix
         // km put "ciao" && km search "ciao" (using default MinRelevance=0.3)
         var id = JsonSerializer.Deserialize<JsonElement>(
-            await this.ExecAsync($"put \"ciao mondo\" --config {this._configPath}").ConfigureAwait(false)
-        ).GetProperty("id").GetString();
+                await ExecAsync($"put \"ciao mondo\" --config {_configPath}").ConfigureAwait(false)
+            )
+            .GetProperty("id")
+            .GetString();
 
         // Don't specify --min-relevance, use default 0.3
         var result = JsonSerializer.Deserialize<JsonElement>(
-            await this.ExecAsync($"search \"ciao\" --config {this._configPath} --format json").ConfigureAwait(false)
+            await ExecAsync($"search \"ciao\" --config {_configPath} --format json").ConfigureAwait(false)
         );
 
         Assert.True(result.GetProperty("totalResults").GetInt32() > 0,
@@ -381,16 +437,19 @@ public sealed class ExamplesCommandE2ETests : IDisposable
         Assert.Equal(id, result.GetProperty("results")[0].GetProperty("id").GetString());
     }
 
+
     [Fact]
     public async Task Regression_FieldSpecificStemming()
     {
         // km put "summary" && km search "content:summaries"
         var id = JsonSerializer.Deserialize<JsonElement>(
-            await this.ExecAsync($"put \"summary of findings\" --config {this._configPath}").ConfigureAwait(false)
-        ).GetProperty("id").GetString();
+                await ExecAsync($"put \"summary of findings\" --config {_configPath}").ConfigureAwait(false)
+            )
+            .GetProperty("id")
+            .GetString();
 
         var result = JsonSerializer.Deserialize<JsonElement>(
-            await this.ExecAsync($"search \"content:summaries\" --config {this._configPath} --format json").ConfigureAwait(false)
+            await ExecAsync($"search \"content:summaries\" --config {_configPath} --format json").ConfigureAwait(false)
         );
 
         Assert.Equal(1, result.GetProperty("totalResults").GetInt32());
@@ -398,4 +457,6 @@ public sealed class ExamplesCommandE2ETests : IDisposable
     }
 
     #endregion
+
+
 }

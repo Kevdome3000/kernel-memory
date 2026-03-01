@@ -10,14 +10,17 @@ public class ContentStorageException : Exception
     {
     }
 
+
     public ContentStorageException(string message) : base(message)
     {
     }
+
 
     public ContentStorageException(string message, Exception innerException) : base(message, innerException)
     {
     }
 }
+
 
 /// <summary>
 /// Exception thrown when a content record is not found.
@@ -26,28 +29,33 @@ public class ContentNotFoundException : ContentStorageException
 {
     public string ContentId { get; }
 
+
     public ContentNotFoundException(string contentId)
         : base($"Content with ID '{contentId}' was not found.")
     {
-        this.ContentId = contentId;
+        ContentId = contentId;
     }
+
 
     public ContentNotFoundException(string contentId, string message)
         : base(message)
     {
-        this.ContentId = contentId;
+        ContentId = contentId;
     }
 
-    public ContentNotFoundException() : base()
+
+    public ContentNotFoundException()
     {
-        this.ContentId = string.Empty;
+        ContentId = string.Empty;
     }
+
 
     public ContentNotFoundException(string message, Exception innerException) : base(message, innerException)
     {
-        this.ContentId = string.Empty;
+        ContentId = string.Empty;
     }
 }
+
 
 /// <summary>
 /// Exception thrown when an operation fails during processing.
@@ -56,30 +64,35 @@ public class OperationFailedException : ContentStorageException
 {
     public string OperationId { get; }
 
+
     public OperationFailedException(string operationId, string message)
         : base(message)
     {
-        this.OperationId = operationId;
+        OperationId = operationId;
     }
+
 
     public OperationFailedException(string operationId, string message, Exception innerException)
         : base(message, innerException)
     {
-        this.OperationId = operationId;
+        OperationId = operationId;
     }
 
-    public OperationFailedException() : base()
+
+    public OperationFailedException()
     {
-        this.OperationId = string.Empty;
+        OperationId = string.Empty;
     }
+
 
     public OperationFailedException(string message) : base(message)
     {
-        this.OperationId = string.Empty;
+        OperationId = string.Empty;
     }
+
 
     public OperationFailedException(string message, Exception innerException) : base(message, innerException)
     {
-        this.OperationId = string.Empty;
+        OperationId = string.Empty;
     }
 }

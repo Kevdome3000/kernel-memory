@@ -10,9 +10,9 @@ namespace KernelMemory.Core.Config.SearchIndex;
 /// Base class for search index configurations
 /// </summary>
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
-[JsonDerivedType(typeof(FtsSearchIndexConfig), typeDiscriminator: "sqliteFTS")]
-[JsonDerivedType(typeof(VectorSearchIndexConfig), typeDiscriminator: "sqliteVector")]
-[JsonDerivedType(typeof(GraphSearchIndexConfig), typeDiscriminator: "graph")]
+[JsonDerivedType(typeof(FtsSearchIndexConfig), "sqliteFTS")]
+[JsonDerivedType(typeof(VectorSearchIndexConfig), "sqliteVector")]
+[JsonDerivedType(typeof(GraphSearchIndexConfig), "graph")]
 public abstract class SearchIndexConfig : IValidatable
 {
     /// <summary>
@@ -53,6 +53,7 @@ public abstract class SearchIndexConfig : IValidatable
     /// </summary>
     [JsonPropertyName("embeddings")]
     public EmbeddingsConfig? Embeddings { get; set; }
+
 
     /// <summary>
     /// Validates the search index configuration

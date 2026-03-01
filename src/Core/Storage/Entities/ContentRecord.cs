@@ -1,4 +1,5 @@
 // Copyright (c) Microsoft. All rights reserved.
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 
 namespace KernelMemory.Core.Storage.Entities;
@@ -30,13 +31,13 @@ public class ContentRecord
     /// <summary>
     /// Gets or sets the tags array. Not mapped to database - uses TagsJson for persistence.
     /// </summary>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
+    [SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
     public string[] Tags
     {
-        get => string.IsNullOrWhiteSpace(this.TagsJson)
+        get => string.IsNullOrWhiteSpace(TagsJson)
             ? []
-            : JsonSerializer.Deserialize<string[]>(this.TagsJson) ?? [];
-        set => this.TagsJson = JsonSerializer.Serialize(value);
+            : JsonSerializer.Deserialize<string[]>(TagsJson) ?? [];
+        set => TagsJson = JsonSerializer.Serialize(value);
     }
 
     // Metadata key-value pairs
@@ -47,9 +48,9 @@ public class ContentRecord
     /// </summary>
     public Dictionary<string, string> Metadata
     {
-        get => string.IsNullOrWhiteSpace(this.MetadataJson)
+        get => string.IsNullOrWhiteSpace(MetadataJson)
             ? new Dictionary<string, string>()
-            : JsonSerializer.Deserialize<Dictionary<string, string>>(this.MetadataJson) ?? new Dictionary<string, string>();
-        set => this.MetadataJson = JsonSerializer.Serialize(value);
+            : JsonSerializer.Deserialize<Dictionary<string, string>>(MetadataJson) ?? new Dictionary<string, string>();
+        set => MetadataJson = JsonSerializer.Serialize(value);
     }
 }

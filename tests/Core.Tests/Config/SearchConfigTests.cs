@@ -25,6 +25,7 @@ public sealed class SearchConfigTests
         Assert.Empty(config.ExcludeNodes);
     }
 
+
     [Fact]
     public void Validate_ValidConfig_Succeeds()
     {
@@ -42,6 +43,7 @@ public sealed class SearchConfigTests
         // Act & Assert - should not throw
         config.Validate("Search");
     }
+
 
     [Fact]
     public void Validate_InvalidMinRelevance_Throws()
@@ -61,6 +63,7 @@ public sealed class SearchConfigTests
         Assert.Contains("DefaultMinRelevance", ex2.ConfigPath);
     }
 
+
     [Fact]
     public void Validate_InvalidLimit_Throws()
     {
@@ -71,6 +74,7 @@ public sealed class SearchConfigTests
         var ex = Assert.Throws<ConfigException>(() => config.Validate("Search"));
         Assert.Contains("DefaultLimit", ex.ConfigPath);
     }
+
 
     [Fact]
     public void Validate_InvalidTimeout_Throws()
@@ -83,6 +87,7 @@ public sealed class SearchConfigTests
         Assert.Contains("SearchTimeoutSeconds", ex.ConfigPath);
     }
 
+
     [Fact]
     public void Validate_EmptyDefaultNodes_Throws()
     {
@@ -94,6 +99,7 @@ public sealed class SearchConfigTests
         Assert.Contains("DefaultNodes", ex.ConfigPath);
         Assert.Contains("at least one node", ex.Message);
     }
+
 
     [Fact]
     public void Validate_ContradictoryNodeConfig_Throws()
@@ -111,6 +117,7 @@ public sealed class SearchConfigTests
         Assert.Contains("work", ex.Message);
     }
 
+
     [Fact]
     public void Validate_WildcardWithExclusions_Succeeds()
     {
@@ -125,6 +132,7 @@ public sealed class SearchConfigTests
         config.Validate("Search");
     }
 
+
     [Fact]
     public void Validate_InvalidQueryComplexityLimits_Throws()
     {
@@ -136,6 +144,7 @@ public sealed class SearchConfigTests
         Assert.Contains("MaxQueryDepth", ex.ConfigPath);
     }
 
+
     [Fact]
     public void Validate_InvalidSnippetSettings_Throws()
     {
@@ -146,6 +155,7 @@ public sealed class SearchConfigTests
         var ex = Assert.Throws<ConfigException>(() => config.Validate("Search"));
         Assert.Contains("SnippetLength", ex.ConfigPath);
     }
+
 
     [Fact]
     public void Validate_EmptyHighlightMarkers_Throws()

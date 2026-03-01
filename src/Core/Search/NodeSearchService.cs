@@ -1,5 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using KernelMemory.Core.Search.Exceptions;
 using KernelMemory.Core.Search.Models;
 using KernelMemory.Core.Search.Query.Ast;
 using KernelMemory.Core.Storage;
@@ -14,8 +16,9 @@ namespace KernelMemory.Core.Search;
 /// </summary>
 /// <param name="FtsQuery">The FTS5 query string for positive terms.</param>
 /// <param name="NotTerms">Terms to exclude via LINQ post-filtering. Each term includes optional field info.</param>
-[System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
+[SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
 public sealed record FtsQueryResult(string FtsQuery, NotTerm[] NotTerms);
+
 
 /// <summary>
 /// Represents a term that should be excluded from search results.
@@ -24,6 +27,7 @@ public sealed record FtsQueryResult(string FtsQuery, NotTerm[] NotTerms);
 /// <param name="Term">The term to exclude.</param>
 /// <param name="Field">Optional field to check (title/description/content). If null, checks all fields.</param>
 public sealed record NotTerm(string Term, string? Field);
+
 
 /// <summary>
 /// Per-node search service.
@@ -36,6 +40,7 @@ public sealed class NodeSearchService
     private readonly string _indexId;
     private readonly IFtsIndex _ftsIndex;
     private readonly IContentStorage _contentStorage;
+
 
     /// <summary>
     /// Initialize a new NodeSearchService.
@@ -50,11 +55,12 @@ public sealed class NodeSearchService
         IContentStorage contentStorage,
         string indexId = Constants.SearchDefaults.DefaultFtsIndexId)
     {
-        this._nodeId = nodeId;
-        this._indexId = indexId;
-        this._ftsIndex = ftsIndex;
-        this._contentStorage = contentStorage;
+        _nodeId = nodeId;
+        _indexId = indexId;
+        _ftsIndex = ftsIndex;
+        _contentStorage = contentStorage;
     }
+
 
     /// <summary>
     /// Search this node using a parsed query AST.
@@ -81,26 +87,29 @@ public sealed class NodeSearchService
             var maxResults = request.MaxResultsPerNode ?? Constants.SearchDefaults.DefaultMaxResultsPerNode;
 
             // Convert QueryNode to FTS query string and extract NOT terms for post-filtering
-            var queryResult = this.ExtractFtsQuery(queryNode);
+            var queryResult = ExtractFtsQuery(queryNode);
 
             // Search the FTS index
-            var ftsMatches = await this._ftsIndex.SearchAsync(
-                queryResult.FtsQuery,
-                maxResults,
-                cts.Token).ConfigureAwait(false);
+            var ftsMatches = await _ftsIndex.SearchAsync(
+                    queryResult.FtsQuery,
+                    maxResults,
+                    cts.Token)
+                .ConfigureAwait(false);
 
             // Load full ContentRecords from storage
             var results = new List<SearchIndexResult>();
+
             foreach (var match in ftsMatches)
             {
-                var content = await this._contentStorage.GetByIdAsync(match.ContentId, cts.Token).ConfigureAwait(false);
+                var content = await _contentStorage.GetByIdAsync(match.ContentId, cts.Token).ConfigureAwait(false);
+
                 if (content != null)
                 {
                     results.Add(new SearchIndexResult
                     {
                         RecordId = content.Id,
-                        NodeId = this._nodeId,
-                        IndexId = this._indexId,
+                        NodeId = _nodeId,
+                        IndexId = _indexId,
                         ChunkId = null,
                         BaseRelevance = (float)match.Score,
                         Title = content.Title,
@@ -118,7 +127,7 @@ public sealed class NodeSearchService
             // Filter out any documents that contain the NOT terms
             if (queryResult.NotTerms.Length > 0)
             {
-                results = this.ApplyNotTermFiltering(results, queryResult.NotTerms);
+                results = ApplyNotTermFiltering(results, queryResult.NotTerms);
             }
 
             stopwatch.Stop();
@@ -127,20 +136,21 @@ public sealed class NodeSearchService
         catch (OperationCanceledException)
         {
             stopwatch.Stop();
-            throw new Exceptions.SearchException(
-                $"Node '{this._nodeId}' search timed out after {stopwatch.Elapsed.TotalSeconds:F2} seconds",
-                Exceptions.SearchErrorType.NodeTimeout,
-                this._nodeId);
+            throw new SearchException(
+                $"Node '{_nodeId}' search timed out after {stopwatch.Elapsed.TotalSeconds:F2} seconds",
+                SearchErrorType.NodeTimeout,
+                _nodeId);
         }
         catch (Exception ex)
         {
             stopwatch.Stop();
-            throw new Exceptions.SearchException(
-                $"Failed to search node '{this._nodeId}': {ex.Message}",
-                Exceptions.SearchErrorType.NodeUnavailable,
-                this._nodeId);
+            throw new SearchException(
+                $"Failed to search node '{_nodeId}': {ex.Message}",
+                SearchErrorType.NodeUnavailable,
+                _nodeId);
         }
     }
+
 
     /// <summary>
     /// Apply NOT term filtering to results via LINQ.
@@ -152,9 +162,10 @@ public sealed class NodeSearchService
     private List<SearchIndexResult> ApplyNotTermFiltering(List<SearchIndexResult> results, NotTerm[] notTerms)
     {
         return results
-            .Where(result => !this.ContainsAnyNotTerm(result, notTerms))
+            .Where(result => !ContainsAnyNotTerm(result, notTerms))
             .ToList();
     }
+
 
     /// <summary>
     /// Check if a result contains any of the NOT terms.
@@ -166,7 +177,7 @@ public sealed class NodeSearchService
     {
         foreach (var notTerm in notTerms)
         {
-            if (this.ContainsNotTerm(result, notTerm))
+            if (ContainsNotTerm(result, notTerm))
             {
                 return true;
             }
@@ -174,6 +185,7 @@ public sealed class NodeSearchService
 
         return false;
     }
+
 
     /// <summary>
     /// Check if a result contains a specific NOT term.
@@ -205,10 +217,9 @@ public sealed class NodeSearchService
         var description = result.Description ?? string.Empty;
         var content = result.Content ?? string.Empty;
 
-        return title.Contains(term, StringComparison.OrdinalIgnoreCase) ||
-               description.Contains(term, StringComparison.OrdinalIgnoreCase) ||
-               content.Contains(term, StringComparison.OrdinalIgnoreCase);
+        return title.Contains(term, StringComparison.OrdinalIgnoreCase) || description.Contains(term, StringComparison.OrdinalIgnoreCase) || content.Contains(term, StringComparison.OrdinalIgnoreCase);
     }
+
 
     /// <summary>
     /// Extract FTS query string and NOT terms from query AST.
@@ -220,6 +231,7 @@ public sealed class NodeSearchService
         var visitor = new FtsQueryExtractor();
         return visitor.Extract(queryNode);
     }
+
 
     /// <summary>
     /// Visitor that extracts FTS query terms from the AST.
@@ -240,27 +252,32 @@ public sealed class NodeSearchService
             "AND", "OR", "NOT", "NEAR"
         };
 
+
         public FtsQueryResult Extract(QueryNode node)
         {
-            var terms = this.ExtractTerms(node);
+            var terms = ExtractTerms(node);
 
             // If only NOT terms exist (no positive terms), use wildcard to get all documents
             // then filter with NOT terms
-            var ftsQuery = string.IsNullOrEmpty(terms) ? "*" : terms;
+            var ftsQuery = string.IsNullOrEmpty(terms)
+                ? "*"
+                : terms;
 
-            return new FtsQueryResult(ftsQuery, [.. this._notTerms]);
+            return new FtsQueryResult(ftsQuery, [.. _notTerms]);
         }
+
 
         private string ExtractTerms(QueryNode node)
         {
             return node switch
             {
-                TextSearchNode textNode => this.ExtractTextSearch(textNode),
-                LogicalNode logicalNode => this.ExtractLogical(logicalNode),
-                ComparisonNode comparisonNode => this.ExtractComparison(comparisonNode),
+                TextSearchNode textNode => ExtractTextSearch(textNode),
+                LogicalNode logicalNode => ExtractLogical(logicalNode),
+                ComparisonNode comparisonNode => ExtractComparison(comparisonNode),
                 _ => string.Empty
             };
         }
+
 
         private string ExtractTextSearch(TextSearchNode node)
         {
@@ -271,24 +288,24 @@ public sealed class NodeSearchService
             {
                 // Phrase searches: use quotes and no field prefix
                 // FTS5 doesn't support field:phrase syntax well, so just search all fields
-                var escapedPhrase = this.EscapeFtsPhrase(node.SearchText);
+                var escapedPhrase = EscapeFtsPhrase(node.SearchText);
                 return $"\"{escapedPhrase}\"";
             }
 
             // Check if the term is a reserved word that needs quoting
-            if (this.IsFts5ReservedWord(node.SearchText))
+            if (IsFts5ReservedWord(node.SearchText))
             {
                 // Reserved words must be quoted to be treated as literal search terms
                 // We cannot use field prefix with quoted terms in FTS5, so search all fields
-                var escapedTerm = this.EscapeFtsPhrase(node.SearchText);
+                var escapedTerm = EscapeFtsPhrase(node.SearchText);
                 return $"\"{escapedTerm}\"";
             }
 
             // Single word searches: use field prefix WITHOUT quotes
-            var escaped = this.EscapeFtsSingleTerm(node.SearchText);
+            var escaped = EscapeFtsSingleTerm(node.SearchText);
 
             // If specific field, prefix with field name (SQLite FTS5 syntax)
-            if (node.Field != null && this.IsFtsField(node.Field.FieldPath))
+            if (node.Field != null && IsFtsField(node.Field.FieldPath))
             {
                 return $"{node.Field.FieldPath}:{escaped}";
             }
@@ -298,18 +315,19 @@ public sealed class NodeSearchService
             return $"{{title description content}}:{escaped}";
         }
 
+
         private string ExtractLogical(LogicalNode node)
         {
             // Handle NOT and NOR specially - collect terms for LINQ post-filtering
             if (node.Operator == LogicalOperator.Not || node.Operator == LogicalOperator.Nor)
             {
-                this.CollectNotTerms(node);
+                CollectNotTerms(node);
                 // Return empty string - NOT terms are not included in FTS query
                 return string.Empty;
             }
 
             var childTerms = node.Children
-                .Select(this.ExtractTerms)
+                .Select(ExtractTerms)
                 .Where(t => !string.IsNullOrEmpty(t))
                 .ToArray();
 
@@ -326,6 +344,7 @@ public sealed class NodeSearchService
             };
         }
 
+
         /// <summary>
         /// Collect NOT terms from a NOT or NOR node.
         /// These terms will be filtered via LINQ after FTS returns results.
@@ -334,9 +353,10 @@ public sealed class NodeSearchService
         {
             foreach (var child in node.Children)
             {
-                this.CollectNotTermsFromNode(child);
+                CollectNotTermsFromNode(child);
             }
         }
+
 
         /// <summary>
         /// Recursively collect NOT terms from a node.
@@ -347,18 +367,15 @@ public sealed class NodeSearchService
             {
                 case TextSearchNode textNode:
                     // Extract the term and optional field
-                    this._notTerms.Add(new NotTerm(textNode.SearchText, textNode.Field?.FieldPath));
+                    _notTerms.Add(new NotTerm(textNode.SearchText, textNode.Field?.FieldPath));
                     break;
 
                 case ComparisonNode comparisonNode:
                     // Handle field:value comparisons for NOT
-                    if ((comparisonNode.Operator == ComparisonOperator.Contains ||
-                         comparisonNode.Operator == ComparisonOperator.Equal) &&
-                        comparisonNode.Field?.FieldPath != null &&
-                        comparisonNode.Value != null)
+                    if ((comparisonNode.Operator == ComparisonOperator.Contains || comparisonNode.Operator == ComparisonOperator.Equal) && comparisonNode.Field?.FieldPath != null && comparisonNode.Value != null)
                     {
                         var term = comparisonNode.Value.AsString();
-                        this._notTerms.Add(new NotTerm(term, comparisonNode.Field.FieldPath));
+                        _notTerms.Add(new NotTerm(term, comparisonNode.Field.FieldPath));
                     }
 
                     break;
@@ -369,21 +386,19 @@ public sealed class NodeSearchService
                     // For nested AND/OR within NOT, all their children become NOT terms
                     foreach (var child in logicalNode.Children)
                     {
-                        this.CollectNotTermsFromNode(child);
+                        CollectNotTermsFromNode(child);
                     }
 
                     break;
             }
         }
 
+
         private string ExtractComparison(ComparisonNode node)
         {
             // Extract text search from Contains OR Equal operator on FTS fields
             // Equal on FTS fields uses FTS semantics (substring/stemming match), not exact equality
-            if ((node.Operator == ComparisonOperator.Contains || node.Operator == ComparisonOperator.Equal) &&
-                node.Field?.FieldPath != null &&
-                this.IsFtsField(node.Field.FieldPath) &&
-                node.Value != null)
+            if ((node.Operator == ComparisonOperator.Contains || node.Operator == ComparisonOperator.Equal) && node.Field?.FieldPath != null && IsFtsField(node.Field.FieldPath) && node.Value != null)
             {
                 var searchText = node.Value.AsString();
                 var isPhrase = searchText.Contains(' ', StringComparison.Ordinal);
@@ -391,21 +406,21 @@ public sealed class NodeSearchService
                 if (isPhrase)
                 {
                     // Phrase search: use quotes without field prefix
-                    var escapedPhrase = this.EscapeFtsPhrase(searchText);
+                    var escapedPhrase = EscapeFtsPhrase(searchText);
                     return $"\"{escapedPhrase}\"";
                 }
 
                 // Check if the term is a reserved word that needs quoting
-                if (this.IsFts5ReservedWord(searchText))
+                if (IsFts5ReservedWord(searchText))
                 {
                     // Reserved words must be quoted to be treated as literal search terms
                     // We cannot use field prefix with quoted terms in FTS5
-                    var escapedTerm = this.EscapeFtsPhrase(searchText);
+                    var escapedTerm = EscapeFtsPhrase(searchText);
                     return $"\"{escapedTerm}\"";
                 }
 
                 // Single word: use field prefix without quotes
-                var escaped = this.EscapeFtsSingleTerm(searchText);
+                var escaped = EscapeFtsSingleTerm(searchText);
                 return $"{node.Field.FieldPath}:{escaped}";
             }
 
@@ -413,6 +428,7 @@ public sealed class NodeSearchService
             // Return empty string as these don't contribute to FTS query
             return string.Empty;
         }
+
 
         private bool IsFtsField(string? fieldPath)
         {
@@ -425,6 +441,7 @@ public sealed class NodeSearchService
             return normalized == "title" || normalized == "description" || normalized == "content";
         }
 
+
         /// <summary>
         /// Check if a term is an FTS5 reserved word.
         /// Reserved words need special escaping to be searched as literals.
@@ -433,6 +450,7 @@ public sealed class NodeSearchService
         {
             return s_fts5ReservedWords.Contains(term);
         }
+
 
         /// <summary>
         /// Escape a phrase for FTS5 quoted string search.
@@ -443,6 +461,7 @@ public sealed class NodeSearchService
             return phrase.Replace("\"", "\"\"", StringComparison.Ordinal);
         }
 
+
         private string EscapeFtsSingleTerm(string term)
         {
             // For single-word searches with field prefix (e.g., content:call)
@@ -452,7 +471,7 @@ public sealed class NodeSearchService
             // Escape FTS5 special characters: " *
             // For now, keep it simple: just remove quotes and wildcards that could break syntax
             return term.Replace("\"", string.Empty, StringComparison.Ordinal)
-                      .Replace("*", string.Empty, StringComparison.Ordinal);
+                .Replace("*", string.Empty, StringComparison.Ordinal);
         }
     }
 }

@@ -14,11 +14,11 @@ public sealed class EmbeddingCacheKeyTests
     {
         // Arrange & Act
         var key = EmbeddingCacheKey.Create(
-            provider: "OpenAI",
-            model: "text-embedding-ada-002",
-            vectorDimensions: 1536,
-            isNormalized: true,
-            text: "Hello world");
+            "OpenAI",
+            "text-embedding-ada-002",
+            1536,
+            true,
+            "Hello world");
 
         // Assert
         Assert.Equal("OpenAI", key.Provider);
@@ -30,6 +30,7 @@ public sealed class EmbeddingCacheKeyTests
         Assert.NotEmpty(key.TextHash);
     }
 
+
     [Fact]
     public void Create_WithSameText_ShouldGenerateSameHash()
     {
@@ -37,12 +38,21 @@ public sealed class EmbeddingCacheKeyTests
         const string text = "Test embedding text";
 
         // Act
-        var key1 = EmbeddingCacheKey.Create("OpenAI", "model", 1536, true, text);
-        var key2 = EmbeddingCacheKey.Create("OpenAI", "model", 1536, true, text);
+        var key1 = EmbeddingCacheKey.Create("OpenAI",
+            "model",
+            1536,
+            true,
+            text);
+        var key2 = EmbeddingCacheKey.Create("OpenAI",
+            "model",
+            1536,
+            true,
+            text);
 
         // Assert
         Assert.Equal(key1.TextHash, key2.TextHash);
     }
+
 
     [Fact]
     public void Create_WithDifferentText_ShouldGenerateDifferentHash()
@@ -52,34 +62,48 @@ public sealed class EmbeddingCacheKeyTests
         const string text2 = "Text two";
 
         // Act
-        var key1 = EmbeddingCacheKey.Create("OpenAI", "model", 1536, true, text1);
-        var key2 = EmbeddingCacheKey.Create("OpenAI", "model", 1536, true, text2);
+        var key1 = EmbeddingCacheKey.Create("OpenAI",
+            "model",
+            1536,
+            true,
+            text1);
+        var key2 = EmbeddingCacheKey.Create("OpenAI",
+            "model",
+            1536,
+            true,
+            text2);
 
         // Assert
         Assert.NotEqual(key1.TextHash, key2.TextHash);
     }
 
+
     [Fact]
     public void TextHash_ShouldBeSha256Format()
     {
         // Arrange & Act
-        var key = EmbeddingCacheKey.Create("OpenAI", "model", 1536, true, "test");
+        var key = EmbeddingCacheKey.Create("OpenAI",
+            "model",
+            1536,
+            true,
+            "test");
 
         // Assert - SHA256 produces 64 character hex string
         Assert.Equal(64, key.TextHash.Length);
         Assert.Matches("^[a-fA-F0-9]+$", key.TextHash);
     }
 
+
     [Fact]
     public void ToCompositeKey_ShouldIncludeAllComponents()
     {
         // Arrange
         var key = EmbeddingCacheKey.Create(
-            provider: "Ollama",
-            model: "qwen3-embedding",
-            vectorDimensions: 1024,
-            isNormalized: false,
-            text: "sample");
+            "Ollama",
+            "qwen3-embedding",
+            1024,
+            false,
+            "sample");
 
         // Act
         var compositeKey = key.ToCompositeKey();
@@ -93,12 +117,21 @@ public sealed class EmbeddingCacheKeyTests
         Assert.Contains(key.TextHash, compositeKey);
     }
 
+
     [Fact]
     public void ToCompositeKey_WithSameParameters_ShouldBeIdentical()
     {
         // Arrange
-        var key1 = EmbeddingCacheKey.Create("OpenAI", "model", 1536, true, "text");
-        var key2 = EmbeddingCacheKey.Create("OpenAI", "model", 1536, true, "text");
+        var key1 = EmbeddingCacheKey.Create("OpenAI",
+            "model",
+            1536,
+            true,
+            "text");
+        var key2 = EmbeddingCacheKey.Create("OpenAI",
+            "model",
+            1536,
+            true,
+            "text");
 
         // Act
         var composite1 = key1.ToCompositeKey();
@@ -108,55 +141,96 @@ public sealed class EmbeddingCacheKeyTests
         Assert.Equal(composite1, composite2);
     }
 
+
     [Fact]
     public void ToCompositeKey_WithDifferentProvider_ShouldBeDifferent()
     {
         // Arrange
-        var key1 = EmbeddingCacheKey.Create("OpenAI", "model", 1536, true, "text");
-        var key2 = EmbeddingCacheKey.Create("Ollama", "model", 1536, true, "text");
+        var key1 = EmbeddingCacheKey.Create("OpenAI",
+            "model",
+            1536,
+            true,
+            "text");
+        var key2 = EmbeddingCacheKey.Create("Ollama",
+            "model",
+            1536,
+            true,
+            "text");
 
         // Act & Assert
         Assert.NotEqual(key1.ToCompositeKey(), key2.ToCompositeKey());
     }
+
 
     [Fact]
     public void ToCompositeKey_WithDifferentModel_ShouldBeDifferent()
     {
         // Arrange
-        var key1 = EmbeddingCacheKey.Create("OpenAI", "model-a", 1536, true, "text");
-        var key2 = EmbeddingCacheKey.Create("OpenAI", "model-b", 1536, true, "text");
+        var key1 = EmbeddingCacheKey.Create("OpenAI",
+            "model-a",
+            1536,
+            true,
+            "text");
+        var key2 = EmbeddingCacheKey.Create("OpenAI",
+            "model-b",
+            1536,
+            true,
+            "text");
 
         // Act & Assert
         Assert.NotEqual(key1.ToCompositeKey(), key2.ToCompositeKey());
     }
+
 
     [Fact]
     public void ToCompositeKey_WithDifferentDimensions_ShouldBeDifferent()
     {
         // Arrange
-        var key1 = EmbeddingCacheKey.Create("OpenAI", "model", 1536, true, "text");
-        var key2 = EmbeddingCacheKey.Create("OpenAI", "model", 768, true, "text");
+        var key1 = EmbeddingCacheKey.Create("OpenAI",
+            "model",
+            1536,
+            true,
+            "text");
+        var key2 = EmbeddingCacheKey.Create("OpenAI",
+            "model",
+            768,
+            true,
+            "text");
 
         // Act & Assert
         Assert.NotEqual(key1.ToCompositeKey(), key2.ToCompositeKey());
     }
+
 
     [Fact]
     public void ToCompositeKey_WithDifferentNormalization_ShouldBeDifferent()
     {
         // Arrange
-        var key1 = EmbeddingCacheKey.Create("OpenAI", "model", 1536, true, "text");
-        var key2 = EmbeddingCacheKey.Create("OpenAI", "model", 1536, false, "text");
+        var key1 = EmbeddingCacheKey.Create("OpenAI",
+            "model",
+            1536,
+            true,
+            "text");
+        var key2 = EmbeddingCacheKey.Create("OpenAI",
+            "model",
+            1536,
+            false,
+            "text");
 
         // Act & Assert
         Assert.NotEqual(key1.ToCompositeKey(), key2.ToCompositeKey());
     }
 
+
     [Fact]
     public void Create_WithEmptyText_ShouldGenerateValidHash()
     {
         // Arrange & Act
-        var key = EmbeddingCacheKey.Create("OpenAI", "model", 1536, true, "");
+        var key = EmbeddingCacheKey.Create("OpenAI",
+            "model",
+            1536,
+            true,
+            "");
 
         // Assert
         Assert.Equal(0, key.TextLength);
@@ -164,16 +238,22 @@ public sealed class EmbeddingCacheKeyTests
         Assert.Equal(64, key.TextHash.Length);
     }
 
+
     [Fact]
     public void Create_WithUnicodeText_ShouldGenerateValidHash()
     {
         // Arrange & Act
-        var key = EmbeddingCacheKey.Create("OpenAI", "model", 1536, true, "Hello, ");
+        var key = EmbeddingCacheKey.Create("OpenAI",
+            "model",
+            1536,
+            true,
+            "Hello, ");
 
         // Assert
         Assert.NotNull(key.TextHash);
         Assert.Equal(64, key.TextHash.Length);
     }
+
 
     [Fact]
     public void Create_WithLongText_ShouldCaptureCorrectLength()
@@ -182,52 +262,81 @@ public sealed class EmbeddingCacheKeyTests
         var longText = new string('a', 10000);
 
         // Act
-        var key = EmbeddingCacheKey.Create("OpenAI", "model", 1536, true, longText);
+        var key = EmbeddingCacheKey.Create("OpenAI",
+            "model",
+            1536,
+            true,
+            longText);
 
         // Assert
         Assert.Equal(10000, key.TextLength);
     }
 
+
     [Fact]
     public void Create_WithNullText_ShouldNormalizeToEmptyString()
     {
         // Arrange & Act
-        var key = EmbeddingCacheKey.Create("OpenAI", "model", 1536, true, null);
+        var key = EmbeddingCacheKey.Create("OpenAI",
+            "model",
+            1536,
+            true,
+            null);
 
         // Assert - null should be normalized to empty string
         Assert.Equal(0, key.TextLength);
         Assert.NotEmpty(key.TextHash); // Hash of empty string
     }
 
+
     [Fact]
     public void Create_WithNullProvider_ShouldThrowArgumentNullException()
     {
         // Arrange & Act & Assert
         Assert.Throws<ArgumentNullException>(() =>
-            EmbeddingCacheKey.Create(null!, "model", 1536, true, "text"));
+            EmbeddingCacheKey.Create(null!,
+                "model",
+                1536,
+                true,
+                "text"));
     }
+
 
     [Fact]
     public void Create_WithNullModel_ShouldThrowArgumentNullException()
     {
         // Arrange & Act & Assert
         Assert.Throws<ArgumentNullException>(() =>
-            EmbeddingCacheKey.Create("OpenAI", null!, 1536, true, "text"));
+            EmbeddingCacheKey.Create("OpenAI",
+                null!,
+                1536,
+                true,
+                "text"));
     }
+
 
     [Fact]
     public void Create_WithZeroDimensions_ShouldThrowArgumentOutOfRangeException()
     {
         // Arrange & Act & Assert
         Assert.Throws<ArgumentOutOfRangeException>(() =>
-            EmbeddingCacheKey.Create("OpenAI", "model", 0, true, "text"));
+            EmbeddingCacheKey.Create("OpenAI",
+                "model",
+                0,
+                true,
+                "text"));
     }
+
 
     [Fact]
     public void Create_WithNegativeDimensions_ShouldThrowArgumentOutOfRangeException()
     {
         // Arrange & Act & Assert
         Assert.Throws<ArgumentOutOfRangeException>(() =>
-            EmbeddingCacheKey.Create("OpenAI", "model", -1, true, "text"));
+            EmbeddingCacheKey.Create("OpenAI",
+                "model",
+                -1,
+                true,
+                "text"));
     }
 }

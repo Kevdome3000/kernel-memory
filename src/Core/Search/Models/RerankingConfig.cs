@@ -1,4 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved.
+using System.Diagnostics.CodeAnalysis;
+
 namespace KernelMemory.Core.Search.Models;
 
 /// <summary>
@@ -28,6 +30,6 @@ public sealed class RerankingConfig
     /// Third appearance: multiplier = 0.25 (25% boost)
     /// Fourth appearance: multiplier = 0.125 (12.5% boost)
     /// </summary>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
+    [SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
     public float[] DiminishingMultipliers { get; init; } = Constants.SearchDefaults.DefaultDiminishingMultipliers;
 }

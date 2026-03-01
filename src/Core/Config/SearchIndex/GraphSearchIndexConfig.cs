@@ -24,19 +24,20 @@ public sealed class GraphSearchIndexConfig : SearchIndexConfig
     [JsonPropertyName("connectionString")]
     public string? ConnectionString { get; set; }
 
+
     /// <inheritdoc />
     public override void Validate(string path)
     {
         // Validate ID is provided
-        if (string.IsNullOrWhiteSpace(this.Id))
+        if (string.IsNullOrWhiteSpace(Id))
         {
             throw new ConfigException($"{path}.Id", "Search index ID is required");
         }
 
-        this.Embeddings?.Validate($"{path}.Embeddings");
+        Embeddings?.Validate($"{path}.Embeddings");
 
-        var hasPath = !string.IsNullOrWhiteSpace(this.Path);
-        var hasConnectionString = !string.IsNullOrWhiteSpace(this.ConnectionString);
+        var hasPath = !string.IsNullOrWhiteSpace(Path);
+        var hasConnectionString = !string.IsNullOrWhiteSpace(ConnectionString);
 
         if (!hasPath && !hasConnectionString)
         {

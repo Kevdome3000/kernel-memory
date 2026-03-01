@@ -1,4 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved.
+using System.Diagnostics.CodeAnalysis;
+
 namespace KernelMemory.Core.Storage.Models;
 
 /// <summary>
@@ -41,7 +43,7 @@ public class UpsertRequest
     /// <summary>
     /// Optional tags.
     /// </summary>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
+    [SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
     public string[] Tags { get; set; } = [];
 
     /// <summary>

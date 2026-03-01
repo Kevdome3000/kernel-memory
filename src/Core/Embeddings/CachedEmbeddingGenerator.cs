@@ -17,16 +17,17 @@ public sealed class CachedEmbeddingGenerator : IEmbeddingGenerator
     private readonly ILogger<CachedEmbeddingGenerator> _logger;
 
     /// <inheritdoc />
-    public EmbeddingsTypes ProviderType => this._inner.ProviderType;
+    public EmbeddingsTypes ProviderType => _inner.ProviderType;
 
     /// <inheritdoc />
-    public string ModelName => this._inner.ModelName;
+    public string ModelName => _inner.ModelName;
 
     /// <inheritdoc />
-    public int VectorDimensions => this._inner.VectorDimensions;
+    public int VectorDimensions => _inner.VectorDimensions;
 
     /// <inheritdoc />
-    public bool IsNormalized => this._inner.IsNormalized;
+    public bool IsNormalized => _inner.IsNormalized;
+
 
     /// <summary>
     /// Creates a new cached embedding generator decorator.
@@ -40,31 +41,35 @@ public sealed class CachedEmbeddingGenerator : IEmbeddingGenerator
         IEmbeddingCache cache,
         ILogger<CachedEmbeddingGenerator> logger)
     {
-        ArgumentNullException.ThrowIfNull(inner, nameof(inner));
-        ArgumentNullException.ThrowIfNull(cache, nameof(cache));
-        ArgumentNullException.ThrowIfNull(logger, nameof(logger));
+        ArgumentNullException.ThrowIfNull(inner);
+        ArgumentNullException.ThrowIfNull(cache);
+        ArgumentNullException.ThrowIfNull(logger);
 
-        this._inner = inner;
-        this._cache = cache;
-        this._logger = logger;
+        _inner = inner;
+        _cache = cache;
+        _logger = logger;
 
-        this._logger.LogDebug(
+        _logger.LogDebug(
             "CachedEmbeddingGenerator initialized for {Provider}/{Model} with cache mode {Mode}",
-            inner.ProviderType, inner.ModelName, cache.Mode);
+            inner.ProviderType,
+            inner.ModelName,
+            cache.Mode);
     }
+
 
     /// <inheritdoc />
     public async Task<EmbeddingResult> GenerateAsync(string text, CancellationToken ct = default)
     {
-        var key = this.BuildCacheKey(text);
+        var key = BuildCacheKey(text);
 
         // Try cache read (if mode allows)
-        if (this._cache.Mode != CacheModes.WriteOnly)
+        if (_cache.Mode != CacheModes.WriteOnly)
         {
-            var cached = await this._cache.TryGetAsync(key, ct).ConfigureAwait(false);
+            var cached = await _cache.TryGetAsync(key, ct).ConfigureAwait(false);
+
             if (cached != null)
             {
-                this._logger.LogDebug("Cache hit for single embedding, dimensions: {Dimensions}", cached.Vector.Length);
+                _logger.LogDebug("Cache hit for single embedding, dimensions: {Dimensions}", cached.Vector.Length);
                 // Return cached result with token count if available
                 return cached.TokenCount.HasValue
                     ? EmbeddingResult.FromVectorWithTokens(cached.Vector, cached.TokenCount.Value)
@@ -73,24 +78,31 @@ public sealed class CachedEmbeddingGenerator : IEmbeddingGenerator
         }
 
         // Generate embedding
-        this._logger.LogDebug("Cache miss for single embedding, calling {Provider}", this.ProviderType);
-        var result = await this._inner.GenerateAsync(text, ct).ConfigureAwait(false);
+        _logger.LogDebug("Cache miss for single embedding, calling {Provider}", ProviderType);
+        var result = await _inner.GenerateAsync(text, ct).ConfigureAwait(false);
 
         // Store in cache (if mode allows)
-        if (this._cache.Mode != CacheModes.ReadOnly)
+        if (_cache.Mode != CacheModes.ReadOnly)
         {
-            await this._cache.StoreAsync(key, result.Vector, result.TokenCount, ct).ConfigureAwait(false);
-            this._logger.LogDebug("Stored embedding in cache, dimensions: {Dimensions}, tokenCount: {TokenCount}",
-                result.Vector.Length, result.TokenCount);
+            await _cache.StoreAsync(key,
+                    result.Vector,
+                    result.TokenCount,
+                    ct)
+                .ConfigureAwait(false);
+            _logger.LogDebug("Stored embedding in cache, dimensions: {Dimensions}, tokenCount: {TokenCount}",
+                result.Vector.Length,
+                result.TokenCount);
         }
 
         return result;
     }
 
+
     /// <inheritdoc />
     public async Task<EmbeddingResult[]> GenerateAsync(IEnumerable<string> texts, CancellationToken ct = default)
     {
         var textList = texts.ToList();
+
         if (textList.Count == 0)
         {
             return [];
@@ -103,12 +115,12 @@ public sealed class CachedEmbeddingGenerator : IEmbeddingGenerator
         var toGenerate = new List<(int Index, string Text)>();
 
         // Try cache reads (if mode allows)
-        if (this._cache.Mode != CacheModes.WriteOnly)
+        if (_cache.Mode != CacheModes.WriteOnly)
         {
             for (int i = 0; i < textList.Count; i++)
             {
-                var key = this.BuildCacheKey(textList[i]);
-                var cached = await this._cache.TryGetAsync(key, ct).ConfigureAwait(false);
+                var key = BuildCacheKey(textList[i]);
+                var cached = await _cache.TryGetAsync(key, ct).ConfigureAwait(false);
 
                 if (cached != null)
                 {
@@ -123,9 +135,10 @@ public sealed class CachedEmbeddingGenerator : IEmbeddingGenerator
                 }
             }
 
-            this._logger.LogDebug(
+            _logger.LogDebug(
                 "Batch cache lookup: {HitCount} hits, {MissCount} misses",
-                textList.Count - toGenerate.Count, toGenerate.Count);
+                textList.Count - toGenerate.Count,
+                toGenerate.Count);
         }
         else
         {
@@ -140,7 +153,7 @@ public sealed class CachedEmbeddingGenerator : IEmbeddingGenerator
         if (toGenerate.Count > 0)
         {
             var textsToGenerate = toGenerate.Select(x => x.Text);
-            var generatedResults = await this._inner.GenerateAsync(textsToGenerate, ct).ConfigureAwait(false);
+            var generatedResults = await _inner.GenerateAsync(textsToGenerate, ct).ConfigureAwait(false);
 
             // Map generated results back to results array and store in cache
             for (int i = 0; i < toGenerate.Count; i++)
@@ -149,19 +162,24 @@ public sealed class CachedEmbeddingGenerator : IEmbeddingGenerator
                 results[originalIndex] = generatedResults[i];
 
                 // Store in cache (if mode allows)
-                if (this._cache.Mode != CacheModes.ReadOnly)
+                if (_cache.Mode != CacheModes.ReadOnly)
                 {
-                    var key = this.BuildCacheKey(text);
-                    await this._cache.StoreAsync(key, generatedResults[i].Vector, generatedResults[i].TokenCount, ct).ConfigureAwait(false);
+                    var key = BuildCacheKey(text);
+                    await _cache.StoreAsync(key,
+                            generatedResults[i].Vector,
+                            generatedResults[i].TokenCount,
+                            ct)
+                        .ConfigureAwait(false);
                 }
             }
 
-            this._logger.LogDebug("Generated and cached {Count} embeddings", toGenerate.Count);
+            _logger.LogDebug("Generated and cached {Count} embeddings", toGenerate.Count);
         }
 
         // Convert nullable array to non-nullable (all slots should be filled now)
         return results.Select(r => r!).ToArray();
     }
+
 
     /// <summary>
     /// Builds a cache key for the given text using the inner generator's properties.
@@ -169,10 +187,10 @@ public sealed class CachedEmbeddingGenerator : IEmbeddingGenerator
     private EmbeddingCacheKey BuildCacheKey(string text)
     {
         return EmbeddingCacheKey.Create(
-            provider: this._inner.ProviderType.ToString(),
-            model: this._inner.ModelName,
-            vectorDimensions: this._inner.VectorDimensions,
-            isNormalized: this._inner.IsNormalized,
-            text: text);
+            _inner.ProviderType.ToString(),
+            _inner.ModelName,
+            _inner.VectorDimensions,
+            _inner.IsNormalized,
+            text);
     }
 }

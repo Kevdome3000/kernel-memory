@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved.
 using KernelMemory.Core.Config;
+using KernelMemory.Core.Config.ContentIndex;
 using KernelMemory.Core.Config.Validation;
 
 namespace KernelMemory.Core.Tests.Config;
@@ -25,6 +26,7 @@ public sealed class ConfigParserTests
         // Cache configs intentionally null in default config
         Assert.NotNull(config.EmbeddingsCache); // Now included in default config
     }
+
 
     [Fact]
     public void LoadFromFile_WithValidJson_ShouldReturnParsedConfig()
@@ -66,6 +68,7 @@ public sealed class ConfigParserTests
         }
     }
 
+
     [Fact]
     public void LoadFromFile_WithInvalidJson_ShouldThrowConfigException()
     {
@@ -89,6 +92,7 @@ public sealed class ConfigParserTests
             }
         }
     }
+
 
     [Fact]
     public void LoadFromFile_WithValidationErrors_ShouldThrowConfigException()
@@ -117,6 +121,7 @@ public sealed class ConfigParserTests
         }
     }
 
+
     [Fact]
     public void LoadFromFile_WithTildeInPath_ShouldExpandToHomeDirectory()
     {
@@ -143,7 +148,7 @@ public sealed class ConfigParserTests
             var config = ConfigParser.LoadFromFile(tempFile);
 
             // Assert
-            var contentIndex = (KernelMemory.Core.Config.ContentIndex.SqliteContentIndexConfig)config.Nodes["test"].ContentIndex;
+            var contentIndex = (SqliteContentIndexConfig)config.Nodes["test"].ContentIndex;
             Assert.NotNull(contentIndex.Path);
             Assert.DoesNotContain("~", contentIndex.Path);
             Assert.StartsWith(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), contentIndex.Path);
@@ -156,6 +161,7 @@ public sealed class ConfigParserTests
             }
         }
     }
+
 
     [Fact]
     public void LoadFromFile_WithCommentsInJson_ShouldParseSuccessfully()
@@ -199,6 +205,7 @@ public sealed class ConfigParserTests
         }
     }
 
+
     [Fact]
     public void LoadFromFile_WithCaseInsensitiveProperties_ShouldParseSuccessfully()
     {
@@ -238,6 +245,7 @@ public sealed class ConfigParserTests
         }
     }
 
+
     [Fact]
     public void ParseFromString_WithValidJson_ShouldReturnParsedConfig()
     {
@@ -264,6 +272,7 @@ public sealed class ConfigParserTests
         Assert.Equal("test", config.Nodes["test"].Id);
     }
 
+
     [Fact]
     public void ParseFromString_WithInvalidJson_ShouldThrowConfigException()
     {
@@ -274,6 +283,7 @@ public sealed class ConfigParserTests
         var exception = Assert.Throws<ConfigException>(() => ConfigParser.ParseFromString(invalidJson));
         Assert.Contains("Failed to parse configuration", exception.Message);
     }
+
 
     [Fact]
     public void LoadFromFile_WithCacheTildeExpansion_ShouldExpandPaths()
@@ -323,6 +333,7 @@ public sealed class ConfigParserTests
             }
         }
     }
+
 
     [Fact]
     public void LoadFromFile_WithCacheBothPathAndConnectionString_ShouldThrowConfigException()

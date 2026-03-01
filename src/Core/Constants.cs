@@ -135,6 +135,7 @@ public static class Constants
         public const string DefaultFtsIndexId = "fts-main";
     }
 
+
     /// <summary>
     /// Constants for embedding generation including known model dimensions,
     /// default configurations, and batch sizes.
@@ -198,6 +199,7 @@ public static class Constants
             ["BAAI/bge-base-en-v1.5"] = 768
         };
 
+
         /// <summary>
         /// Try to get the dimensions for a known model.
         /// </summary>
@@ -209,6 +211,7 @@ public static class Constants
             return KnownModelDimensions.TryGetValue(modelName, out dimensions);
         }
     }
+
 
     /// <summary>
     /// Constants for HTTP retry/backoff used by external providers (embeddings, etc.).
@@ -242,6 +245,7 @@ public static class Constants
         /// </summary>
         public const int MaxDelayMs = 5000;
     }
+
 
     /// <summary>
     /// Constants for the logging system including file rotation, log levels,
@@ -330,6 +334,7 @@ public static class Constants
         public const string EmptySpanId = "0000000000000000";
     }
 
+
     /// <summary>
     /// Constants for application configuration and setup.
     /// </summary>
@@ -345,6 +350,7 @@ public static class Constants
         /// </summary>
         public const string DefaultConfigDirName = ".km";
     }
+
 
     /// <summary>
     /// Constants for application exit codes and CLI behavior.
@@ -376,6 +382,7 @@ public static class Constants
         /// </summary>
         public const int MaxContentDisplayLength = 100;
     }
+
 
     /// <summary>
     /// Constants for database and storage operations.

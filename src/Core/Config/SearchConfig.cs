@@ -1,4 +1,5 @@
 // Copyright (c) Microsoft. All rights reserved.
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 using KernelMemory.Core.Config.Validation;
 
@@ -48,7 +49,7 @@ public sealed class SearchConfig : IValidatable
     /// Use specific node IDs like ["personal", "work"] to limit search scope.
     /// </summary>
     [JsonPropertyName("defaultNodes")]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
+    [SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
     public string[] DefaultNodes { get; set; } = [Constants.SearchDefaults.AllNodesWildcard];
 
     /// <summary>
@@ -57,7 +58,7 @@ public sealed class SearchConfig : IValidatable
     /// Default: empty (no exclusions).
     /// </summary>
     [JsonPropertyName("excludeNodes")]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
+    [SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
     public string[] ExcludeNodes { get; set; } = [];
 
     /// <summary>
@@ -127,6 +128,7 @@ public sealed class SearchConfig : IValidatable
     [JsonPropertyName("highlightSuffix")]
     public string HighlightSuffix { get; set; } = Constants.SearchDefaults.DefaultHighlightSuffix;
 
+
     /// <summary>
     /// Validates the search configuration.
     /// </summary>
@@ -134,47 +136,47 @@ public sealed class SearchConfig : IValidatable
     public void Validate(string path)
     {
         // Validate min relevance score
-        if (this.DefaultMinRelevance < Constants.SearchDefaults.MinRelevanceScore || this.DefaultMinRelevance > Constants.SearchDefaults.MaxRelevanceScore)
+        if (DefaultMinRelevance < Constants.SearchDefaults.MinRelevanceScore || DefaultMinRelevance > Constants.SearchDefaults.MaxRelevanceScore)
         {
             throw new ConfigException($"{path}.DefaultMinRelevance",
                 $"Must be between {Constants.SearchDefaults.MinRelevanceScore} and {Constants.SearchDefaults.MaxRelevanceScore}");
         }
 
         // Validate default limit
-        if (this.DefaultLimit <= 0)
+        if (DefaultLimit <= 0)
         {
             throw new ConfigException($"{path}.DefaultLimit", "Must be greater than 0");
         }
 
         // Validate timeout
-        if (this.SearchTimeoutSeconds <= 0)
+        if (SearchTimeoutSeconds <= 0)
         {
             throw new ConfigException($"{path}.SearchTimeoutSeconds", "Must be greater than 0");
         }
 
         // Validate max results per node
-        if (this.MaxResultsPerNode <= 0)
+        if (MaxResultsPerNode <= 0)
         {
             throw new ConfigException($"{path}.MaxResultsPerNode", "Must be greater than 0");
         }
 
         // Validate default nodes
-        if (this.DefaultNodes.Length == 0)
+        if (DefaultNodes.Length == 0)
         {
             throw new ConfigException($"{path}.DefaultNodes",
                 "Must specify at least one node or use '*' for all nodes");
         }
 
         // Validate no contradictory node configuration
-        if (this.DefaultNodes.Length == 1 && this.DefaultNodes[0] == Constants.SearchDefaults.AllNodesWildcard)
+        if (DefaultNodes.Length == 1 && DefaultNodes[0] == Constants.SearchDefaults.AllNodesWildcard)
         {
             // Using wildcard - excludeNodes is OK
         }
         else
         {
             // Using specific nodes - check for contradictions
-            var defaultNodesSet = new HashSet<string>(this.DefaultNodes, StringComparer.OrdinalIgnoreCase);
-            var excludeNodesSet = new HashSet<string>(this.ExcludeNodes, StringComparer.OrdinalIgnoreCase);
+            var defaultNodesSet = new HashSet<string>(DefaultNodes, StringComparer.OrdinalIgnoreCase);
+            var excludeNodesSet = new HashSet<string>(ExcludeNodes, StringComparer.OrdinalIgnoreCase);
             var conflicts = defaultNodesSet.Intersect(excludeNodesSet).ToArray();
 
             if (conflicts.Length > 0)
@@ -185,48 +187,48 @@ public sealed class SearchConfig : IValidatable
         }
 
         // Validate query complexity limits
-        if (this.MaxQueryDepth <= 0)
+        if (MaxQueryDepth <= 0)
         {
             throw new ConfigException($"{path}.MaxQueryDepth", "Must be greater than 0");
         }
 
-        if (this.MaxBooleanOperators <= 0)
+        if (MaxBooleanOperators <= 0)
         {
             throw new ConfigException($"{path}.MaxBooleanOperators", "Must be greater than 0");
         }
 
-        if (this.MaxFieldValueLength <= 0)
+        if (MaxFieldValueLength <= 0)
         {
             throw new ConfigException($"{path}.MaxFieldValueLength", "Must be greater than 0");
         }
 
-        if (this.QueryParseTimeoutMs <= 0)
+        if (QueryParseTimeoutMs <= 0)
         {
             throw new ConfigException($"{path}.QueryParseTimeoutMs", "Must be greater than 0");
         }
 
         // Validate snippet settings
-        if (this.SnippetLength <= 0)
+        if (SnippetLength <= 0)
         {
             throw new ConfigException($"{path}.SnippetLength", "Must be greater than 0");
         }
 
-        if (this.MaxSnippetsPerResult <= 0)
+        if (MaxSnippetsPerResult <= 0)
         {
             throw new ConfigException($"{path}.MaxSnippetsPerResult", "Must be greater than 0");
         }
 
-        if (string.IsNullOrEmpty(this.SnippetSeparator))
+        if (string.IsNullOrEmpty(SnippetSeparator))
         {
             throw new ConfigException($"{path}.SnippetSeparator", "Cannot be null or empty");
         }
 
-        if (string.IsNullOrEmpty(this.HighlightPrefix))
+        if (string.IsNullOrEmpty(HighlightPrefix))
         {
             throw new ConfigException($"{path}.HighlightPrefix", "Cannot be null or empty");
         }
 
-        if (string.IsNullOrEmpty(this.HighlightSuffix))
+        if (string.IsNullOrEmpty(HighlightSuffix))
         {
             throw new ConfigException($"{path}.HighlightSuffix", "Cannot be null or empty");
         }

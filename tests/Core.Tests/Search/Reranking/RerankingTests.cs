@@ -12,6 +12,7 @@ public sealed class RerankingTests
 {
     private readonly WeightedDiminishingReranker _reranker = new();
 
+
     [Fact]
     public void Rerank_SingleIndexResult_Example1FromRequirements()
     {
@@ -26,7 +27,7 @@ public sealed class RerankingTests
             NodeWeights = new Dictionary<string, float> { ["personal"] = 1.0f },
             IndexWeights = new Dictionary<string, Dictionary<string, float>>
             {
-                ["personal"] = new Dictionary<string, float> { ["fts-main"] = 0.7f }
+                ["personal"] = new() { ["fts-main"] = 0.7f }
             },
             DiminishingMultipliers = [1.0f, 0.5f, 0.25f, 0.125f]
         };
@@ -45,11 +46,12 @@ public sealed class RerankingTests
             }
         };
 
-        var reranked = this._reranker.Rerank(results, config);
+        var reranked = _reranker.Rerank(results, config);
 
         Assert.Single(reranked);
-        Assert.Equal(0.56f, reranked[0].Relevance, precision: 2);
+        Assert.Equal(0.56f, reranked[0].Relevance, 2);
     }
+
 
     [Fact]
     public void Rerank_DifferentNodeWeight_Example2FromRequirements()
@@ -65,7 +67,7 @@ public sealed class RerankingTests
             NodeWeights = new Dictionary<string, float> { ["archive"] = 0.5f },
             IndexWeights = new Dictionary<string, Dictionary<string, float>>
             {
-                ["archive"] = new Dictionary<string, float> { ["fts-main"] = 0.7f }
+                ["archive"] = new() { ["fts-main"] = 0.7f }
             },
             DiminishingMultipliers = [1.0f, 0.5f, 0.25f, 0.125f]
         };
@@ -84,11 +86,12 @@ public sealed class RerankingTests
             }
         };
 
-        var reranked = this._reranker.Rerank(results, config);
+        var reranked = _reranker.Rerank(results, config);
 
         Assert.Single(reranked);
-        Assert.Equal(0.315f, reranked[0].Relevance, precision: 3);
+        Assert.Equal(0.315f, reranked[0].Relevance, 3);
     }
+
 
     [Fact]
     public void Rerank_DifferentIndexWeight_Example3FromRequirements()
@@ -104,7 +107,7 @@ public sealed class RerankingTests
             NodeWeights = new Dictionary<string, float> { ["personal"] = 1.0f },
             IndexWeights = new Dictionary<string, Dictionary<string, float>>
             {
-                ["personal"] = new Dictionary<string, float> { ["vector-main"] = 0.3f }
+                ["personal"] = new() { ["vector-main"] = 0.3f }
             },
             DiminishingMultipliers = [1.0f, 0.5f, 0.25f, 0.125f]
         };
@@ -123,11 +126,12 @@ public sealed class RerankingTests
             }
         };
 
-        var reranked = this._reranker.Rerank(results, config);
+        var reranked = _reranker.Rerank(results, config);
 
         Assert.Single(reranked);
-        Assert.Equal(0.21f, reranked[0].Relevance, precision: 2);
+        Assert.Equal(0.21f, reranked[0].Relevance, 2);
     }
+
 
     [Fact]
     public void Rerank_SameRecordTwoIndexes_Example4FromRequirements()
@@ -143,7 +147,7 @@ public sealed class RerankingTests
             NodeWeights = new Dictionary<string, float> { ["personal"] = 1.0f },
             IndexWeights = new Dictionary<string, Dictionary<string, float>>
             {
-                ["personal"] = new Dictionary<string, float>
+                ["personal"] = new()
                 {
                     ["fts-main"] = 0.7f,
                     ["vector-main"] = 0.3f
@@ -176,12 +180,13 @@ public sealed class RerankingTests
             }
         };
 
-        var reranked = this._reranker.Rerank(results, config);
+        var reranked = _reranker.Rerank(results, config);
 
         Assert.Single(reranked); // Same record, so only one result after merging
         Assert.Equal("doc-123", reranked[0].Id);
-        Assert.Equal(0.65f, reranked[0].Relevance, precision: 2);
+        Assert.Equal(0.65f, reranked[0].Relevance, 2);
     }
+
 
     [Fact]
     public void Rerank_SameRecordThreeIndexes_Example5FromRequirements()
@@ -198,7 +203,7 @@ public sealed class RerankingTests
             NodeWeights = new Dictionary<string, float> { ["personal"] = 1.0f },
             IndexWeights = new Dictionary<string, Dictionary<string, float>>
             {
-                ["personal"] = new Dictionary<string, float>
+                ["personal"] = new()
                 {
                     ["fts-main"] = 0.7f,
                     ["vector-main"] = 0.3f,
@@ -242,14 +247,15 @@ public sealed class RerankingTests
             }
         };
 
-        var reranked = this._reranker.Rerank(results, config);
+        var reranked = _reranker.Rerank(results, config);
 
         Assert.Single(reranked);
         Assert.Equal("doc-456", reranked[0].Id);
         // Sorted by weighted score: 0.63, 0.25, 0.24
         // 0.63×1.0 + 0.25×0.5 + 0.24×0.25 = 0.815
-        Assert.Equal(0.815f, reranked[0].Relevance, precision: 3);
+        Assert.Equal(0.815f, reranked[0].Relevance, 3);
     }
+
 
     [Fact]
     public void Rerank_MultipleRecords_SortsCorrectly()
@@ -259,7 +265,7 @@ public sealed class RerankingTests
             NodeWeights = new Dictionary<string, float> { ["personal"] = 1.0f },
             IndexWeights = new Dictionary<string, Dictionary<string, float>>
             {
-                ["personal"] = new Dictionary<string, float> { ["fts-main"] = 1.0f }
+                ["personal"] = new() { ["fts-main"] = 1.0f }
             },
             DiminishingMultipliers = [1.0f, 0.5f, 0.25f, 0.125f]
         };
@@ -299,7 +305,7 @@ public sealed class RerankingTests
             }
         };
 
-        var reranked = this._reranker.Rerank(results, config);
+        var reranked = _reranker.Rerank(results, config);
 
         Assert.Equal(3, reranked.Length);
 
@@ -308,6 +314,7 @@ public sealed class RerankingTests
         Assert.Equal("doc-2", reranked[1].Id); // 0.9 relevance, older
         Assert.Equal("doc-1", reranked[2].Id); // 0.7 relevance
     }
+
 
     [Fact]
     public void Rerank_ScoreCappedAtOne_WhenExceedsMaximum()
@@ -318,7 +325,7 @@ public sealed class RerankingTests
             NodeWeights = new Dictionary<string, float> { ["personal"] = 1.0f },
             IndexWeights = new Dictionary<string, Dictionary<string, float>>
             {
-                ["personal"] = new Dictionary<string, float>
+                ["personal"] = new()
                 {
                     ["fts-main"] = 1.0f,
                     ["vector-main"] = 1.0f
@@ -351,13 +358,14 @@ public sealed class RerankingTests
             }
         };
 
-        var reranked = this._reranker.Rerank(results, config);
+        var reranked = _reranker.Rerank(results, config);
 
         Assert.Single(reranked);
         // Weighted: 1.0×1.0 + 0.9×0.5 = 1.0 + 0.45 = 1.45
         // But capped at 1.0
         Assert.Equal(1.0f, reranked[0].Relevance);
     }
+
 
     [Fact]
     public void Rerank_EmptyResults_ReturnsEmptyArray()
@@ -371,10 +379,11 @@ public sealed class RerankingTests
 
         var results = Array.Empty<SearchIndexResult>();
 
-        var reranked = this._reranker.Rerank(results, config);
+        var reranked = _reranker.Rerank(results, config);
 
         Assert.Empty(reranked);
     }
+
 
     [Fact]
     public void Rerank_UsesHighestScoredAppearanceForRecordData()
@@ -385,7 +394,7 @@ public sealed class RerankingTests
             NodeWeights = new Dictionary<string, float> { ["personal"] = 1.0f },
             IndexWeights = new Dictionary<string, Dictionary<string, float>>
             {
-                ["personal"] = new Dictionary<string, float>
+                ["personal"] = new()
                 {
                     ["fts-main"] = 0.7f,
                     ["vector-main"] = 0.3f
@@ -418,7 +427,7 @@ public sealed class RerankingTests
             }
         };
 
-        var reranked = this._reranker.Rerank(results, config);
+        var reranked = _reranker.Rerank(results, config);
 
         Assert.Single(reranked);
         // Should use data from FTS result (higher weighted score: 0.9×0.7=0.63 vs 0.8×0.3=0.24)

@@ -31,6 +31,7 @@ public sealed class OllamaEmbeddingGenerator : IEmbeddingGenerator
     /// <inheritdoc />
     public bool IsNormalized { get; }
 
+
     /// <summary>
     /// Creates a new Ollama embedding generator.
     /// </summary>
@@ -50,50 +51,54 @@ public sealed class OllamaEmbeddingGenerator : IEmbeddingGenerator
         ILogger<OllamaEmbeddingGenerator> logger,
         Func<TimeSpan, CancellationToken, Task>? delayAsync = null)
     {
-        ArgumentNullException.ThrowIfNull(httpClient, nameof(httpClient));
-        ArgumentNullException.ThrowIfNull(baseUrl, nameof(baseUrl));
-        ArgumentNullException.ThrowIfNull(model, nameof(model));
-        ArgumentNullException.ThrowIfNull(logger, nameof(logger));
+        ArgumentNullException.ThrowIfNull(httpClient);
+        ArgumentNullException.ThrowIfNull(baseUrl);
+        ArgumentNullException.ThrowIfNull(model);
+        ArgumentNullException.ThrowIfNull(logger);
 
-        this._httpClient = httpClient;
-        this._baseUrl = baseUrl.TrimEnd('/');
-        this.ModelName = model;
-        this.VectorDimensions = vectorDimensions;
-        this.IsNormalized = isNormalized;
-        this._logger = logger;
-        this._delayAsync = delayAsync ?? Task.Delay;
+        _httpClient = httpClient;
+        _baseUrl = baseUrl.TrimEnd('/');
+        ModelName = model;
+        VectorDimensions = vectorDimensions;
+        IsNormalized = isNormalized;
+        _logger = logger;
+        _delayAsync = delayAsync ?? Task.Delay;
 
-        this._logger.LogDebug("OllamaEmbeddingGenerator initialized: {BaseUrl}, model: {Model}, dimensions: {Dimensions}",
-            this._baseUrl, this.ModelName, this.VectorDimensions);
+        _logger.LogDebug("OllamaEmbeddingGenerator initialized: {BaseUrl}, model: {Model}, dimensions: {Dimensions}",
+            _baseUrl,
+            ModelName,
+            VectorDimensions);
     }
+
 
     /// <inheritdoc />
     public async Task<EmbeddingResult> GenerateAsync(string text, CancellationToken ct = default)
     {
-        var endpoint = $"{this._baseUrl}/api/embeddings";
+        var endpoint = $"{_baseUrl}/api/embeddings";
 
         var request = new OllamaEmbeddingRequest
         {
-            Model = this.ModelName,
+            Model = ModelName,
             Prompt = text
         };
 
-        this._logger.LogTrace("Calling Ollama embeddings API: {Endpoint}", endpoint);
+        _logger.LogTrace("Calling Ollama embeddings API: {Endpoint}", endpoint);
 
         using var response = await HttpRetryPolicy.SendAsync(
-            this._httpClient,
-            requestFactory: () =>
-            {
-                var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint)
+                _httpClient,
+                () =>
                 {
-                    Content = JsonContent.Create(request)
-                };
-                return httpRequest;
-            },
-            this._logger,
-            ct,
-            delayAsync: this._delayAsync,
-            perAttemptTimeout: TimeSpan.FromSeconds(Constants.HttpRetryDefaults.OllamaPerAttemptTimeoutSeconds)).ConfigureAwait(false);
+                    var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint)
+                    {
+                        Content = JsonContent.Create(request)
+                    };
+                    return httpRequest;
+                },
+                _logger,
+                ct,
+                _delayAsync,
+                TimeSpan.FromSeconds(Constants.HttpRetryDefaults.OllamaPerAttemptTimeoutSeconds))
+            .ConfigureAwait(false);
 
         response.EnsureSuccessStatusCode();
 
@@ -104,11 +109,12 @@ public sealed class OllamaEmbeddingGenerator : IEmbeddingGenerator
             throw new InvalidOperationException("Ollama returned empty embedding");
         }
 
-        this._logger.LogTrace("Ollama returned embedding with {Dimensions} dimensions", result.Embedding.Length);
+        _logger.LogTrace("Ollama returned embedding with {Dimensions} dimensions", result.Embedding.Length);
 
         // Ollama API does not return token count
         return EmbeddingResult.FromVector(result.Embedding);
     }
+
 
     /// <inheritdoc />
     public async Task<EmbeddingResult[]> GenerateAsync(IEnumerable<string> texts, CancellationToken ct = default)
@@ -117,15 +123,16 @@ public sealed class OllamaEmbeddingGenerator : IEmbeddingGenerator
         var textList = texts.ToList();
         var results = new EmbeddingResult[textList.Count];
 
-        this._logger.LogDebug("Generating {Count} embeddings via Ollama (sequential)", textList.Count);
+        _logger.LogDebug("Generating {Count} embeddings via Ollama (sequential)", textList.Count);
 
         for (int i = 0; i < textList.Count; i++)
         {
-            results[i] = await this.GenerateAsync(textList[i], ct).ConfigureAwait(false);
+            results[i] = await GenerateAsync(textList[i], ct).ConfigureAwait(false);
         }
 
         return results;
     }
+
 
     /// <summary>
     /// Request body for Ollama embeddings API.
@@ -138,6 +145,7 @@ public sealed class OllamaEmbeddingGenerator : IEmbeddingGenerator
         [JsonPropertyName("prompt")]
         public string Prompt { get; set; } = string.Empty;
     }
+
 
     /// <summary>
     /// Response from Ollama embeddings API.

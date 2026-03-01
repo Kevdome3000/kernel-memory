@@ -23,9 +23,9 @@ public static class HttpRetryPolicy
         Func<TimeSpan, CancellationToken, Task>? delayAsync = null,
         TimeSpan? perAttemptTimeout = null)
     {
-        ArgumentNullException.ThrowIfNull(httpClient, nameof(httpClient));
-        ArgumentNullException.ThrowIfNull(requestFactory, nameof(requestFactory));
-        ArgumentNullException.ThrowIfNull(logger, nameof(logger));
+        ArgumentNullException.ThrowIfNull(httpClient);
+        ArgumentNullException.ThrowIfNull(requestFactory);
+        ArgumentNullException.ThrowIfNull(logger);
 
         delayAsync ??= Task.Delay;
         perAttemptTimeout ??= TimeSpan.FromSeconds(Constants.HttpRetryDefaults.DefaultPerAttemptTimeoutSeconds);
@@ -69,12 +69,13 @@ public static class HttpRetryPolicy
             catch (TaskCanceledException ex) when (!ct.IsCancellationRequested)
             {
                 lastException = ex;
+
                 if (attempt == Constants.HttpRetryDefaults.MaxAttempts)
                 {
                     throw;
                 }
 
-                var delay = CalculateDelay(attempt, response: null);
+                var delay = CalculateDelay(attempt, null);
                 logger.LogWarning(
                     ex,
                     "HTTP call timed out. Retrying attempt {Attempt}/{MaxAttempts} after {DelayMs}ms",
@@ -87,12 +88,13 @@ public static class HttpRetryPolicy
             catch (HttpRequestException ex)
             {
                 lastException = ex;
+
                 if (!IsRetryableException(ex) || attempt == Constants.HttpRetryDefaults.MaxAttempts)
                 {
                     throw;
                 }
 
-                var delay = CalculateDelay(attempt, response: null);
+                var delay = CalculateDelay(attempt, null);
                 logger.LogWarning(
                     ex,
                     "HTTP call failed with exception. Retrying attempt {Attempt}/{MaxAttempts} after {DelayMs}ms",
@@ -113,33 +115,32 @@ public static class HttpRetryPolicy
         throw lastException ?? new HttpRequestException("HTTP call failed after retries");
     }
 
+
     private static bool IsRetryableException(HttpRequestException ex)
     {
         // Fail fast on common "service not running" / "unreachable" conditions.
         // Retrying these (especially with default HttpClient timeouts) can make test runs appear hung.
         if (ex.InnerException is SocketException socketEx)
         {
-            return socketEx.SocketErrorCode != SocketError.ConnectionRefused &&
-                   socketEx.SocketErrorCode != SocketError.HostNotFound &&
-                   socketEx.SocketErrorCode != SocketError.NetworkUnreachable;
+            return socketEx.SocketErrorCode != SocketError.ConnectionRefused && socketEx.SocketErrorCode != SocketError.HostNotFound && socketEx.SocketErrorCode != SocketError.NetworkUnreachable;
         }
 
         return true;
     }
 
+
     private static bool IsRetryableStatusCode(HttpStatusCode statusCode)
     {
-        return statusCode == HttpStatusCode.TooManyRequests ||
-               statusCode == HttpStatusCode.RequestTimeout ||
-               statusCode == HttpStatusCode.InternalServerError ||
-               statusCode == HttpStatusCode.BadGateway ||
-               statusCode == HttpStatusCode.ServiceUnavailable ||
-               statusCode == HttpStatusCode.GatewayTimeout;
+        return statusCode == HttpStatusCode.TooManyRequests || statusCode == HttpStatusCode.RequestTimeout || statusCode == HttpStatusCode.InternalServerError || statusCode == HttpStatusCode.BadGateway || statusCode == HttpStatusCode.ServiceUnavailable || statusCode == HttpStatusCode.GatewayTimeout;
     }
+
 
     private static TimeSpan CalculateDelay(int attempt, HttpResponseMessage? response)
     {
-        var retryAfter = response != null ? TryGetRetryAfterDelay(response) : null;
+        var retryAfter = response != null
+            ? TryGetRetryAfterDelay(response)
+            : null;
+
         if (retryAfter.HasValue)
         {
             return ClampDelay(retryAfter.Value);
@@ -149,15 +150,17 @@ public static class HttpRetryPolicy
         var clampedMs = Math.Min(exponentialMs, Constants.HttpRetryDefaults.MaxDelayMs);
 
         // Deterministic jitter (avoid Random in deterministic tests/builds)
-        var jitterMs = (attempt * 37) % 101;
+        var jitterMs = attempt * 37 % 101;
         return TimeSpan.FromMilliseconds(Math.Min(clampedMs + jitterMs, Constants.HttpRetryDefaults.MaxDelayMs));
     }
+
 
     private static TimeSpan ClampDelay(TimeSpan delay)
     {
         var ms = Math.Clamp(delay.TotalMilliseconds, 0, Constants.HttpRetryDefaults.MaxDelayMs);
         return TimeSpan.FromMilliseconds(ms);
     }
+
 
     private static TimeSpan? TryGetRetryAfterDelay(HttpResponseMessage response)
     {
@@ -169,7 +172,9 @@ public static class HttpRetryPolicy
         if (response.Headers.RetryAfter?.Date != null)
         {
             var delta = response.Headers.RetryAfter.Date.Value - DateTimeOffset.UtcNow;
-            return delta < TimeSpan.Zero ? TimeSpan.Zero : delta;
+            return delta < TimeSpan.Zero
+                ? TimeSpan.Zero
+                : delta;
         }
 
         return null;

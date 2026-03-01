@@ -9,10 +9,10 @@ namespace KernelMemory.Core.Config.Embeddings;
 /// Base class for embeddings provider configurations
 /// </summary>
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
-[JsonDerivedType(typeof(OllamaEmbeddingsConfig), typeDiscriminator: "ollama")]
-[JsonDerivedType(typeof(OpenAIEmbeddingsConfig), typeDiscriminator: "openai")]
-[JsonDerivedType(typeof(AzureOpenAIEmbeddingsConfig), typeDiscriminator: "azureOpenAI")]
-[JsonDerivedType(typeof(HuggingFaceEmbeddingsConfig), typeDiscriminator: "huggingFace")]
+[JsonDerivedType(typeof(OllamaEmbeddingsConfig), "ollama")]
+[JsonDerivedType(typeof(OpenAIEmbeddingsConfig), "openai")]
+[JsonDerivedType(typeof(AzureOpenAIEmbeddingsConfig), "azureOpenAI")]
+[JsonDerivedType(typeof(HuggingFaceEmbeddingsConfig), "huggingFace")]
 public abstract class EmbeddingsConfig : IValidatable
 {
     /// <summary>
@@ -28,6 +28,7 @@ public abstract class EmbeddingsConfig : IValidatable
     /// </summary>
     [JsonPropertyName("batchSize")]
     public int BatchSize { get; set; } = Constants.EmbeddingDefaults.DefaultBatchSize;
+
 
     /// <summary>
     /// Validates the embeddings configuration

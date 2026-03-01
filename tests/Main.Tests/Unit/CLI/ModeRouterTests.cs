@@ -14,6 +14,7 @@ public sealed class ModeRouterTests
         Assert.Equal("cli", mode);
     }
 
+
     [Theory]
     [InlineData("mcp", "mcp")]
     [InlineData("mcpserver", "mcp")]
@@ -25,6 +26,7 @@ public sealed class ModeRouterTests
         var mode = router.DetectMode(new[] { arg });
         Assert.Equal(expected, mode);
     }
+
 
     [Theory]
     [InlineData("web", "web")]
@@ -38,6 +40,7 @@ public sealed class ModeRouterTests
         Assert.Equal(expected, mode);
     }
 
+
     [Theory]
     [InlineData("rpc")]
     [InlineData("RPC")]
@@ -47,6 +50,7 @@ public sealed class ModeRouterTests
         var mode = router.DetectMode(new[] { arg });
         Assert.Equal("rpc", mode);
     }
+
 
     [Theory]
     [InlineData("put", "cli")]
@@ -60,6 +64,7 @@ public sealed class ModeRouterTests
         var mode = router.DetectMode(new[] { arg });
         Assert.Equal(expected, mode);
     }
+
 
     [Fact]
     public void HandleUnimplementedMode_ReturnsSystemError()

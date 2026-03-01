@@ -49,6 +49,7 @@ public sealed class ContentDtoWithNodeTests
         Assert.Equal("documentation", dto.Metadata["category"]);
     }
 
+
     [Fact]
     public void ContentDtoWithNode_EmptyCollections_WorksCorrectly()
     {
@@ -67,6 +68,7 @@ public sealed class ContentDtoWithNodeTests
         Assert.Empty(dto.Tags);
         Assert.Empty(dto.Metadata);
     }
+
 
     [Fact]
     public void ContentDtoWithNode_FromContentDto_MapsAllProperties()

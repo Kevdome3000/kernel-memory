@@ -21,6 +21,7 @@ public sealed class JsonOutputFormatterTests
         Assert.Equal("quiet", formatter.Verbosity);
     }
 
+
     [Fact]
     public void Format_WithNormalVerbosity_DoesNotThrow()
     {
@@ -32,6 +33,7 @@ public sealed class JsonOutputFormatterTests
         formatter.Format(data);
     }
 
+
     [Fact]
     public void Format_WithSilentVerbosity_DoesNotOutput()
     {
@@ -42,6 +44,7 @@ public sealed class JsonOutputFormatterTests
         // Act & Assert - Should not throw and silently exit
         formatter.Format(data);
     }
+
 
     [Fact]
     public void Format_WithComplexObject_DoesNotThrow()
@@ -60,6 +63,7 @@ public sealed class JsonOutputFormatterTests
         formatter.Format(content);
     }
 
+
     [Fact]
     public void FormatError_WithMessage_DoesNotThrow()
     {
@@ -70,6 +74,7 @@ public sealed class JsonOutputFormatterTests
         // Act & Assert
         formatter.FormatError(errorMessage);
     }
+
 
     [Fact]
     public void FormatList_WithItems_DoesNotThrow()
@@ -83,8 +88,12 @@ public sealed class JsonOutputFormatterTests
         };
 
         // Act & Assert
-        formatter.FormatList(items, totalCount: 10, skip: 0, take: 2);
+        formatter.FormatList(items,
+            10,
+            0,
+            2);
     }
+
 
     [Fact]
     public void FormatList_WithEmptyList_DoesNotThrow()
@@ -94,8 +103,12 @@ public sealed class JsonOutputFormatterTests
         var items = new List<ContentDto>();
 
         // Act & Assert
-        formatter.FormatList(items, totalCount: 0, skip: 0, take: 10);
+        formatter.FormatList(items,
+            0,
+            0,
+            10);
     }
+
 
     [Fact]
     public void FormatList_WithSilentVerbosity_DoesNotOutput()
@@ -105,8 +118,12 @@ public sealed class JsonOutputFormatterTests
         var items = new List<string> { "item1", "item2" };
 
         // Act & Assert - Should silently exit
-        formatter.FormatList(items, totalCount: 2, skip: 0, take: 2);
+        formatter.FormatList(items,
+            2,
+            0,
+            2);
     }
+
 
     [Fact]
     public void FormatList_WithPaginationInfo_IncludesMetadata()
@@ -116,6 +133,9 @@ public sealed class JsonOutputFormatterTests
         var items = new List<string> { "a", "b", "c" };
 
         // Act & Assert - Verifies pagination metadata is handled
-        formatter.FormatList(items, totalCount: 100, skip: 20, take: 10);
+        formatter.FormatList(items,
+            100,
+            20,
+            10);
     }
 }

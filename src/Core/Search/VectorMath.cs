@@ -19,7 +19,7 @@ public static class VectorMath
     /// <exception cref="ArgumentNullException">If vector is null.</exception>
     public static float[] NormalizeVector(float[] vector)
     {
-        ArgumentNullException.ThrowIfNull(vector, nameof(vector));
+        ArgumentNullException.ThrowIfNull(vector);
 
         if (vector.Length == 0)
         {
@@ -28,6 +28,7 @@ public static class VectorMath
 
         // Calculate magnitude (L2 norm)
         double sumOfSquares = 0.0;
+
         for (int i = 0; i < vector.Length; i++)
         {
             sumOfSquares += vector[i] * (double)vector[i];
@@ -43,6 +44,7 @@ public static class VectorMath
         // Create normalized vector
         var normalized = new float[vector.Length];
         var magnitudeF = (float)magnitude;
+
         for (int i = 0; i < vector.Length; i++)
         {
             normalized[i] = vector[i] / magnitudeF;
@@ -50,6 +52,7 @@ public static class VectorMath
 
         return normalized;
     }
+
 
     /// <summary>
     /// Computes dot product of two vectors.
@@ -62,8 +65,8 @@ public static class VectorMath
     /// <exception cref="ArgumentNullException">If either vector is null.</exception>
     public static double DotProduct(float[] a, float[] b)
     {
-        ArgumentNullException.ThrowIfNull(a, nameof(a));
-        ArgumentNullException.ThrowIfNull(b, nameof(b));
+        ArgumentNullException.ThrowIfNull(a);
+        ArgumentNullException.ThrowIfNull(b);
 
         if (a.Length != b.Length)
         {
@@ -71,6 +74,7 @@ public static class VectorMath
         }
 
         double sum = 0.0;
+
         for (int i = 0; i < a.Length; i++)
         {
             sum += a[i] * (double)b[i];
@@ -78,6 +82,7 @@ public static class VectorMath
 
         return sum;
     }
+
 
     /// <summary>
     /// Serializes a float32 vector to a byte array (BLOB).
@@ -88,9 +93,10 @@ public static class VectorMath
     /// <exception cref="ArgumentNullException">If vector is null.</exception>
     public static byte[] VectorToBlob(float[] vector)
     {
-        ArgumentNullException.ThrowIfNull(vector, nameof(vector));
+        ArgumentNullException.ThrowIfNull(vector);
 
         var blob = new byte[vector.Length * sizeof(float)];
+
         for (int i = 0; i < vector.Length; i++)
         {
             BinaryPrimitives.WriteSingleLittleEndian(blob.AsSpan(i * sizeof(float)), vector[i]);
@@ -98,6 +104,7 @@ public static class VectorMath
 
         return blob;
     }
+
 
     /// <summary>
     /// Deserializes a byte array (BLOB) to a float32 vector.
@@ -109,7 +116,7 @@ public static class VectorMath
     /// <exception cref="ArgumentException">If blob length is not divisible by sizeof(float).</exception>
     public static float[] BlobToVector(byte[] blob)
     {
-        ArgumentNullException.ThrowIfNull(blob, nameof(blob));
+        ArgumentNullException.ThrowIfNull(blob);
 
         if (blob.Length % sizeof(float) != 0)
         {
@@ -117,6 +124,7 @@ public static class VectorMath
         }
 
         var vector = new float[blob.Length / sizeof(float)];
+
         for (int i = 0; i < vector.Length; i++)
         {
             vector[i] = BinaryPrimitives.ReadSingleLittleEndian(blob.AsSpan(i * sizeof(float)));

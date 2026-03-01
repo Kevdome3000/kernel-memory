@@ -15,30 +15,33 @@ public sealed class SqliteVectorIndexPersistenceTests : IDisposable
     private readonly Mock<IEmbeddingGenerator> _mockEmbeddingGenerator;
     private const int TestDimensions = 4;
 
+
     public SqliteVectorIndexPersistenceTests()
     {
         // Use temp file for SQLite
-        this._dbPath = Path.Combine(Path.GetTempPath(), $"vector_persist_test_{Guid.NewGuid()}.db");
-        this._mockLogger = new Mock<ILogger<SqliteVectorIndex>>();
-        this._mockEmbeddingGenerator = new Mock<IEmbeddingGenerator>();
+        _dbPath = Path.Combine(Path.GetTempPath(), $"vector_persist_test_{Guid.NewGuid()}.db");
+        _mockLogger = new Mock<ILogger<SqliteVectorIndex>>();
+        _mockEmbeddingGenerator = new Mock<IEmbeddingGenerator>();
 
         // Configure mock to return predictable embeddings
-        this._mockEmbeddingGenerator
+        _mockEmbeddingGenerator
             .Setup(x => x.GenerateAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string text, CancellationToken _) => EmbeddingResult.FromVector(this.GenerateTestEmbedding(text)));
+            .ReturnsAsync((string text, CancellationToken _) => EmbeddingResult.FromVector(GenerateTestEmbedding(text)));
     }
+
 
     public void Dispose()
     {
         // Clean up temp file
-        if (File.Exists(this._dbPath))
+        if (File.Exists(_dbPath))
         {
-            File.Delete(this._dbPath);
+            File.Delete(_dbPath);
         }
 
         // Clean up WAL files
-        var walPath = this._dbPath + "-wal";
-        var shmPath = this._dbPath + "-shm";
+        var walPath = _dbPath + "-wal";
+        var shmPath = _dbPath + "-shm";
+
         if (File.Exists(walPath))
         {
             File.Delete(walPath);
@@ -52,6 +55,7 @@ public sealed class SqliteVectorIndexPersistenceTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
+
     /// <summary>
     /// Generates a deterministic test embedding based on text hash.
     /// </summary>
@@ -60,13 +64,15 @@ public sealed class SqliteVectorIndexPersistenceTests : IDisposable
     {
         var hash = text.GetHashCode();
         var embedding = new float[TestDimensions];
+
         for (int i = 0; i < TestDimensions; i++)
         {
-            embedding[i] = ((hash >> (i * 8)) & 0xFF) / 255.0f;
+            embedding[i] = (hash >> i * 8 & 0xFF) / 255.0f;
         }
 
         return embedding;
     }
+
 
     [Fact]
     public async Task VectorsPersistAcrossDisposeAndRecreate()
@@ -76,11 +82,11 @@ public sealed class SqliteVectorIndexPersistenceTests : IDisposable
         const string text = "This is persisted content";
 
         using (var firstIndex = new SqliteVectorIndex(
-            this._dbPath,
+            _dbPath,
             TestDimensions,
-            useSqliteVec: false,
-            this._mockEmbeddingGenerator.Object,
-            this._mockLogger.Object))
+            false,
+            _mockEmbeddingGenerator.Object,
+            _mockLogger.Object))
         {
             await firstIndex.IndexAsync(contentId, text).ConfigureAwait(false);
 
@@ -91,11 +97,11 @@ public sealed class SqliteVectorIndexPersistenceTests : IDisposable
 
         // Act - Create new index pointing to same file
         using (var secondIndex = new SqliteVectorIndex(
-            this._dbPath,
+            _dbPath,
             TestDimensions,
-            useSqliteVec: false,
-            this._mockEmbeddingGenerator.Object,
-            this._mockLogger.Object))
+            false,
+            _mockEmbeddingGenerator.Object,
+            _mockLogger.Object))
         {
             // Assert - Data should persist
             var afterRecreate = await secondIndex.SearchAsync(text).ConfigureAwait(false);
@@ -103,6 +109,7 @@ public sealed class SqliteVectorIndexPersistenceTests : IDisposable
             Assert.Equal(contentId, afterRecreate[0].ContentId);
         }
     }
+
 
     [Fact]
     public async Task MultipleVectorsPersistCorrectly()
@@ -117,11 +124,11 @@ public sealed class SqliteVectorIndexPersistenceTests : IDisposable
 
         // Create and populate
         using (var firstIndex = new SqliteVectorIndex(
-            this._dbPath,
+            _dbPath,
             TestDimensions,
-            useSqliteVec: false,
-            this._mockEmbeddingGenerator.Object,
-            this._mockLogger.Object))
+            false,
+            _mockEmbeddingGenerator.Object,
+            _mockLogger.Object))
         {
             foreach (var (id, content) in testData)
             {
@@ -131,11 +138,11 @@ public sealed class SqliteVectorIndexPersistenceTests : IDisposable
 
         // Act - Recreate and verify
         using (var secondIndex = new SqliteVectorIndex(
-            this._dbPath,
+            _dbPath,
             TestDimensions,
-            useSqliteVec: false,
-            this._mockEmbeddingGenerator.Object,
-            this._mockLogger.Object))
+            false,
+            _mockEmbeddingGenerator.Object,
+            _mockLogger.Object))
         {
             var results = await secondIndex.SearchAsync("document").ConfigureAwait(false);
 
@@ -148,6 +155,7 @@ public sealed class SqliteVectorIndexPersistenceTests : IDisposable
         }
     }
 
+
     [Fact]
     public async Task RemovalPersistsCorrectly()
     {
@@ -156,11 +164,11 @@ public sealed class SqliteVectorIndexPersistenceTests : IDisposable
         const string toRemove = "remove-id";
 
         using (var firstIndex = new SqliteVectorIndex(
-            this._dbPath,
+            _dbPath,
             TestDimensions,
-            useSqliteVec: false,
-            this._mockEmbeddingGenerator.Object,
-            this._mockLogger.Object))
+            false,
+            _mockEmbeddingGenerator.Object,
+            _mockLogger.Object))
         {
             await firstIndex.IndexAsync(toKeep, "Content to keep").ConfigureAwait(false);
             await firstIndex.IndexAsync(toRemove, "Content to remove").ConfigureAwait(false);
@@ -169,11 +177,11 @@ public sealed class SqliteVectorIndexPersistenceTests : IDisposable
 
         // Act - Recreate and verify
         using (var secondIndex = new SqliteVectorIndex(
-            this._dbPath,
+            _dbPath,
             TestDimensions,
-            useSqliteVec: false,
-            this._mockEmbeddingGenerator.Object,
-            this._mockLogger.Object))
+            false,
+            _mockEmbeddingGenerator.Object,
+            _mockLogger.Object))
         {
             var results = await secondIndex.SearchAsync("Content").ConfigureAwait(false);
 
@@ -183,16 +191,17 @@ public sealed class SqliteVectorIndexPersistenceTests : IDisposable
         }
     }
 
+
     [Fact]
     public async Task ClearPersistsCorrectly()
     {
         // Arrange
         using (var firstIndex = new SqliteVectorIndex(
-            this._dbPath,
+            _dbPath,
             TestDimensions,
-            useSqliteVec: false,
-            this._mockEmbeddingGenerator.Object,
-            this._mockLogger.Object))
+            false,
+            _mockEmbeddingGenerator.Object,
+            _mockLogger.Object))
         {
             await firstIndex.IndexAsync("id1", "First content").ConfigureAwait(false);
             await firstIndex.IndexAsync("id2", "Second content").ConfigureAwait(false);
@@ -201,11 +210,11 @@ public sealed class SqliteVectorIndexPersistenceTests : IDisposable
 
         // Act - Recreate and verify
         using (var secondIndex = new SqliteVectorIndex(
-            this._dbPath,
+            _dbPath,
             TestDimensions,
-            useSqliteVec: false,
-            this._mockEmbeddingGenerator.Object,
-            this._mockLogger.Object))
+            false,
+            _mockEmbeddingGenerator.Object,
+            _mockLogger.Object))
         {
             var results = await secondIndex.SearchAsync("content").ConfigureAwait(false);
 
@@ -214,6 +223,7 @@ public sealed class SqliteVectorIndexPersistenceTests : IDisposable
         }
     }
 
+
     [Fact]
     public async Task UpdatePersistsCorrectly()
     {
@@ -221,11 +231,11 @@ public sealed class SqliteVectorIndexPersistenceTests : IDisposable
         const string contentId = "update-test";
 
         using (var firstIndex = new SqliteVectorIndex(
-            this._dbPath,
+            _dbPath,
             TestDimensions,
-            useSqliteVec: false,
-            this._mockEmbeddingGenerator.Object,
-            this._mockLogger.Object))
+            false,
+            _mockEmbeddingGenerator.Object,
+            _mockLogger.Object))
         {
             await firstIndex.IndexAsync(contentId, "Original content").ConfigureAwait(false);
             await firstIndex.IndexAsync(contentId, "Updated content").ConfigureAwait(false);
@@ -233,11 +243,11 @@ public sealed class SqliteVectorIndexPersistenceTests : IDisposable
 
         // Act - Recreate and verify
         using (var secondIndex = new SqliteVectorIndex(
-            this._dbPath,
+            _dbPath,
             TestDimensions,
-            useSqliteVec: false,
-            this._mockEmbeddingGenerator.Object,
-            this._mockLogger.Object))
+            false,
+            _mockEmbeddingGenerator.Object,
+            _mockLogger.Object))
         {
             var results = await secondIndex.SearchAsync("Updated content").ConfigureAwait(false);
 
@@ -247,27 +257,28 @@ public sealed class SqliteVectorIndexPersistenceTests : IDisposable
         }
     }
 
+
     [Fact]
     public async Task CanIndexAfterReopen()
     {
         // Arrange
         using (var firstIndex = new SqliteVectorIndex(
-            this._dbPath,
+            _dbPath,
             TestDimensions,
-            useSqliteVec: false,
-            this._mockEmbeddingGenerator.Object,
-            this._mockLogger.Object))
+            false,
+            _mockEmbeddingGenerator.Object,
+            _mockLogger.Object))
         {
             await firstIndex.IndexAsync("id1", "First content").ConfigureAwait(false);
         }
 
         // Act - Reopen and add more content
         using (var secondIndex = new SqliteVectorIndex(
-            this._dbPath,
+            _dbPath,
             TestDimensions,
-            useSqliteVec: false,
-            this._mockEmbeddingGenerator.Object,
-            this._mockLogger.Object))
+            false,
+            _mockEmbeddingGenerator.Object,
+            _mockLogger.Object))
         {
             await secondIndex.IndexAsync("id2", "Second content").ConfigureAwait(false);
             var results = await secondIndex.SearchAsync("content").ConfigureAwait(false);

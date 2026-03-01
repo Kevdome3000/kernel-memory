@@ -39,6 +39,7 @@ public sealed class AzureOpenAIEmbeddingGenerator : IEmbeddingGenerator
     /// <inheritdoc />
     public bool IsNormalized { get; }
 
+
     /// <summary>
     /// Creates a new Azure OpenAI embedding generator with API key authentication.
     /// </summary>
@@ -68,97 +69,107 @@ public sealed class AzureOpenAIEmbeddingGenerator : IEmbeddingGenerator
         TokenCredential? credential = null,
         Func<TimeSpan, CancellationToken, Task>? delayAsync = null)
     {
-        ArgumentNullException.ThrowIfNull(httpClient, nameof(httpClient));
-        ArgumentNullException.ThrowIfNull(endpoint, nameof(endpoint));
-        ArgumentNullException.ThrowIfNull(deployment, nameof(deployment));
-        ArgumentNullException.ThrowIfNull(model, nameof(model));
-        ArgumentNullException.ThrowIfNull(logger, nameof(logger));
-        ArgumentOutOfRangeException.ThrowIfLessThan(batchSize, 1, nameof(batchSize));
+        ArgumentNullException.ThrowIfNull(httpClient);
+        ArgumentNullException.ThrowIfNull(endpoint);
+        ArgumentNullException.ThrowIfNull(deployment);
+        ArgumentNullException.ThrowIfNull(model);
+        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentOutOfRangeException.ThrowIfLessThan(batchSize, 1);
 
-        this._httpClient = httpClient;
-        this._endpoint = endpoint.TrimEnd('/');
-        this._deployment = deployment;
-        this._apiKey = apiKey;
-        this._useManagedIdentity = useManagedIdentity;
-        this._credential = credential;
-        this._batchSize = batchSize;
-        this.ModelName = model;
-        this.VectorDimensions = vectorDimensions;
-        this.IsNormalized = isNormalized;
-        this._logger = logger;
-        this._delayAsync = delayAsync ?? Task.Delay;
+        _httpClient = httpClient;
+        _endpoint = endpoint.TrimEnd('/');
+        _deployment = deployment;
+        _apiKey = apiKey;
+        _useManagedIdentity = useManagedIdentity;
+        _credential = credential;
+        _batchSize = batchSize;
+        ModelName = model;
+        VectorDimensions = vectorDimensions;
+        IsNormalized = isNormalized;
+        _logger = logger;
+        _delayAsync = delayAsync ?? Task.Delay;
 
-        if (!this._useManagedIdentity && string.IsNullOrWhiteSpace(this._apiKey))
+        if (!_useManagedIdentity && string.IsNullOrWhiteSpace(_apiKey))
         {
             throw new ArgumentException("Azure OpenAI API key is required when not using managed identity", nameof(apiKey));
         }
 
-        this._logger.LogDebug("AzureOpenAIEmbeddingGenerator initialized: {Endpoint}, deployment: {Deployment}, model: {Model}",
-            this._endpoint, this._deployment, this.ModelName);
+        _logger.LogDebug("AzureOpenAIEmbeddingGenerator initialized: {Endpoint}, deployment: {Deployment}, model: {Model}",
+            _endpoint,
+            _deployment,
+            ModelName);
     }
+
 
     /// <inheritdoc />
     public async Task<EmbeddingResult> GenerateAsync(string text, CancellationToken ct = default)
     {
-        var results = await this.GenerateAsync(new[] { text }, ct).ConfigureAwait(false);
+        var results = await GenerateAsync(new[] { text }, ct).ConfigureAwait(false);
         return results[0];
     }
+
 
     /// <inheritdoc />
     public async Task<EmbeddingResult[]> GenerateAsync(IEnumerable<string> texts, CancellationToken ct = default)
     {
         var textArray = texts.ToArray();
+
         if (textArray.Length == 0)
         {
             return [];
         }
 
         var allResults = new List<EmbeddingResult>(textArray.Length);
-        foreach (var chunk in Chunk(textArray, this._batchSize))
+
+        foreach (var chunk in Chunk(textArray, _batchSize))
         {
-            var chunkResults = await this.GenerateBatchAsync(chunk, ct).ConfigureAwait(false);
+            var chunkResults = await GenerateBatchAsync(chunk, ct).ConfigureAwait(false);
             allResults.AddRange(chunkResults);
         }
 
         return allResults.ToArray();
     }
 
+
     private async Task<EmbeddingResult[]> GenerateBatchAsync(string[] textArray, CancellationToken ct)
     {
-        var url = $"{this._endpoint}/openai/deployments/{this._deployment}/embeddings?api-version={Constants.EmbeddingDefaults.AzureOpenAIApiVersion}";
+        var url = $"{_endpoint}/openai/deployments/{_deployment}/embeddings?api-version={Constants.EmbeddingDefaults.AzureOpenAIApiVersion}";
 
         var request = new AzureEmbeddingRequest
         {
             Input = textArray
         };
 
-        var bearerToken = this._useManagedIdentity
-            ? await this.GetManagedIdentityTokenAsync(ct).ConfigureAwait(false)
+        var bearerToken = _useManagedIdentity
+            ? await GetManagedIdentityTokenAsync(ct).ConfigureAwait(false)
             : null;
 
-        this._logger.LogTrace("Calling Azure OpenAI embeddings API: deployment={Deployment}, batch size: {BatchSize}",
-            this._deployment, textArray.Length);
+        _logger.LogTrace("Calling Azure OpenAI embeddings API: deployment={Deployment}, batch size: {BatchSize}",
+            _deployment,
+            textArray.Length);
 
         using var response = await HttpRetryPolicy.SendAsync(
-            this._httpClient,
-            requestFactory: () =>
-            {
-                var httpRequest = new HttpRequestMessage(HttpMethod.Post, url);
-                if (bearerToken != null)
+                _httpClient,
+                () =>
                 {
-                    httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", bearerToken);
-                }
-                else
-                {
-                    httpRequest.Headers.Add("api-key", this._apiKey);
-                }
+                    var httpRequest = new HttpRequestMessage(HttpMethod.Post, url);
 
-                httpRequest.Content = JsonContent.Create(request);
-                return httpRequest;
-            },
-            this._logger,
-            ct,
-            delayAsync: this._delayAsync).ConfigureAwait(false);
+                    if (bearerToken != null)
+                    {
+                        httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", bearerToken);
+                    }
+                    else
+                    {
+                        httpRequest.Headers.Add("api-key", _apiKey);
+                    }
+
+                    httpRequest.Content = JsonContent.Create(request);
+                    return httpRequest;
+                },
+                _logger,
+                ct,
+                _delayAsync)
+            .ConfigureAwait(false);
 
         response.EnsureSuccessStatusCode();
 
@@ -175,12 +186,14 @@ public sealed class AzureOpenAIEmbeddingGenerator : IEmbeddingGenerator
         // Get total token count from API response
         var totalTokens = result.Usage?.TotalTokens;
 
-        this._logger.LogTrace("Azure OpenAI returned {Count} embeddings, usage: {TotalTokens} tokens",
-            sortedData.Length, totalTokens);
+        _logger.LogTrace("Azure OpenAI returned {Count} embeddings, usage: {TotalTokens} tokens",
+            sortedData.Length,
+            totalTokens);
 
         // Calculate per-embedding token count if total tokens available
         // For batch requests, we distribute tokens evenly across embeddings (approximation)
         int? perEmbeddingTokens = null;
+
         if (totalTokens.HasValue && sortedData.Length > 0)
         {
             perEmbeddingTokens = totalTokens.Value / sortedData.Length;
@@ -188,6 +201,7 @@ public sealed class AzureOpenAIEmbeddingGenerator : IEmbeddingGenerator
 
         // Create EmbeddingResult for each embedding with token count
         var results = new EmbeddingResult[sortedData.Length];
+
         for (int i = 0; i < sortedData.Length; i++)
         {
             results[i] = perEmbeddingTokens.HasValue
@@ -198,14 +212,17 @@ public sealed class AzureOpenAIEmbeddingGenerator : IEmbeddingGenerator
         return results;
     }
 
+
     private async Task<string> GetManagedIdentityTokenAsync(CancellationToken ct)
     {
-        var credential = this._credential ?? new DefaultAzureCredential();
+        var credential = _credential ?? new DefaultAzureCredential();
         var token = await credential.GetTokenAsync(
-            new TokenRequestContext(["https://cognitiveservices.azure.com/.default"]),
-            ct).ConfigureAwait(false);
+                new TokenRequestContext(["https://cognitiveservices.azure.com/.default"]),
+                ct)
+            .ConfigureAwait(false);
         return token.Token;
     }
+
 
     private static IEnumerable<string[]> Chunk(string[] items, int chunkSize)
     {
@@ -213,10 +230,15 @@ public sealed class AzureOpenAIEmbeddingGenerator : IEmbeddingGenerator
         {
             var length = Math.Min(chunkSize, items.Length - i);
             var chunk = new string[length];
-            Array.Copy(items, i, chunk, 0, length);
+            Array.Copy(items,
+                i,
+                chunk,
+                0,
+                length);
             yield return chunk;
         }
     }
+
 
     /// <summary>
     /// Request body for Azure OpenAI embeddings API.
@@ -226,6 +248,7 @@ public sealed class AzureOpenAIEmbeddingGenerator : IEmbeddingGenerator
         [JsonPropertyName("input")]
         public string[] Input { get; set; } = Array.Empty<string>();
     }
+
 
     /// <summary>
     /// Response from Azure OpenAI embeddings API.
@@ -239,6 +262,7 @@ public sealed class AzureOpenAIEmbeddingGenerator : IEmbeddingGenerator
         public UsageInfo? Usage { get; set; }
     }
 
+
     private sealed class EmbeddingData
     {
         [JsonPropertyName("index")]
@@ -247,6 +271,7 @@ public sealed class AzureOpenAIEmbeddingGenerator : IEmbeddingGenerator
         [JsonPropertyName("embedding")]
         public float[] Embedding { get; set; } = Array.Empty<float>();
     }
+
 
     private sealed class UsageInfo
     {

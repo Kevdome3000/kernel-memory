@@ -33,6 +33,7 @@ public sealed class SearchRequestTests
         Assert.Null(request.TimeoutSeconds);
     }
 
+
     [Fact]
     public void Properties_CanBeSet()
     {

@@ -89,45 +89,47 @@ public class SearchCommandSettings : GlobalOptions
     [Description("Validate query without executing")]
     public bool ValidateOnly { get; init; }
 
+
     public override ValidationResult Validate()
     {
         var baseResult = base.Validate();
+
         if (!baseResult.Successful)
         {
             return baseResult;
         }
 
-        if (string.IsNullOrWhiteSpace(this.Query))
+        if (string.IsNullOrWhiteSpace(Query))
         {
             return ValidationResult.Error("Query cannot be empty");
         }
 
-        if (this.Limit <= 0)
+        if (Limit <= 0)
         {
             return ValidationResult.Error("Limit must be > 0");
         }
 
-        if (this.Offset < 0)
+        if (Offset < 0)
         {
             return ValidationResult.Error("Offset must be >= 0");
         }
 
-        if (this.MinRelevance < 0 || this.MinRelevance > 1.0f)
+        if (MinRelevance < 0 || MinRelevance > 1.0f)
         {
             return ValidationResult.Error("MinRelevance must be between 0.0 and 1.0");
         }
 
-        if (this.MaxResultsPerNode.HasValue && this.MaxResultsPerNode.Value <= 0)
+        if (MaxResultsPerNode.HasValue && MaxResultsPerNode.Value <= 0)
         {
             return ValidationResult.Error("MaxResultsPerNode must be > 0");
         }
 
-        if (this.SnippetLength.HasValue && this.SnippetLength.Value <= 0)
+        if (SnippetLength.HasValue && SnippetLength.Value <= 0)
         {
             return ValidationResult.Error("SnippetLength must be > 0");
         }
 
-        if (this.Timeout.HasValue && this.Timeout.Value <= 0)
+        if (Timeout.HasValue && Timeout.Value <= 0)
         {
             return ValidationResult.Error("Timeout must be > 0");
         }
@@ -135,6 +137,7 @@ public class SearchCommandSettings : GlobalOptions
         return ValidationResult.Success();
     }
 }
+
 
 /// <summary>
 /// Command to search across nodes and indexes.
@@ -144,6 +147,7 @@ public class SearchCommand : BaseCommand<SearchCommandSettings>
 {
     private readonly ILogger<SearchCommand> _logger;
 
+
     /// <summary>
     /// Initializes a new instance of the <see cref="SearchCommand"/> class.
     /// </summary>
@@ -151,8 +155,9 @@ public class SearchCommand : BaseCommand<SearchCommandSettings>
     /// <param name="loggerFactory">Logger factory for creating loggers (injected by DI).</param>
     public SearchCommand(AppConfig config, ILoggerFactory loggerFactory) : base(config, loggerFactory)
     {
-        this._logger = loggerFactory.CreateLogger<SearchCommand>();
+        _logger = loggerFactory.CreateLogger<SearchCommand>();
     }
+
 
     public override async Task<int> ExecuteAsync(
         CommandContext context,
@@ -164,29 +169,29 @@ public class SearchCommand : BaseCommand<SearchCommandSettings>
             var formatter = OutputFormatterFactory.Create(settings);
 
             // Create search service
-            var searchService = this.CreateSearchService();
+            var searchService = CreateSearchService();
 
             // If validate flag is set, just validate and return
             if (settings.ValidateOnly)
             {
-                return await this.ValidateQueryAsync(searchService, settings, formatter).ConfigureAwait(false);
+                return await ValidateQueryAsync(searchService, settings, formatter).ConfigureAwait(false);
             }
 
             // Build search request
-            var request = this.BuildSearchRequest(settings);
+            var request = BuildSearchRequest(settings);
 
             // Execute search
             var response = await searchService.SearchAsync(request, CancellationToken.None).ConfigureAwait(false);
 
             // Format and display results
-            this.FormatSearchResults(response, settings, formatter);
+            FormatSearchResults(response, settings, formatter);
 
             return Constants.App.ExitCodeSuccess;
         }
         catch (DatabaseNotFoundException)
         {
             // First-run scenario: no database exists yet
-            this.ShowFirstRunMessage(settings);
+            ShowFirstRunMessage(settings);
             return Constants.App.ExitCodeSuccess; // Not a user error
         }
         catch (SearchException ex)
@@ -198,9 +203,10 @@ public class SearchCommand : BaseCommand<SearchCommandSettings>
         catch (Exception ex)
         {
             var formatter = OutputFormatterFactory.Create(settings);
-            return this.HandleError(ex, formatter);
+            return HandleError(ex, formatter);
         }
     }
+
 
     /// <summary>
     /// Validates a query without executing it.
@@ -209,7 +215,8 @@ public class SearchCommand : BaseCommand<SearchCommandSettings>
     /// <param name="settings">The command settings.</param>
     /// <param name="formatter">The output formatter.</param>
     /// <returns>Exit code (0 for valid, 1 for invalid).</returns>
-    [SuppressMessage("Performance", "CA1859:Use concrete types when possible for improved performance",
+    [SuppressMessage("Performance",
+        "CA1859:Use concrete types when possible for improved performance",
         Justification = "Using interface provides flexibility for testing and future implementations")]
     private async Task<int> ValidateQueryAsync(
         ISearchService searchService,
@@ -238,6 +245,7 @@ public class SearchCommand : BaseCommand<SearchCommandSettings>
                 AnsiConsole.MarkupLine("[red]✗ Query syntax error[/]");
                 AnsiConsole.WriteLine();
                 AnsiConsole.MarkupLine($"[red]{result.ErrorMessage}[/]");
+
                 if (result.ErrorPosition.HasValue)
                 {
                     AnsiConsole.MarkupLine($"[dim]Position: {result.ErrorPosition.Value}[/]");
@@ -248,6 +256,7 @@ public class SearchCommand : BaseCommand<SearchCommandSettings>
             {
                 AnsiConsole.WriteLine();
                 AnsiConsole.MarkupLine("[dim]Available fields:[/]");
+
                 foreach (var field in result.AvailableFields)
                 {
                     AnsiConsole.MarkupLine($"  [cyan]{field}[/]");
@@ -255,8 +264,11 @@ public class SearchCommand : BaseCommand<SearchCommandSettings>
             }
         }
 
-        return result.IsValid ? Constants.App.ExitCodeSuccess : Constants.App.ExitCodeUserError;
+        return result.IsValid
+            ? Constants.App.ExitCodeSuccess
+            : Constants.App.ExitCodeUserError;
     }
+
 
     /// <summary>
     /// Builds a SearchRequest from command settings.
@@ -316,11 +328,12 @@ public class SearchCommand : BaseCommand<SearchCommandSettings>
         // Parse node weights
         if (!string.IsNullOrEmpty(settings.NodeWeights))
         {
-            request.NodeWeights = this.ParseNodeWeights(settings.NodeWeights);
+            request.NodeWeights = ParseNodeWeights(settings.NodeWeights);
         }
 
         return request;
     }
+
 
     /// <summary>
     /// Parses node weights from CLI format: "node1:1.0,node2:0.5"
@@ -332,15 +345,18 @@ public class SearchCommand : BaseCommand<SearchCommandSettings>
         var weights = new Dictionary<string, float>();
 
         var pairs = nodeWeights.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
         foreach (var pair in pairs)
         {
             var parts = pair.Split(':', StringSplitOptions.TrimEntries);
+
             if (parts.Length != 2)
             {
                 throw new ArgumentException($"Invalid node weight format: '{pair}'. Expected format: 'node:weight'");
             }
 
             var nodeId = parts[0];
+
             if (!float.TryParse(parts[1], out var weight))
             {
                 throw new ArgumentException($"Invalid weight value for node '{nodeId}': '{parts[1]}'. Must be a number.");
@@ -356,6 +372,7 @@ public class SearchCommand : BaseCommand<SearchCommandSettings>
 
         return weights;
     }
+
 
     /// <summary>
     /// Formats and displays search results.
@@ -379,9 +396,10 @@ public class SearchCommand : BaseCommand<SearchCommandSettings>
         else
         {
             // Human format - create a table
-            this.FormatSearchResultsHuman(response, settings);
+            FormatSearchResultsHuman(response, settings);
         }
     }
+
 
     /// <summary>
     /// Formats search results in human-readable format (table).
@@ -437,6 +455,7 @@ public class SearchCommand : BaseCommand<SearchCommandSettings>
         {
             AnsiConsole.WriteLine();
             AnsiConsole.MarkupLine("[yellow]Warnings:[/]");
+
             foreach (var warning in response.Metadata.Warnings)
             {
                 AnsiConsole.MarkupLine($"  [yellow]⚠ {warning}[/]");
@@ -452,13 +471,15 @@ public class SearchCommand : BaseCommand<SearchCommandSettings>
         }
     }
 
+
     /// <summary>
     /// Creates a SearchService instance with all configured nodes.
     /// Skips nodes with missing databases gracefully (logs warning, continues with working nodes).
     /// </summary>
     /// <returns>A configured SearchService.</returns>
     /// <exception cref="DatabaseNotFoundException">Thrown when ALL nodes have missing databases.</exception>
-    [SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope",
+    [SuppressMessage("Reliability",
+        "CA2000:Dispose objects before losing scope",
         Justification = "ContentService instances must remain alive for the duration of the search operation. CLI commands are short-lived and process exit handles cleanup.")]
     private SearchService CreateSearchService()
     {
@@ -466,20 +487,21 @@ public class SearchCommand : BaseCommand<SearchCommandSettings>
         var indexWeights = new Dictionary<string, Dictionary<string, float>>();
         var skippedNodes = new List<string>();
 
-        foreach (var (nodeId, nodeConfig) in this.Config.Nodes)
+        foreach (var (nodeId, nodeConfig) in Config.Nodes)
         {
             try
             {
                 // Create ContentService for this node
                 // Don't dispose - NodeSearchService needs access to its Storage and SearchIndexes
-                var contentService = this.CreateContentService(nodeConfig, readonlyMode: true);
+                var contentService = CreateContentService(nodeConfig, true);
 
                 // Get FTS index from the content service's registered indexes
                 // The content service already has FTS indexes registered and keeps them in sync
                 var ftsIndex = contentService.SearchIndexes.Values.OfType<IFtsIndex>().FirstOrDefault();
+
                 if (ftsIndex == null)
                 {
-                    this._logger.LogWarning("Skipping node '{NodeId}': No FTS index configured", nodeId);
+                    _logger.LogWarning("Skipping node '{NodeId}': No FTS index configured", nodeId);
                     skippedNodes.Add(nodeId);
                     continue;
                 }
@@ -497,6 +519,7 @@ public class SearchCommand : BaseCommand<SearchCommandSettings>
                 if (nodeConfig.SearchIndexes.Count > 0)
                 {
                     var nodeIndexWeights = new Dictionary<string, float>();
+
                     foreach (var searchIndex in nodeConfig.SearchIndexes)
                     {
                         // Use the configured weight for each search index
@@ -508,7 +531,7 @@ public class SearchCommand : BaseCommand<SearchCommandSettings>
             catch (DatabaseNotFoundException ex)
             {
                 // Node's database doesn't exist - skip this node and continue with others
-                this._logger.LogWarning("Skipping node '{NodeId}': {Message}", nodeId, ex.Message);
+                _logger.LogWarning("Skipping node '{NodeId}': {Message}", nodeId, ex.Message);
                 skippedNodes.Add(nodeId);
             }
         }
@@ -523,15 +546,16 @@ public class SearchCommand : BaseCommand<SearchCommandSettings>
         // Log summary if some nodes were skipped
         if (skippedNodes.Count > 0)
         {
-            this._logger.LogInformation(
+            _logger.LogInformation(
                 "Search using {ActiveCount} of {TotalCount} nodes. Skipped: {SkippedNodes}",
                 nodeServices.Count,
-                this.Config.Nodes.Count,
+                Config.Nodes.Count,
                 string.Join(", ", skippedNodes));
         }
 
         return new SearchService(nodeServices, indexWeights);
     }
+
 
     /// <summary>
     /// Shows a friendly first-run message when no database exists yet.

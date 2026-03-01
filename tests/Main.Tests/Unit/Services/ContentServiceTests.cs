@@ -25,6 +25,7 @@ public sealed class ContentServiceTests
         Assert.Equal(nodeId, service.NodeId);
     }
 
+
     [Fact]
     public async Task UpsertAsync_CallsStorageUpsert()
     {
@@ -51,6 +52,7 @@ public sealed class ContentServiceTests
         mockStorage.Verify(s => s.UpsertAsync(request, CancellationToken.None), Times.Once);
     }
 
+
     [Fact]
     public async Task UpsertAsync_WithCancellationToken_PassesTokenToStorage()
     {
@@ -74,6 +76,7 @@ public sealed class ContentServiceTests
         mockStorage.Verify(s => s.UpsertAsync(request, cts.Token), Times.Once);
     }
 
+
     [Fact]
     public async Task GetAsync_CallsStorageGetById()
     {
@@ -96,6 +99,7 @@ public sealed class ContentServiceTests
         mockStorage.Verify(s => s.GetByIdAsync(contentId, CancellationToken.None), Times.Once);
     }
 
+
     [Fact]
     public async Task GetAsync_WhenNotFound_ReturnsNull()
     {
@@ -112,6 +116,7 @@ public sealed class ContentServiceTests
         // Assert
         Assert.Null(result);
     }
+
 
     [Fact]
     public async Task DeleteAsync_CallsStorageDelete()
@@ -133,6 +138,7 @@ public sealed class ContentServiceTests
         Assert.True(result.Completed);
         mockStorage.Verify(s => s.DeleteAsync(contentId, CancellationToken.None), Times.Once);
     }
+
 
     [Fact]
     public async Task ListAsync_CallsStorageList()
@@ -161,6 +167,7 @@ public sealed class ContentServiceTests
         mockStorage.Verify(s => s.ListAsync(skip, take, CancellationToken.None), Times.Once);
     }
 
+
     [Fact]
     public async Task ListAsync_EmptyResult_ReturnsEmptyList()
     {
@@ -177,6 +184,7 @@ public sealed class ContentServiceTests
         // Assert
         Assert.Empty(result);
     }
+
 
     [Fact]
     public async Task CountAsync_CallsStorageCount()
@@ -196,6 +204,7 @@ public sealed class ContentServiceTests
         Assert.Equal(expectedCount, result);
         mockStorage.Verify(s => s.CountAsync(CancellationToken.None), Times.Once);
     }
+
 
     [Fact]
     public async Task CountAsync_EmptyStorage_ReturnsZero()

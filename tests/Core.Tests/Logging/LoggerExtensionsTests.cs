@@ -13,15 +13,17 @@ public sealed class LoggerExtensionsTests
 {
     private readonly Mock<ILogger> _mockLogger;
 
+
     /// <summary>
     /// Initializes test with mock logger.
     /// </summary>
     public LoggerExtensionsTests()
     {
-        this._mockLogger = new Mock<ILogger>();
+        _mockLogger = new Mock<ILogger>();
         // Enable all log levels for testing
-        this._mockLogger.Setup(x => x.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
+        _mockLogger.Setup(x => x.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
     }
+
 
     /// <summary>
     /// Verifies LogMethodEntry logs at Debug level.
@@ -31,10 +33,10 @@ public sealed class LoggerExtensionsTests
     public void LogMethodEntry_ShouldLogAtDebugLevel()
     {
         // Arrange & Act
-        this._mockLogger.Object.LogMethodEntry();
+        _mockLogger.Object.LogMethodEntry();
 
         // Assert - verify Log was called at Debug level
-        this._mockLogger.Verify(
+        _mockLogger.Verify(
             x => x.Log(
                 LogLevel.Debug,
                 It.IsAny<EventId>(),
@@ -43,6 +45,7 @@ public sealed class LoggerExtensionsTests
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
     }
+
 
     /// <summary>
     /// Verifies LogMethodEntry captures calling method name automatically.
@@ -53,24 +56,30 @@ public sealed class LoggerExtensionsTests
     {
         // Arrange
         string? capturedState = null;
-        this._mockLogger.Setup(x => x.Log(
+        _mockLogger.Setup(x => x.Log(
                 LogLevel.Debug,
                 It.IsAny<EventId>(),
                 It.IsAny<It.IsAnyType>(),
                 It.IsAny<Exception?>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()))
-            .Callback((LogLevel level, EventId eventId, object state, Exception? ex, Delegate formatter) =>
+            .Callback((
+                LogLevel level,
+                EventId eventId,
+                object state,
+                Exception? ex,
+                Delegate formatter) =>
             {
                 capturedState = state?.ToString();
             });
 
         // Act
-        this._mockLogger.Object.LogMethodEntry();
+        _mockLogger.Object.LogMethodEntry();
 
         // Assert - method name should be captured (this test method name)
         Assert.NotNull(capturedState);
         Assert.Contains("LogMethodEntry_ShouldCaptureMethodName", capturedState);
     }
+
 
     /// <summary>
     /// Verifies LogMethodEntry includes parameters in log output.
@@ -81,24 +90,30 @@ public sealed class LoggerExtensionsTests
     {
         // Arrange
         string? capturedState = null;
-        this._mockLogger.Setup(x => x.Log(
+        _mockLogger.Setup(x => x.Log(
                 LogLevel.Debug,
                 It.IsAny<EventId>(),
                 It.IsAny<It.IsAnyType>(),
                 It.IsAny<Exception?>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()))
-            .Callback((LogLevel level, EventId eventId, object state, Exception? ex, Delegate formatter) =>
+            .Callback((
+                LogLevel level,
+                EventId eventId,
+                object state,
+                Exception? ex,
+                Delegate formatter) =>
             {
                 capturedState = state?.ToString();
             });
 
         // Act
-        this._mockLogger.Object.LogMethodEntry("param1", 42, true);
+        _mockLogger.Object.LogMethodEntry("param1", 42, true);
 
         // Assert - parameters should be in the log
         Assert.NotNull(capturedState);
         Assert.Contains("param1", capturedState);
     }
+
 
     /// <summary>
     /// Verifies LogMethodExit logs at Debug level.
@@ -107,10 +122,10 @@ public sealed class LoggerExtensionsTests
     public void LogMethodExit_ShouldLogAtDebugLevel()
     {
         // Arrange & Act
-        this._mockLogger.Object.LogMethodExit();
+        _mockLogger.Object.LogMethodExit();
 
         // Assert
-        this._mockLogger.Verify(
+        _mockLogger.Verify(
             x => x.Log(
                 LogLevel.Debug,
                 It.IsAny<EventId>(),
@@ -120,6 +135,7 @@ public sealed class LoggerExtensionsTests
             Times.Once);
     }
 
+
     /// <summary>
     /// Verifies LogMethodExit captures method name.
     /// </summary>
@@ -128,24 +144,30 @@ public sealed class LoggerExtensionsTests
     {
         // Arrange
         string? capturedState = null;
-        this._mockLogger.Setup(x => x.Log(
+        _mockLogger.Setup(x => x.Log(
                 LogLevel.Debug,
                 It.IsAny<EventId>(),
                 It.IsAny<It.IsAnyType>(),
                 It.IsAny<Exception?>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()))
-            .Callback((LogLevel level, EventId eventId, object state, Exception? ex, Delegate formatter) =>
+            .Callback((
+                LogLevel level,
+                EventId eventId,
+                object state,
+                Exception? ex,
+                Delegate formatter) =>
             {
                 capturedState = state?.ToString();
             });
 
         // Act
-        this._mockLogger.Object.LogMethodExit();
+        _mockLogger.Object.LogMethodExit();
 
         // Assert
         Assert.NotNull(capturedState);
         Assert.Contains("LogMethodExit_ShouldCaptureMethodName", capturedState);
     }
+
 
     /// <summary>
     /// Verifies LogMethodExit includes result in log output.
@@ -156,24 +178,30 @@ public sealed class LoggerExtensionsTests
     {
         // Arrange
         string? capturedState = null;
-        this._mockLogger.Setup(x => x.Log(
+        _mockLogger.Setup(x => x.Log(
                 LogLevel.Debug,
                 It.IsAny<EventId>(),
                 It.IsAny<It.IsAnyType>(),
                 It.IsAny<Exception?>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()))
-            .Callback((LogLevel level, EventId eventId, object state, Exception? ex, Delegate formatter) =>
+            .Callback((
+                LogLevel level,
+                EventId eventId,
+                object state,
+                Exception? ex,
+                Delegate formatter) =>
             {
                 capturedState = state?.ToString();
             });
 
         // Act
-        this._mockLogger.Object.LogMethodExit("success result");
+        _mockLogger.Object.LogMethodExit("success result");
 
         // Assert
         Assert.NotNull(capturedState);
         Assert.Contains("success result", capturedState);
     }
+
 
     /// <summary>
     /// Verifies LogMethodEntry with null parameters handles gracefully.
@@ -183,11 +211,12 @@ public sealed class LoggerExtensionsTests
     {
         // Arrange & Act
         var exception = Record.Exception(() =>
-            this._mockLogger.Object.LogMethodEntry(null, null, null));
+            _mockLogger.Object.LogMethodEntry());
 
         // Assert
         Assert.Null(exception);
     }
+
 
     /// <summary>
     /// Verifies LogMethodExit with null result handles gracefully.
@@ -197,11 +226,12 @@ public sealed class LoggerExtensionsTests
     {
         // Arrange & Act
         var exception = Record.Exception(() =>
-            this._mockLogger.Object.LogMethodExit(null));
+            _mockLogger.Object.LogMethodExit());
 
         // Assert
         Assert.Null(exception);
     }
+
 
     /// <summary>
     /// Verifies LogMethodEntry respects log level filtering.
@@ -227,6 +257,7 @@ public sealed class LoggerExtensionsTests
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Never);
     }
+
 
     /// <summary>
     /// Verifies LogMethodExit respects log level filtering.

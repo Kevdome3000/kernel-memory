@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 using System.Net;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using KernelMemory.Core.Config.Enums;
 using KernelMemory.Core.Embeddings.Providers;
 using Microsoft.Extensions.Logging;
@@ -18,25 +19,27 @@ public sealed class OllamaEmbeddingGeneratorTests
     private readonly Mock<ILogger<OllamaEmbeddingGenerator>> _loggerMock;
     private readonly Mock<HttpMessageHandler> _httpHandlerMock;
 
+
     public OllamaEmbeddingGeneratorTests()
     {
-        this._loggerMock = new Mock<ILogger<OllamaEmbeddingGenerator>>();
-        this._httpHandlerMock = new Mock<HttpMessageHandler>();
+        _loggerMock = new Mock<ILogger<OllamaEmbeddingGenerator>>();
+        _httpHandlerMock = new Mock<HttpMessageHandler>();
     }
+
 
     [Fact]
     public void Properties_ShouldReflectConfiguration()
     {
         // Arrange
-        var httpClient = new HttpClient(this._httpHandlerMock.Object);
+        var httpClient = new HttpClient(_httpHandlerMock.Object);
         var generator = new OllamaEmbeddingGenerator(
             httpClient,
-            baseUrl: "http://localhost:11434",
-            model: "qwen3-embedding",
-            vectorDimensions: 1024,
-            isNormalized: true,
-            this._loggerMock.Object,
-            delayAsync: (_, _) => Task.CompletedTask);
+            "http://localhost:11434",
+            "qwen3-embedding",
+            1024,
+            true,
+            _loggerMock.Object,
+            (_, _) => Task.CompletedTask);
 
         // Assert
         Assert.Equal(EmbeddingsTypes.Ollama, generator.ProviderType);
@@ -45,6 +48,7 @@ public sealed class OllamaEmbeddingGeneratorTests
         Assert.True(generator.IsNormalized);
     }
 
+
     [Fact]
     public async Task GenerateAsync_Single_ShouldCallCorrectEndpoint()
     {
@@ -52,13 +56,12 @@ public sealed class OllamaEmbeddingGeneratorTests
         var response = new OllamaEmbeddingResponse { Embedding = new[] { 0.1f, 0.2f, 0.3f } };
         var responseJson = JsonSerializer.Serialize(response);
 
-        this._httpHandlerMock
+        _httpHandlerMock
             .Protected()
             .Setup<Task<HttpResponseMessage>>(
                 "SendAsync",
                 ItExpr.Is<HttpRequestMessage>(req =>
-                    req.Method == HttpMethod.Post &&
-                    req.RequestUri!.ToString() == "http://localhost:11434/api/embeddings"),
+                    req.Method == HttpMethod.Post && req.RequestUri!.ToString() == "http://localhost:11434/api/embeddings"),
                 ItExpr.IsAny<CancellationToken>())
             .ReturnsAsync(new HttpResponseMessage
             {
@@ -66,9 +69,15 @@ public sealed class OllamaEmbeddingGeneratorTests
                 Content = new StringContent(responseJson)
             });
 
-        var httpClient = new HttpClient(this._httpHandlerMock.Object);
+        var httpClient = new HttpClient(_httpHandlerMock.Object);
         var generator = new OllamaEmbeddingGenerator(
-            httpClient, "http://localhost:11434", "qwen3-embedding", 1024, true, this._loggerMock.Object, delayAsync: (_, _) => Task.CompletedTask);
+            httpClient,
+            "http://localhost:11434",
+            "qwen3-embedding",
+            1024,
+            true,
+            _loggerMock.Object,
+            (_, _) => Task.CompletedTask);
 
         // Act
         var result = await generator.GenerateAsync("test text", CancellationToken.None).ConfigureAwait(false);
@@ -77,6 +86,7 @@ public sealed class OllamaEmbeddingGeneratorTests
         Assert.Equal(new[] { 0.1f, 0.2f, 0.3f }, result.Vector);
     }
 
+
     [Fact]
     public async Task GenerateAsync_Single_ShouldSendCorrectRequestBody()
     {
@@ -84,7 +94,7 @@ public sealed class OllamaEmbeddingGeneratorTests
         var response = new OllamaEmbeddingResponse { Embedding = new[] { 0.1f } };
         string? capturedContent = null;
 
-        this._httpHandlerMock
+        _httpHandlerMock
             .Protected()
             .Setup<Task<HttpResponseMessage>>(
                 "SendAsync",
@@ -100,9 +110,15 @@ public sealed class OllamaEmbeddingGeneratorTests
                 };
             });
 
-        var httpClient = new HttpClient(this._httpHandlerMock.Object);
+        var httpClient = new HttpClient(_httpHandlerMock.Object);
         var generator = new OllamaEmbeddingGenerator(
-            httpClient, "http://localhost:11434", "qwen3-embedding", 1024, true, this._loggerMock.Object, delayAsync: (_, _) => Task.CompletedTask);
+            httpClient,
+            "http://localhost:11434",
+            "qwen3-embedding",
+            1024,
+            true,
+            _loggerMock.Object,
+            (_, _) => Task.CompletedTask);
 
         // Act
         await generator.GenerateAsync("hello world", CancellationToken.None).ConfigureAwait(false);
@@ -113,6 +129,7 @@ public sealed class OllamaEmbeddingGeneratorTests
         Assert.Equal("qwen3-embedding", requestBody!.Model);
         Assert.Equal("hello world", requestBody.Prompt);
     }
+
 
     [Fact]
     public async Task GenerateAsync_Batch_ShouldProcessAllTexts()
@@ -127,7 +144,7 @@ public sealed class OllamaEmbeddingGeneratorTests
         };
 
         var callIndex = 0;
-        this._httpHandlerMock
+        _httpHandlerMock
             .Protected()
             .Setup<Task<HttpResponseMessage>>(
                 "SendAsync",
@@ -143,9 +160,15 @@ public sealed class OllamaEmbeddingGeneratorTests
                 };
             });
 
-        var httpClient = new HttpClient(this._httpHandlerMock.Object);
+        var httpClient = new HttpClient(_httpHandlerMock.Object);
         var generator = new OllamaEmbeddingGenerator(
-            httpClient, "http://localhost:11434", "qwen3-embedding", 1024, true, this._loggerMock.Object, delayAsync: (_, _) => Task.CompletedTask);
+            httpClient,
+            "http://localhost:11434",
+            "qwen3-embedding",
+            1024,
+            true,
+            _loggerMock.Object,
+            (_, _) => Task.CompletedTask);
 
         // Act
         var results = await generator.GenerateAsync(texts, CancellationToken.None).ConfigureAwait(false);
@@ -157,11 +180,12 @@ public sealed class OllamaEmbeddingGeneratorTests
         Assert.Equal(new[] { 0.3f }, results[2].Vector);
     }
 
+
     [Fact]
     public async Task GenerateAsync_WithHttpError_ShouldThrowHttpRequestException()
     {
         // Arrange
-        this._httpHandlerMock
+        _httpHandlerMock
             .Protected()
             .Setup<Task<HttpResponseMessage>>(
                 "SendAsync",
@@ -173,20 +197,26 @@ public sealed class OllamaEmbeddingGeneratorTests
                 Content = new StringContent("Server error")
             });
 
-        var httpClient = new HttpClient(this._httpHandlerMock.Object);
+        var httpClient = new HttpClient(_httpHandlerMock.Object);
         var generator = new OllamaEmbeddingGenerator(
-            httpClient, "http://localhost:11434", "qwen3-embedding", 1024, true, this._loggerMock.Object, delayAsync: (_, _) => Task.CompletedTask);
+            httpClient,
+            "http://localhost:11434",
+            "qwen3-embedding",
+            1024,
+            true,
+            _loggerMock.Object,
+            (_, _) => Task.CompletedTask);
 
         // Act & Assert
-        await Assert.ThrowsAsync<HttpRequestException>(
-            () => generator.GenerateAsync("test", CancellationToken.None)).ConfigureAwait(false);
+        await Assert.ThrowsAsync<HttpRequestException>(() => generator.GenerateAsync("test", CancellationToken.None)).ConfigureAwait(false);
     }
+
 
     [Fact]
     public async Task GenerateAsync_WithMalformedResponse_ShouldThrowJsonException()
     {
         // Arrange
-        this._httpHandlerMock
+        _httpHandlerMock
             .Protected()
             .Setup<Task<HttpResponseMessage>>(
                 "SendAsync",
@@ -198,20 +228,26 @@ public sealed class OllamaEmbeddingGeneratorTests
                 Content = new StringContent("not json")
             });
 
-        var httpClient = new HttpClient(this._httpHandlerMock.Object);
+        var httpClient = new HttpClient(_httpHandlerMock.Object);
         var generator = new OllamaEmbeddingGenerator(
-            httpClient, "http://localhost:11434", "qwen3-embedding", 1024, true, this._loggerMock.Object, delayAsync: (_, _) => Task.CompletedTask);
+            httpClient,
+            "http://localhost:11434",
+            "qwen3-embedding",
+            1024,
+            true,
+            _loggerMock.Object,
+            (_, _) => Task.CompletedTask);
 
         // Act & Assert
-        await Assert.ThrowsAsync<JsonException>(
-            () => generator.GenerateAsync("test", CancellationToken.None)).ConfigureAwait(false);
+        await Assert.ThrowsAsync<JsonException>(() => generator.GenerateAsync("test", CancellationToken.None)).ConfigureAwait(false);
     }
+
 
     [Fact]
     public async Task GenerateAsync_WithCancellation_ShouldPropagate()
     {
         // Arrange
-        this._httpHandlerMock
+        _httpHandlerMock
             .Protected()
             .Setup<Task<HttpResponseMessage>>(
                 "SendAsync",
@@ -219,25 +255,37 @@ public sealed class OllamaEmbeddingGeneratorTests
                 ItExpr.IsAny<CancellationToken>())
             .ThrowsAsync(new OperationCanceledException());
 
-        var httpClient = new HttpClient(this._httpHandlerMock.Object);
+        var httpClient = new HttpClient(_httpHandlerMock.Object);
         var generator = new OllamaEmbeddingGenerator(
-            httpClient, "http://localhost:11434", "qwen3-embedding", 1024, true, this._loggerMock.Object, delayAsync: (_, _) => Task.CompletedTask);
+            httpClient,
+            "http://localhost:11434",
+            "qwen3-embedding",
+            1024,
+            true,
+            _loggerMock.Object,
+            (_, _) => Task.CompletedTask);
 
         using var cts = new CancellationTokenSource();
         cts.Cancel();
 
         // Act & Assert - TaskCanceledException inherits from OperationCanceledException
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(
-            () => generator.GenerateAsync("test", cts.Token)).ConfigureAwait(false);
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => generator.GenerateAsync("test", cts.Token)).ConfigureAwait(false);
     }
+
 
     [Fact]
     public void Constructor_WithNullHttpClient_ShouldThrow()
     {
         // Assert
         Assert.Throws<ArgumentNullException>(() =>
-            new OllamaEmbeddingGenerator(null!, "http://localhost", "model", 1024, true, this._loggerMock.Object));
+            new OllamaEmbeddingGenerator(null!,
+                "http://localhost",
+                "model",
+                1024,
+                true,
+                _loggerMock.Object));
     }
+
 
     [Fact]
     public void Constructor_WithNullBaseUrl_ShouldThrow()
@@ -245,8 +293,14 @@ public sealed class OllamaEmbeddingGeneratorTests
         // Assert
         var httpClient = new HttpClient();
         Assert.Throws<ArgumentNullException>(() =>
-            new OllamaEmbeddingGenerator(httpClient, null!, "model", 1024, true, this._loggerMock.Object));
+            new OllamaEmbeddingGenerator(httpClient,
+                null!,
+                "model",
+                1024,
+                true,
+                _loggerMock.Object));
     }
+
 
     [Fact]
     public void Constructor_WithNullModel_ShouldThrow()
@@ -254,8 +308,14 @@ public sealed class OllamaEmbeddingGeneratorTests
         // Assert
         var httpClient = new HttpClient();
         Assert.Throws<ArgumentNullException>(() =>
-            new OllamaEmbeddingGenerator(httpClient, "http://localhost", null!, 1024, true, this._loggerMock.Object));
+            new OllamaEmbeddingGenerator(httpClient,
+                "http://localhost",
+                null!,
+                1024,
+                true,
+                _loggerMock.Object));
     }
+
 
     [Fact]
     public async Task GenerateAsync_Single_ShouldReturnNullTokenCount()
@@ -264,7 +324,7 @@ public sealed class OllamaEmbeddingGeneratorTests
         var response = new OllamaEmbeddingResponse { Embedding = new[] { 0.1f, 0.2f, 0.3f } };
         var responseJson = JsonSerializer.Serialize(response);
 
-        this._httpHandlerMock
+        _httpHandlerMock
             .Protected()
             .Setup<Task<HttpResponseMessage>>(
                 "SendAsync",
@@ -276,9 +336,15 @@ public sealed class OllamaEmbeddingGeneratorTests
                 Content = new StringContent(responseJson)
             });
 
-        var httpClient = new HttpClient(this._httpHandlerMock.Object);
+        var httpClient = new HttpClient(_httpHandlerMock.Object);
         var generator = new OllamaEmbeddingGenerator(
-            httpClient, "http://localhost:11434", "qwen3-embedding", 1024, true, this._loggerMock.Object, delayAsync: (_, _) => Task.CompletedTask);
+            httpClient,
+            "http://localhost:11434",
+            "qwen3-embedding",
+            1024,
+            true,
+            _loggerMock.Object,
+            (_, _) => Task.CompletedTask);
 
         // Act
         var result = await generator.GenerateAsync("test text", CancellationToken.None).ConfigureAwait(false);
@@ -287,19 +353,21 @@ public sealed class OllamaEmbeddingGeneratorTests
         Assert.Null(result.TokenCount);
     }
 
+
     // Internal request/response classes for testing
     private sealed class OllamaEmbeddingRequest
     {
-        [System.Text.Json.Serialization.JsonPropertyName("model")]
+        [JsonPropertyName("model")]
         public string Model { get; set; } = string.Empty;
 
-        [System.Text.Json.Serialization.JsonPropertyName("prompt")]
+        [JsonPropertyName("prompt")]
         public string Prompt { get; set; } = string.Empty;
     }
 
+
     private sealed class OllamaEmbeddingResponse
     {
-        [System.Text.Json.Serialization.JsonPropertyName("embedding")]
+        [JsonPropertyName("embedding")]
         public float[] Embedding { get; set; } = Array.Empty<float>();
     }
 }

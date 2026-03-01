@@ -27,6 +27,7 @@ public sealed class OutputFormatterFactoryTests
         Assert.Equal("normal", formatter.Verbosity);
     }
 
+
     [Fact]
     public void Create_WithYamlFormat_ReturnsYamlFormatter()
     {
@@ -44,6 +45,7 @@ public sealed class OutputFormatterFactoryTests
         Assert.IsType<YamlOutputFormatter>(formatter);
         Assert.Equal("quiet", formatter.Verbosity);
     }
+
 
     [Fact]
     public void Create_WithHumanFormat_ReturnsHumanFormatter()
@@ -63,6 +65,7 @@ public sealed class OutputFormatterFactoryTests
         Assert.Equal("verbose", formatter.Verbosity);
     }
 
+
     [Fact]
     public void Create_WithUpperCaseFormat_HandlesCorrectly()
     {
@@ -79,6 +82,7 @@ public sealed class OutputFormatterFactoryTests
         // Assert
         Assert.IsType<JsonOutputFormatter>(formatter);
     }
+
 
     [Fact]
     public void Create_WithMixedCaseFormat_HandlesCorrectly()
@@ -97,6 +101,7 @@ public sealed class OutputFormatterFactoryTests
         Assert.IsType<YamlOutputFormatter>(formatter);
     }
 
+
     [Fact]
     public void Create_WithDefaultFormat_ReturnsHumanFormatter()
     {
@@ -113,6 +118,7 @@ public sealed class OutputFormatterFactoryTests
         // Assert
         Assert.IsType<HumanOutputFormatter>(formatter);
     }
+
 
     [Fact]
     public void Create_WithNoColor_PassesToHumanFormatter()
@@ -131,6 +137,7 @@ public sealed class OutputFormatterFactoryTests
         // Assert
         Assert.IsType<HumanOutputFormatter>(formatter);
     }
+
 
     [Fact]
     public void Create_WithColors_PassesToHumanFormatter()

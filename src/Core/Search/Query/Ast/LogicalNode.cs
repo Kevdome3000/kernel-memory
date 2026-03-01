@@ -1,4 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved.
+using System.Diagnostics.CodeAnalysis;
+
 namespace KernelMemory.Core.Search.Query.Ast;
 
 /// <summary>
@@ -17,8 +19,9 @@ public sealed class LogicalNode : QueryNode
     /// For NOT: single child (unary operator).
     /// For AND/OR/NOR: multiple children.
     /// </summary>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
+    [SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
     public required QueryNode[] Children { get; init; }
+
 
     /// <summary>
     /// Accept a visitor for AST traversal.

@@ -24,58 +24,61 @@ public sealed class FtsIntegrationTests : IDisposable
     private readonly ContentStorageService _service;
     private int _cuidCounter;
 
+
     public FtsIntegrationTests()
     {
         // Content storage - in-memory SQLite
-        this._contentConnection = new SqliteConnection("DataSource=:memory:");
-        this._contentConnection.Open();
+        _contentConnection = new SqliteConnection("DataSource=:memory:");
+        _contentConnection.Open();
 
         var options = new DbContextOptionsBuilder<ContentStorageDbContext>()
-            .UseSqlite(this._contentConnection)
+            .UseSqlite(_contentConnection)
             .Options;
 
-        this._context = new ContentStorageDbContext(options);
-        this._context.Database.EnsureCreated();
+        _context = new ContentStorageDbContext(options);
+        _context.Database.EnsureCreated();
 
         // FTS index - temp file (FTS5 needs persistent storage for some operations)
-        this._ftsDbPath = Path.Combine(Path.GetTempPath(), $"fts_integration_{Guid.NewGuid()}.db");
-        this._mockFtsLogger = new Mock<ILogger<SqliteFtsIndex>>();
-        this._ftsIndex = new SqliteFtsIndex(this._ftsDbPath, enableStemming: true, this._mockFtsLogger.Object);
+        _ftsDbPath = Path.Combine(Path.GetTempPath(), $"fts_integration_{Guid.NewGuid()}.db");
+        _mockFtsLogger = new Mock<ILogger<SqliteFtsIndex>>();
+        _ftsIndex = new SqliteFtsIndex(_ftsDbPath, true, _mockFtsLogger.Object);
 
         // Mock CUID generator with predictable IDs
-        this._mockCuidGenerator = new Mock<ICuidGenerator>();
-        this._cuidCounter = 0;
-        this._mockCuidGenerator
+        _mockCuidGenerator = new Mock<ICuidGenerator>();
+        _cuidCounter = 0;
+        _mockCuidGenerator
             .Setup(x => x.Generate())
-            .Returns(() => $"fts_test_id_{++this._cuidCounter:D5}");
+            .Returns(() => $"fts_test_id_{++_cuidCounter:D5}");
 
-        this._mockStorageLogger = new Mock<ILogger<ContentStorageService>>();
+        _mockStorageLogger = new Mock<ILogger<ContentStorageService>>();
 
         // Create service with FTS index integrated
         var searchIndexById = new Dictionary<string, ISearchIndex>
         {
-            ["sqlite-fts"] = this._ftsIndex
+            ["sqlite-fts"] = _ftsIndex
         };
-        this._service = new ContentStorageService(
-            this._context,
-            this._mockCuidGenerator.Object,
-            this._mockStorageLogger.Object,
-            (IReadOnlyDictionary<string, Core.Search.ISearchIndex>)searchIndexById);
+        _service = new ContentStorageService(
+            _context,
+            _mockCuidGenerator.Object,
+            _mockStorageLogger.Object,
+            searchIndexById);
     }
+
 
     public void Dispose()
     {
-        this._ftsIndex.Dispose();
-        this._context.Dispose();
-        this._contentConnection.Dispose();
+        _ftsIndex.Dispose();
+        _context.Dispose();
+        _contentConnection.Dispose();
 
-        if (File.Exists(this._ftsDbPath))
+        if (File.Exists(_ftsDbPath))
         {
-            File.Delete(this._ftsDbPath);
+            File.Delete(_ftsDbPath);
         }
 
         GC.SuppressFinalize(this);
     }
+
 
     [Fact]
     public async Task UpsertAsync_WithFtsIndex_IndexesContentAutomatically()
@@ -89,7 +92,7 @@ public sealed class FtsIntegrationTests : IDisposable
         };
 
         // Act
-        var result = await this._service.UpsertAsync(request).ConfigureAwait(false);
+        var result = await _service.UpsertAsync(request).ConfigureAwait(false);
         await Task.Delay(100).ConfigureAwait(false); // Allow processing
 
         // Assert - WriteResult should indicate completion
@@ -97,10 +100,11 @@ public sealed class FtsIntegrationTests : IDisposable
         Assert.Equal("fts_test_id_00001", result.Id);
 
         // Verify FTS index contains the content
-        var searchResults = await this._ftsIndex.SearchAsync("machine learning").ConfigureAwait(false);
+        var searchResults = await _ftsIndex.SearchAsync("machine learning").ConfigureAwait(false);
         Assert.Single(searchResults);
         Assert.Equal(result.Id, searchResults[0].ContentId);
     }
+
 
     [Fact]
     public async Task UpsertAsync_WithFtsIndex_IncludesFtsStep()
@@ -113,10 +117,10 @@ public sealed class FtsIntegrationTests : IDisposable
         };
 
         // Act
-        var result = await this._service.UpsertAsync(request).ConfigureAwait(false);
+        var result = await _service.UpsertAsync(request).ConfigureAwait(false);
 
         // Assert - Check that operation includes index step (index:0 for first search index)
-        var operation = await this._context.Operations
+        var operation = await _context.Operations
             .FirstOrDefaultAsync(o => o.ContentId == result.Id)
             .ConfigureAwait(false);
 
@@ -124,6 +128,7 @@ public sealed class FtsIntegrationTests : IDisposable
         Assert.Contains("upsert", operation.PlannedSteps);
         Assert.Contains("index:sqlite-fts", operation.PlannedSteps); // SQLite FTS index
     }
+
 
     [Fact]
     public async Task DeleteAsync_WithFtsIndex_RemovesFromFtsIndex()
@@ -135,15 +140,15 @@ public sealed class FtsIntegrationTests : IDisposable
             Content = "Content to be deleted from FTS index",
             MimeType = "text/plain"
         };
-        await this._service.UpsertAsync(request).ConfigureAwait(false);
+        await _service.UpsertAsync(request).ConfigureAwait(false);
         await Task.Delay(100).ConfigureAwait(false);
 
         // Verify it's in FTS
-        var beforeDelete = await this._ftsIndex.SearchAsync("deleted").ConfigureAwait(false);
+        var beforeDelete = await _ftsIndex.SearchAsync("deleted").ConfigureAwait(false);
         Assert.Single(beforeDelete);
 
         // Act - Delete the content
-        var result = await this._service.DeleteAsync("delete_fts_test").ConfigureAwait(false);
+        var result = await _service.DeleteAsync("delete_fts_test").ConfigureAwait(false);
         await Task.Delay(100).ConfigureAwait(false);
 
         // Assert
@@ -151,9 +156,10 @@ public sealed class FtsIntegrationTests : IDisposable
         Assert.Equal("delete_fts_test", result.Id);
 
         // Verify removed from FTS
-        var afterDelete = await this._ftsIndex.SearchAsync("deleted").ConfigureAwait(false);
+        var afterDelete = await _ftsIndex.SearchAsync("deleted").ConfigureAwait(false);
         Assert.Empty(afterDelete);
     }
+
 
     [Fact]
     public async Task DeleteAsync_WithFtsIndex_IncludesFtsDeleteStep()
@@ -162,10 +168,10 @@ public sealed class FtsIntegrationTests : IDisposable
         const string contentId = "fts_delete_step_test";
 
         // Act
-        var result = await this._service.DeleteAsync(contentId).ConfigureAwait(false);
+        var result = await _service.DeleteAsync(contentId).ConfigureAwait(false);
 
         // Assert - Check that operation includes index delete step (index:0:delete for first search index)
-        var operation = await this._context.Operations
+        var operation = await _context.Operations
             .FirstOrDefaultAsync(o => o.ContentId == contentId)
             .ConfigureAwait(false);
 
@@ -173,6 +179,7 @@ public sealed class FtsIntegrationTests : IDisposable
         Assert.Contains("delete", operation.PlannedSteps);
         Assert.Contains("index:sqlite-fts:delete", operation.PlannedSteps); // SQLite FTS index
     }
+
 
     [Fact]
     public async Task UpsertAsync_MultipleDocuments_AllSearchable()
@@ -186,9 +193,10 @@ public sealed class FtsIntegrationTests : IDisposable
         };
 
         var ids = new List<string>();
+
         foreach (var request in requests)
         {
-            var result = await this._service.UpsertAsync(request).ConfigureAwait(false);
+            var result = await _service.UpsertAsync(request).ConfigureAwait(false);
             ids.Add(result.Id);
             await Task.Delay(50).ConfigureAwait(false);
         }
@@ -196,11 +204,12 @@ public sealed class FtsIntegrationTests : IDisposable
         await Task.Delay(200).ConfigureAwait(false); // Allow all to process
 
         // Assert - Search for "programming" should find 2 documents
-        var searchResults = await this._ftsIndex.SearchAsync("programming").ConfigureAwait(false);
+        var searchResults = await _ftsIndex.SearchAsync("programming").ConfigureAwait(false);
         Assert.Equal(2, searchResults.Count);
         Assert.Contains(searchResults, r => r.ContentId == ids[0]); // Python
         Assert.Contains(searchResults, r => r.ContentId == ids[2]); // C#
     }
+
 
     [Fact]
     public async Task UpsertAsync_UpdateContent_FtsIndexUpdated()
@@ -212,11 +221,11 @@ public sealed class FtsIntegrationTests : IDisposable
             Content = "Original content about cats",
             MimeType = "text/plain"
         };
-        await this._service.UpsertAsync(initialRequest).ConfigureAwait(false);
+        await _service.UpsertAsync(initialRequest).ConfigureAwait(false);
         await Task.Delay(100).ConfigureAwait(false);
 
         // Verify initial indexing
-        var catResults = await this._ftsIndex.SearchAsync("cats").ConfigureAwait(false);
+        var catResults = await _ftsIndex.SearchAsync("cats").ConfigureAwait(false);
         Assert.Single(catResults);
 
         // Act - Update content
@@ -226,18 +235,19 @@ public sealed class FtsIntegrationTests : IDisposable
             Content = "Updated content about dogs",
             MimeType = "text/plain"
         };
-        await this._service.UpsertAsync(updateRequest).ConfigureAwait(false);
+        await _service.UpsertAsync(updateRequest).ConfigureAwait(false);
         await Task.Delay(100).ConfigureAwait(false);
 
         // Assert - Old content not searchable
-        var catResultsAfter = await this._ftsIndex.SearchAsync("cats").ConfigureAwait(false);
+        var catResultsAfter = await _ftsIndex.SearchAsync("cats").ConfigureAwait(false);
         Assert.Empty(catResultsAfter);
 
         // New content is searchable
-        var dogResults = await this._ftsIndex.SearchAsync("dogs").ConfigureAwait(false);
+        var dogResults = await _ftsIndex.SearchAsync("dogs").ConfigureAwait(false);
         Assert.Single(dogResults);
         Assert.Equal("update_fts_test", dogResults[0].ContentId);
     }
+
 
     [Fact]
     public async Task WriteResult_ReturnsQueuedOnlyWhenFtsFails()
@@ -253,7 +263,7 @@ public sealed class FtsIntegrationTests : IDisposable
         };
 
         // Act
-        var result = await this._service.UpsertAsync(request).ConfigureAwait(false);
+        var result = await _service.UpsertAsync(request).ConfigureAwait(false);
 
         // Assert - Should complete successfully
         Assert.True(result.Completed);

@@ -13,10 +13,11 @@ public class JsonOutputFormatter : IOutputFormatter
 
     public string Verbosity { get; }
 
+
     public JsonOutputFormatter(string verbosity)
     {
-        this.Verbosity = verbosity;
-        this._jsonOptions = new JsonSerializerOptions
+        Verbosity = verbosity;
+        _jsonOptions = new JsonSerializerOptions
         {
             WriteIndented = true,
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -24,44 +25,51 @@ public class JsonOutputFormatter : IOutputFormatter
         };
     }
 
+
     public void Format(object data)
     {
-        if (this.Verbosity.Equals("silent", StringComparison.OrdinalIgnoreCase))
+        if (Verbosity.Equals("silent", StringComparison.OrdinalIgnoreCase))
         {
             return;
         }
 
-        var json = JsonSerializer.Serialize(data, this._jsonOptions);
+        var json = JsonSerializer.Serialize(data, _jsonOptions);
         Console.WriteLine(json);
     }
+
 
     public void FormatError(string errorMessage)
     {
         var error = new { error = errorMessage };
-        var json = JsonSerializer.Serialize(error, this._jsonOptions);
+        var json = JsonSerializer.Serialize(error, _jsonOptions);
         Console.Error.WriteLine(json);
     }
 
-    public void FormatList<T>(IEnumerable<T> items, long totalCount, int skip, int take)
+
+    public void FormatList<T>(
+        IEnumerable<T> items,
+        long totalCount,
+        int skip,
+        int take)
     {
-        if (this.Verbosity.Equals("silent", StringComparison.OrdinalIgnoreCase))
+        if (Verbosity.Equals("silent", StringComparison.OrdinalIgnoreCase))
         {
             return;
         }
 
         var result = new
         {
-            items = items,
+            items,
             pagination = new
             {
-                totalCount = totalCount,
-                skip = skip,
-                take = take,
+                totalCount,
+                skip,
+                take,
                 returned = items.Count()
             }
         };
 
-        var json = JsonSerializer.Serialize(result, this._jsonOptions);
+        var json = JsonSerializer.Serialize(result, _jsonOptions);
         Console.WriteLine(json);
     }
 }

@@ -44,45 +44,46 @@ public sealed class AzureOpenAIEmbeddingsConfig : EmbeddingsConfig
     [JsonPropertyName("useManagedIdentity")]
     public bool UseManagedIdentity { get; set; }
 
+
     /// <inheritdoc />
     public override void Validate(string path)
     {
-        if (string.IsNullOrWhiteSpace(this.Model))
+        if (string.IsNullOrWhiteSpace(Model))
         {
             throw new ConfigException($"{path}.Model", "Model name is required");
         }
 
-        if (string.IsNullOrWhiteSpace(this.Endpoint))
+        if (string.IsNullOrWhiteSpace(Endpoint))
         {
             throw new ConfigException($"{path}.Endpoint", "Azure OpenAI endpoint is required");
         }
 
-        if (!Uri.TryCreate(this.Endpoint, UriKind.Absolute, out _))
+        if (!Uri.TryCreate(Endpoint, UriKind.Absolute, out _))
         {
             throw new ConfigException($"{path}.Endpoint",
-                $"Invalid Azure OpenAI endpoint: {this.Endpoint}");
+                $"Invalid Azure OpenAI endpoint: {Endpoint}");
         }
 
-        if (string.IsNullOrWhiteSpace(this.Deployment))
+        if (string.IsNullOrWhiteSpace(Deployment))
         {
             throw new ConfigException($"{path}.Deployment", "Deployment name is required");
         }
 
-        var hasApiKey = !string.IsNullOrWhiteSpace(this.ApiKey);
+        var hasApiKey = !string.IsNullOrWhiteSpace(ApiKey);
 
-        if (!hasApiKey && !this.UseManagedIdentity)
+        if (!hasApiKey && !UseManagedIdentity)
         {
             throw new ConfigException(path,
                 "Azure OpenAI requires either ApiKey or UseManagedIdentity");
         }
 
-        if (hasApiKey && this.UseManagedIdentity)
+        if (hasApiKey && UseManagedIdentity)
         {
             throw new ConfigException(path,
                 "Azure OpenAI: specify either ApiKey or UseManagedIdentity, not both");
         }
 
-        if (this.BatchSize < 1)
+        if (BatchSize < 1)
         {
             throw new ConfigException($"{path}.BatchSize", "BatchSize must be >= 1");
         }

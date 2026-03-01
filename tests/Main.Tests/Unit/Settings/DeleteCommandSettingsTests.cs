@@ -24,6 +24,7 @@ public sealed class DeleteCommandSettingsTests
         Assert.True(result.Successful);
     }
 
+
     [Fact]
     public void Validate_WithEmptyId_ReturnsError()
     {
@@ -41,6 +42,7 @@ public sealed class DeleteCommandSettingsTests
         Assert.Contains("ID cannot be empty", result.Message ?? string.Empty);
     }
 
+
     [Fact]
     public void Validate_WithWhitespaceId_ReturnsError()
     {
@@ -56,6 +58,7 @@ public sealed class DeleteCommandSettingsTests
         // Assert
         Assert.False(result.Successful);
     }
+
 
     [Fact]
     public void Validate_WithInvalidBaseOptions_ReturnsError()

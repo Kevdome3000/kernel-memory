@@ -25,12 +25,14 @@ public sealed class EmbeddingConstantsTests
         Assert.Equal(expectedDimensions, dimensions);
     }
 
+
     [Fact]
     public void KnownModelDimensions_ShouldNotBeEmpty()
     {
         // Assert
         Assert.NotEmpty(Constants.EmbeddingDefaults.KnownModelDimensions);
     }
+
 
     [Fact]
     public void KnownModelDimensions_AllValuesShouldBePositive()
@@ -41,6 +43,7 @@ public sealed class EmbeddingConstantsTests
             Assert.True(kvp.Value > 0, $"Model '{kvp.Key}' has invalid dimensions: {kvp.Value}");
         }
     }
+
 
     [Fact]
     public void TryGetDimensions_WithKnownModel_ShouldReturnTrue()
@@ -53,6 +56,7 @@ public sealed class EmbeddingConstantsTests
         Assert.Equal(1536, dimensions);
     }
 
+
     [Fact]
     public void TryGetDimensions_WithUnknownModel_ShouldReturnFalse()
     {
@@ -64,12 +68,14 @@ public sealed class EmbeddingConstantsTests
         Assert.Equal(0, dimensions);
     }
 
+
     [Fact]
     public void DefaultBatchSize_ShouldBe10()
     {
         // Assert
         Assert.Equal(10, Constants.EmbeddingDefaults.DefaultBatchSize);
     }
+
 
     [Fact]
     public void DefaultOllamaModel_ShouldBeQwen3Embedding()
@@ -78,6 +84,7 @@ public sealed class EmbeddingConstantsTests
         Assert.Equal("qwen3-embedding:0.6b", Constants.EmbeddingDefaults.DefaultOllamaModel);
     }
 
+
     [Fact]
     public void DefaultOllamaBaseUrl_ShouldBeLocalhost()
     {
@@ -85,12 +92,14 @@ public sealed class EmbeddingConstantsTests
         Assert.Equal("http://localhost:11434", Constants.EmbeddingDefaults.DefaultOllamaBaseUrl);
     }
 
+
     [Fact]
     public void DefaultHuggingFaceModel_ShouldBeAllMiniLM()
     {
         // Assert
         Assert.Equal("sentence-transformers/all-MiniLM-L6-v2", Constants.EmbeddingDefaults.DefaultHuggingFaceModel);
     }
+
 
     [Fact]
     public void DefaultHuggingFaceBaseUrl_ShouldBeInferenceApi()

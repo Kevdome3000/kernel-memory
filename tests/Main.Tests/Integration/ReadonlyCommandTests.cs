@@ -3,6 +3,7 @@ using System.Text.Json;
 using KernelMemory.Core.Config;
 using KernelMemory.Core.Config.ContentIndex;
 using KernelMemory.Main.CLI.Commands;
+using KernelMemory.Main.CLI.Infrastructure;
 using Microsoft.Extensions.Logging.Abstractions;
 using Spectre.Console.Cli;
 
@@ -19,46 +20,56 @@ public sealed class ReadonlyCommandTests : IDisposable
     private readonly string _configPath;
     private readonly string _dbPath;
 
+
     public ReadonlyCommandTests()
     {
         // Create temp directory for test config (but NOT for database)
-        this._tempDir = Path.Combine(Path.GetTempPath(), $"km-readonly-test-{Guid.NewGuid()}");
-        Directory.CreateDirectory(this._tempDir);
+        _tempDir = Path.Combine(Path.GetTempPath(), $"km-readonly-test-{Guid.NewGuid()}");
+        Directory.CreateDirectory(_tempDir);
 
         // Database path is in a SUBDIRECTORY that doesn't exist yet
         // This allows us to test if commands create the directory
-        this._dbPath = Path.Combine(this._tempDir, "nodes", "test-node", "test.db");
-        this._configPath = Path.Combine(this._tempDir, "config.json");
+        _dbPath = Path.Combine(_tempDir,
+            "nodes",
+            "test-node",
+            "test.db");
+        _configPath = Path.Combine(_tempDir, "config.json");
 
         // Create test config pointing to non-existent database
         var config = new AppConfig
         {
             Nodes = new Dictionary<string, NodeConfig>
             {
-                ["test-node"] = new NodeConfig
+                ["test-node"] = new()
                 {
                     Id = "test-node",
-                    ContentIndex = new SqliteContentIndexConfig { Path = this._dbPath }
+                    ContentIndex = new SqliteContentIndexConfig { Path = _dbPath }
                 }
             }
         };
 
         var json = JsonSerializer.Serialize(config, s_jsonOptions);
-        File.WriteAllText(this._configPath, json);
+        File.WriteAllText(_configPath, json);
     }
+
 
     public void Dispose()
     {
-        if (Directory.Exists(this._tempDir))
+        if (Directory.Exists(_tempDir))
         {
-            Directory.Delete(this._tempDir, recursive: true);
+            Directory.Delete(_tempDir, true);
         }
     }
 
+
     private static CommandContext CreateTestContext(string commandName)
     {
-        return new CommandContext([], new EmptyRemainingArguments(), commandName, null);
+        return new CommandContext([],
+            new EmptyRemainingArguments(),
+            commandName,
+            null);
     }
+
 
     [Fact]
     public async Task BugA_ListCommand_NonExistentDatabase_ShouldNotCreateDirectory()
@@ -68,17 +79,17 @@ public sealed class ReadonlyCommandTests : IDisposable
         // Actual: Creates the database directory and file
 
         // Arrange
-        var config = ConfigParser.LoadFromFile(this._configPath);
-        var dbDir = Path.GetDirectoryName(this._dbPath);
+        var config = ConfigParser.LoadFromFile(_configPath);
+        var dbDir = Path.GetDirectoryName(_dbPath);
         Assert.NotNull(dbDir);
 
         // Verify database directory does not exist yet
         Assert.False(Directory.Exists(dbDir), "Database directory should not exist before test");
-        Assert.False(File.Exists(this._dbPath), "Database file should not exist before test");
+        Assert.False(File.Exists(_dbPath), "Database file should not exist before test");
 
         var settings = new ListCommandSettings
         {
-            ConfigPath = this._configPath,
+            ConfigPath = _configPath,
             Format = "json"
         };
 
@@ -93,9 +104,10 @@ public sealed class ReadonlyCommandTests : IDisposable
         Assert.Equal(Constants.App.ExitCodeSuccess, exitCode); // First-run is not an error
         Assert.False(Directory.Exists(dbDir),
             $"BUG: ListCommand (readonly) should NOT create directory: {dbDir}");
-        Assert.False(File.Exists(this._dbPath),
-            $"BUG: ListCommand (readonly) should NOT create database: {this._dbPath}");
+        Assert.False(File.Exists(_dbPath),
+            $"BUG: ListCommand (readonly) should NOT create database: {_dbPath}");
     }
+
 
     [Fact]
     public async Task BugA_GetCommand_NonExistentDatabase_ShouldNotCreateDirectory()
@@ -103,17 +115,17 @@ public sealed class ReadonlyCommandTests : IDisposable
         // BUG A: Readonly operations like "km get" should NEVER create files/directories
 
         // Arrange
-        var config = ConfigParser.LoadFromFile(this._configPath);
-        var dbDir = Path.GetDirectoryName(this._dbPath);
+        var config = ConfigParser.LoadFromFile(_configPath);
+        var dbDir = Path.GetDirectoryName(_dbPath);
         Assert.NotNull(dbDir);
 
         // Verify database directory does not exist yet
         Assert.False(Directory.Exists(dbDir), "Database directory should not exist before test");
-        Assert.False(File.Exists(this._dbPath), "Database file should not exist before test");
+        Assert.False(File.Exists(_dbPath), "Database file should not exist before test");
 
         var settings = new GetCommandSettings
         {
-            ConfigPath = this._configPath,
+            ConfigPath = _configPath,
             Format = "json",
             Id = "test-id"
         };
@@ -129,9 +141,10 @@ public sealed class ReadonlyCommandTests : IDisposable
         Assert.Equal(Constants.App.ExitCodeSuccess, exitCode); // First-run is not an error
         Assert.False(Directory.Exists(dbDir),
             $"BUG: GetCommand (readonly) should NOT create directory: {dbDir}");
-        Assert.False(File.Exists(this._dbPath),
-            $"BUG: GetCommand (readonly) should NOT create database: {this._dbPath}");
+        Assert.False(File.Exists(_dbPath),
+            $"BUG: GetCommand (readonly) should NOT create database: {_dbPath}");
     }
+
 
     [Fact]
     public async Task BugA_NodesCommand_NonExistentDatabase_ShouldNotCreateDirectory()
@@ -140,8 +153,8 @@ public sealed class ReadonlyCommandTests : IDisposable
         // NodesCommand doesn't even need the database - it just reads config
 
         // Arrange
-        var config = ConfigParser.LoadFromFile(this._configPath);
-        var dbDir = Path.GetDirectoryName(this._dbPath);
+        var config = ConfigParser.LoadFromFile(_configPath);
+        var dbDir = Path.GetDirectoryName(_dbPath);
         Assert.NotNull(dbDir);
 
         // Verify database directory does not exist yet
@@ -149,7 +162,7 @@ public sealed class ReadonlyCommandTests : IDisposable
 
         var settings = new NodesCommandSettings
         {
-            ConfigPath = this._configPath,
+            ConfigPath = _configPath,
             Format = "json"
         };
 
@@ -164,9 +177,10 @@ public sealed class ReadonlyCommandTests : IDisposable
         Assert.Equal(Constants.App.ExitCodeSuccess, exitCode);
         Assert.False(Directory.Exists(dbDir),
             $"BUG: NodesCommand (readonly) should NOT create directory: {dbDir}");
-        Assert.False(File.Exists(this._dbPath),
-            $"BUG: NodesCommand (readonly) should NOT create database: {this._dbPath}");
+        Assert.False(File.Exists(_dbPath),
+            $"BUG: NodesCommand (readonly) should NOT create database: {_dbPath}");
     }
+
 
     [Fact]
     public async Task BugA_ConfigCommand_NonExistentDatabase_ShouldNotCreateDirectory()
@@ -175,8 +189,8 @@ public sealed class ReadonlyCommandTests : IDisposable
         // ConfigCommand doesn't even need the database - it just reads config
 
         // Arrange
-        var config = ConfigParser.LoadFromFile(this._configPath);
-        var dbDir = Path.GetDirectoryName(this._dbPath);
+        var config = ConfigParser.LoadFromFile(_configPath);
+        var dbDir = Path.GetDirectoryName(_dbPath);
         Assert.NotNull(dbDir);
 
         // Verify database directory does not exist yet
@@ -184,11 +198,11 @@ public sealed class ReadonlyCommandTests : IDisposable
 
         var settings = new ConfigCommandSettings
         {
-            ConfigPath = this._configPath,
+            ConfigPath = _configPath,
             Format = "json"
         };
 
-        var configPathService = new KernelMemory.Main.CLI.Infrastructure.ConfigPathService(this._configPath);
+        var configPathService = new ConfigPathService(_configPath);
         var command = new ConfigCommand(config, NullLoggerFactory.Instance, configPathService);
         var context = CreateTestContext("config");
 
@@ -200,9 +214,10 @@ public sealed class ReadonlyCommandTests : IDisposable
         Assert.Equal(Constants.App.ExitCodeSuccess, exitCode);
         Assert.False(Directory.Exists(dbDir),
             $"BUG: ConfigCommand (readonly) should NOT create directory: {dbDir}");
-        Assert.False(File.Exists(this._dbPath),
-            $"BUG: ConfigCommand (readonly) should NOT create database: {this._dbPath}");
+        Assert.False(File.Exists(_dbPath),
+            $"BUG: ConfigCommand (readonly) should NOT create database: {_dbPath}");
     }
+
 
     /// <summary>
     /// Simple test implementation of IRemainingArguments.

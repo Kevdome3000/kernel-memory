@@ -13,6 +13,7 @@ public sealed class QueryLinqBuilderTests
 {
     private readonly QueryLinqBuilder _builder = new(typeof(ContentRecord));
 
+
     [Fact]
     public void Build_SimpleFieldEquality_GeneratesCorrectLinq()
     {
@@ -23,7 +24,7 @@ public sealed class QueryLinqBuilderTests
             Value = new LiteralNode { Value = "kubernetes" }
         };
 
-        var expr = this._builder.Build<ContentRecord>(query);
+        var expr = _builder.Build<ContentRecord>(query);
 
         // Test with sample data
         var records = new[]
@@ -38,6 +39,7 @@ public sealed class QueryLinqBuilderTests
         Assert.Equal("1", results[0].Id);
     }
 
+
     [Fact]
     public void Build_CaseInsensitiveMatch_WorksCorrectly()
     {
@@ -48,7 +50,7 @@ public sealed class QueryLinqBuilderTests
             Value = new LiteralNode { Value = "KUBERNETES" }
         };
 
-        var expr = this._builder.Build<ContentRecord>(query);
+        var expr = _builder.Build<ContentRecord>(query);
 
         var records = new[]
         {
@@ -62,6 +64,7 @@ public sealed class QueryLinqBuilderTests
         Assert.Equal(2, results.Length);
     }
 
+
     [Fact]
     public void Build_NotEqualOperator_GeneratesCorrectLinq()
     {
@@ -72,7 +75,7 @@ public sealed class QueryLinqBuilderTests
             Value = new LiteralNode { Value = "image/png" }
         };
 
-        var expr = this._builder.Build<ContentRecord>(query);
+        var expr = _builder.Build<ContentRecord>(query);
 
         var records = new[]
         {
@@ -87,6 +90,7 @@ public sealed class QueryLinqBuilderTests
         Assert.DoesNotContain(results, r => r.Id == "2");
     }
 
+
     [Fact]
     public void Build_ContainsOperator_GeneratesCorrectLinq()
     {
@@ -97,7 +101,7 @@ public sealed class QueryLinqBuilderTests
             Value = new LiteralNode { Value = "machine" }
         };
 
-        var expr = this._builder.Build<ContentRecord>(query);
+        var expr = _builder.Build<ContentRecord>(query);
 
         var records = new[]
         {
@@ -113,6 +117,7 @@ public sealed class QueryLinqBuilderTests
         Assert.Contains(results, r => r.Id == "3");
     }
 
+
     [Fact]
     public void Build_MetadataFieldPositiveMatch_NoSqlSemantics()
     {
@@ -123,7 +128,7 @@ public sealed class QueryLinqBuilderTests
             Value = new LiteralNode { Value = "John" }
         };
 
-        var expr = this._builder.Build<ContentRecord>(query);
+        var expr = _builder.Build<ContentRecord>(query);
 
         var records = new[]
         {
@@ -140,6 +145,7 @@ public sealed class QueryLinqBuilderTests
         Assert.Equal("1", results[0].Id);
     }
 
+
     [Fact]
     public void Build_MetadataFieldNegativeMatch_NoSqlSemantics()
     {
@@ -150,7 +156,7 @@ public sealed class QueryLinqBuilderTests
             Value = new LiteralNode { Value = "John" }
         };
 
-        var expr = this._builder.Build<ContentRecord>(query);
+        var expr = _builder.Build<ContentRecord>(query);
 
         var records = new[]
         {
@@ -169,6 +175,7 @@ public sealed class QueryLinqBuilderTests
         Assert.Contains(results, r => r.Id == "4");
     }
 
+
     [Fact]
     public void Build_TagsArrayContains_GeneratesCorrectLinq()
     {
@@ -179,7 +186,7 @@ public sealed class QueryLinqBuilderTests
             Value = new LiteralNode { Value = new[] { "AI", "ML" } }
         };
 
-        var expr = this._builder.Build<ContentRecord>(query);
+        var expr = _builder.Build<ContentRecord>(query);
 
         var records = new[]
         {
@@ -196,6 +203,7 @@ public sealed class QueryLinqBuilderTests
         Assert.Contains(results, r => r.Id == "1");
         Assert.Contains(results, r => r.Id == "3");
     }
+
 
     [Fact]
     public void Build_LogicalAnd_GeneratesCorrectLinq()
@@ -220,7 +228,7 @@ public sealed class QueryLinqBuilderTests
             }
         };
 
-        var expr = this._builder.Build<ContentRecord>(query);
+        var expr = _builder.Build<ContentRecord>(query);
 
         var records = new[]
         {
@@ -235,6 +243,7 @@ public sealed class QueryLinqBuilderTests
         Assert.Single(results);
         Assert.Equal("1", results[0].Id);
     }
+
 
     [Fact]
     public void Build_LogicalOr_GeneratesCorrectLinq()
@@ -259,7 +268,7 @@ public sealed class QueryLinqBuilderTests
             }
         };
 
-        var expr = this._builder.Build<ContentRecord>(query);
+        var expr = _builder.Build<ContentRecord>(query);
 
         var records = new[]
         {
@@ -274,6 +283,7 @@ public sealed class QueryLinqBuilderTests
         Assert.Contains(results, r => r.Id == "1");
         Assert.Contains(results, r => r.Id == "2");
     }
+
 
     [Fact]
     public void Build_LogicalNot_GeneratesCorrectLinq()
@@ -292,7 +302,7 @@ public sealed class QueryLinqBuilderTests
             }
         };
 
-        var expr = this._builder.Build<ContentRecord>(query);
+        var expr = _builder.Build<ContentRecord>(query);
 
         var records = new[]
         {
@@ -307,6 +317,7 @@ public sealed class QueryLinqBuilderTests
         Assert.DoesNotContain(results, r => r.Id == "2");
     }
 
+
     [Fact]
     public void Build_TextSearchDefaultField_SearchesAllFtsFields()
     {
@@ -316,7 +327,7 @@ public sealed class QueryLinqBuilderTests
             Field = null! // Default field behavior
         };
 
-        var expr = this._builder.Build<ContentRecord>(query);
+        var expr = _builder.Build<ContentRecord>(query);
 
         var records = new[]
         {
@@ -335,6 +346,7 @@ public sealed class QueryLinqBuilderTests
         Assert.Contains(results, r => r.Id == "3");
     }
 
+
     [Fact]
     public void Build_ExistsOperator_ChecksFieldPresence()
     {
@@ -345,7 +357,7 @@ public sealed class QueryLinqBuilderTests
             Value = new LiteralNode { Value = true }
         };
 
-        var expr = this._builder.Build<ContentRecord>(query);
+        var expr = _builder.Build<ContentRecord>(query);
 
         var records = new[]
         {
@@ -361,6 +373,7 @@ public sealed class QueryLinqBuilderTests
         Assert.Equal("1", results[0].Id);
     }
 
+
     [Fact]
     public void Build_NullHandling_DoesNotThrowOnNullFields()
     {
@@ -371,7 +384,7 @@ public sealed class QueryLinqBuilderTests
             Value = new LiteralNode { Value = "test" }
         };
 
-        var expr = this._builder.Build<ContentRecord>(query);
+        var expr = _builder.Build<ContentRecord>(query);
 
         var records = new[]
         {
@@ -387,6 +400,7 @@ public sealed class QueryLinqBuilderTests
         Assert.Contains(results, r => r.Id == "1");
         Assert.Contains(results, r => r.Id == "3");
     }
+
 
     [Fact]
     public void Build_ComplexNestedQuery_GeneratesCorrectLinq()
@@ -438,7 +452,7 @@ public sealed class QueryLinqBuilderTests
             }
         };
 
-        var expr = this._builder.Build<ContentRecord>(query);
+        var expr = _builder.Build<ContentRecord>(query);
 
         var records = new[]
         {

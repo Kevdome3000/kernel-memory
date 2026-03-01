@@ -34,15 +34,16 @@ public sealed class HttpRetryPolicyTests
 
         // Act
         using var response = await HttpRetryPolicy.SendAsync(
-            httpClient,
-            requestFactory: () => new HttpRequestMessage(HttpMethod.Get, "https://example.com"),
-            loggerMock.Object,
-            CancellationToken.None,
-            delayAsync: (d, _) =>
-            {
-                delayCalls.Add(d);
-                return Task.CompletedTask;
-            }).ConfigureAwait(false);
+                httpClient,
+                () => new HttpRequestMessage(HttpMethod.Get, "https://example.com"),
+                loggerMock.Object,
+                CancellationToken.None,
+                (d, _) =>
+                {
+                    delayCalls.Add(d);
+                    return Task.CompletedTask;
+                })
+            .ConfigureAwait(false);
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);

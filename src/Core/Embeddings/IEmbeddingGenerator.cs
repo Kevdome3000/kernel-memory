@@ -34,6 +34,7 @@ public interface IEmbeddingGenerator
     /// </summary>
     bool IsNormalized { get; }
 
+
     /// <summary>
     /// Generate embedding for a single text.
     /// </summary>
@@ -43,6 +44,7 @@ public interface IEmbeddingGenerator
     /// <exception cref="HttpRequestException">When the API call fails.</exception>
     /// <exception cref="OperationCanceledException">When the operation is cancelled.</exception>
     Task<EmbeddingResult> GenerateAsync(string text, CancellationToken ct = default);
+
 
     /// <summary>
     /// Generate embeddings for multiple texts (batch).

@@ -18,13 +18,14 @@ public class SearchException : Exception
     /// </summary>
     public SearchErrorType ErrorType { get; init; }
 
+
     /// <summary>
     /// Initializes a new SearchException.
     /// </summary>
     public SearchException()
-        : base()
     {
     }
+
 
     /// <summary>
     /// Initializes a new SearchException with a message.
@@ -34,6 +35,7 @@ public class SearchException : Exception
         : base(message)
     {
     }
+
 
     /// <summary>
     /// Initializes a new SearchException with message and inner exception.
@@ -45,6 +47,7 @@ public class SearchException : Exception
     {
     }
 
+
     /// <summary>
     /// Initializes a new SearchException with error type.
     /// </summary>
@@ -54,9 +57,10 @@ public class SearchException : Exception
     public SearchException(string message, SearchErrorType errorType, string? nodeId = null)
         : base(message)
     {
-        this.ErrorType = errorType;
-        this.NodeId = nodeId;
+        ErrorType = errorType;
+        NodeId = nodeId;
     }
+
 
     /// <summary>
     /// Initializes a new SearchException with error type and inner exception.
@@ -65,13 +69,18 @@ public class SearchException : Exception
     /// <param name="errorType">Type of error.</param>
     /// <param name="innerException">Inner exception.</param>
     /// <param name="nodeId">Affected node ID (optional).</param>
-    public SearchException(string message, SearchErrorType errorType, Exception innerException, string? nodeId = null)
+    public SearchException(
+        string message,
+        SearchErrorType errorType,
+        Exception innerException,
+        string? nodeId = null)
         : base(message, innerException)
     {
-        this.ErrorType = errorType;
-        this.NodeId = nodeId;
+        ErrorType = errorType;
+        NodeId = nodeId;
     }
 }
+
 
 /// <summary>
 /// Types of search errors for precise error handling.
@@ -157,5 +166,5 @@ public enum SearchErrorType
     /// Node prefix references node not in --nodes.
     /// Example: --nodes personal --indexes work:fts-main (work not in nodes list).
     /// </summary>
-    InvalidNodePrefix,
+    InvalidNodePrefix
 }

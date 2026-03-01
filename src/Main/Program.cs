@@ -29,6 +29,7 @@ internal sealed class Program
         };
     }
 
+
     /// <summary>
     /// Runs in CLI mode using Spectre.Console.Cli.
     /// </summary>

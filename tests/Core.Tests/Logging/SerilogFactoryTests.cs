@@ -14,14 +14,16 @@ public sealed class SerilogFactoryTests : IDisposable
 {
     private readonly string _tempDir;
 
+
     /// <summary>
     /// Initializes test with temp directory for file logging tests.
     /// </summary>
     public SerilogFactoryTests()
     {
-        this._tempDir = Path.Combine(Path.GetTempPath(), $"km-test-{Guid.NewGuid()}");
-        Directory.CreateDirectory(this._tempDir);
+        _tempDir = Path.Combine(Path.GetTempPath(), $"km-test-{Guid.NewGuid()}");
+        Directory.CreateDirectory(_tempDir);
     }
+
 
     /// <summary>
     /// Cleans up temp directory after tests.
@@ -31,9 +33,9 @@ public sealed class SerilogFactoryTests : IDisposable
     {
         try
         {
-            if (Directory.Exists(this._tempDir))
+            if (Directory.Exists(_tempDir))
             {
-                Directory.Delete(this._tempDir, recursive: true);
+                Directory.Delete(_tempDir, true);
             }
         }
         catch (IOException)
@@ -43,6 +45,7 @@ public sealed class SerilogFactoryTests : IDisposable
 
         GC.SuppressFinalize(this);
     }
+
 
     /// <summary>
     /// Verifies CreateLoggerFactory returns non-null factory.
@@ -60,6 +63,7 @@ public sealed class SerilogFactoryTests : IDisposable
         Assert.NotNull(factory);
     }
 
+
     /// <summary>
     /// Verifies factory can create typed loggers.
     /// </summary>
@@ -76,6 +80,7 @@ public sealed class SerilogFactoryTests : IDisposable
         // Assert
         Assert.NotNull(logger);
     }
+
 
     /// <summary>
     /// Verifies logger respects minimum level from config.
@@ -99,6 +104,7 @@ public sealed class SerilogFactoryTests : IDisposable
         Assert.True(logger.IsEnabled(LogLevel.Error));
     }
 
+
     /// <summary>
     /// Verifies logger enables all levels when set to Verbose.
     /// </summary>
@@ -121,6 +127,7 @@ public sealed class SerilogFactoryTests : IDisposable
         Assert.True(logger.IsEnabled(LogLevel.Information));
     }
 
+
     /// <summary>
     /// Verifies file logging creates log file when configured.
     /// </summary>
@@ -128,7 +135,7 @@ public sealed class SerilogFactoryTests : IDisposable
     public void CreateLoggerFactory_WithFilePath_ShouldCreateLogFile()
     {
         // Arrange
-        var logPath = Path.Combine(this._tempDir, "test.log");
+        var logPath = Path.Combine(_tempDir, "test.log");
         var config = new LoggingConfig
         {
             FilePath = logPath
@@ -143,9 +150,10 @@ public sealed class SerilogFactoryTests : IDisposable
         factory.Dispose();
 
         // Assert - file should exist (Serilog may add date suffix)
-        var logFiles = Directory.GetFiles(this._tempDir, "test*.log");
+        var logFiles = Directory.GetFiles(_tempDir, "test*.log");
         Assert.NotEmpty(logFiles);
     }
+
 
     /// <summary>
     /// Verifies file logging writes messages to file.
@@ -155,7 +163,7 @@ public sealed class SerilogFactoryTests : IDisposable
     public void CreateLoggerFactory_WithFilePath_ShouldWriteToFile()
     {
         // Arrange
-        var logPath = Path.Combine(this._tempDir, "messages.log");
+        var logPath = Path.Combine(_tempDir, "messages.log");
         var config = new LoggingConfig
         {
             FilePath = logPath,
@@ -171,12 +179,13 @@ public sealed class SerilogFactoryTests : IDisposable
         }
 
         // Assert
-        var logFiles = Directory.GetFiles(this._tempDir, "messages*.log");
+        var logFiles = Directory.GetFiles(_tempDir, "messages*.log");
         Assert.NotEmpty(logFiles);
 
         var content = File.ReadAllText(logFiles[0]);
         Assert.Contains(testMessage, content);
     }
+
 
     /// <summary>
     /// Verifies JSON format writes structured log entries.
@@ -185,7 +194,7 @@ public sealed class SerilogFactoryTests : IDisposable
     public void CreateLoggerFactory_WithJsonFormat_ShouldWriteJsonToFile()
     {
         // Arrange
-        var logPath = Path.Combine(this._tempDir, "json.log");
+        var logPath = Path.Combine(_tempDir, "json.log");
         var config = new LoggingConfig
         {
             FilePath = logPath,
@@ -201,7 +210,7 @@ public sealed class SerilogFactoryTests : IDisposable
         }
 
         // Assert
-        var logFiles = Directory.GetFiles(this._tempDir, "json*.log");
+        var logFiles = Directory.GetFiles(_tempDir, "json*.log");
         Assert.NotEmpty(logFiles);
 
         var content = File.ReadAllText(logFiles[0]);
@@ -209,6 +218,7 @@ public sealed class SerilogFactoryTests : IDisposable
         Assert.Contains("{", content);
         Assert.Contains("\"", content);
     }
+
 
     /// <summary>
     /// Verifies logger factory can be disposed multiple times without error.
@@ -228,6 +238,7 @@ public sealed class SerilogFactoryTests : IDisposable
         Assert.Null(exception);
     }
 
+
     /// <summary>
     /// Verifies CreateLogger extension method creates typed logger.
     /// </summary>
@@ -245,6 +256,7 @@ public sealed class SerilogFactoryTests : IDisposable
         Assert.NotNull(logger);
     }
 
+
     /// <summary>
     /// Verifies file logging creates directory if it doesn't exist.
     /// </summary>
@@ -252,7 +264,10 @@ public sealed class SerilogFactoryTests : IDisposable
     public void CreateLoggerFactory_WithNestedFilePath_ShouldCreateDirectory()
     {
         // Arrange
-        var logPath = Path.Combine(this._tempDir, "nested", "dir", "test.log");
+        var logPath = Path.Combine(_tempDir,
+            "nested",
+            "dir",
+            "test.log");
         var config = new LoggingConfig
         {
             FilePath = logPath
@@ -270,6 +285,7 @@ public sealed class SerilogFactoryTests : IDisposable
         Assert.True(Directory.Exists(Path.GetDirectoryName(logPath)));
     }
 
+
     /// <summary>
     /// Verifies async logging option is respected.
     /// </summary>
@@ -277,7 +293,7 @@ public sealed class SerilogFactoryTests : IDisposable
     public void CreateLoggerFactory_WithAsyncLogging_ShouldNotThrow()
     {
         // Arrange
-        var logPath = Path.Combine(this._tempDir, "async.log");
+        var logPath = Path.Combine(_tempDir, "async.log");
         var config = new LoggingConfig
         {
             FilePath = logPath,
@@ -295,6 +311,7 @@ public sealed class SerilogFactoryTests : IDisposable
         // Assert
         Assert.Null(exception);
     }
+
 
     /// <summary>
     /// Verifies error level config filters out lower levels.

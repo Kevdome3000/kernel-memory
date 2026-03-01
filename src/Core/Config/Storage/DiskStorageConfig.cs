@@ -20,10 +20,11 @@ public sealed class DiskStorageConfig : StorageConfig
     [JsonPropertyName("path")]
     public string Path { get; set; } = string.Empty;
 
+
     /// <inheritdoc />
     public override void Validate(string path)
     {
-        if (string.IsNullOrWhiteSpace(this.Path))
+        if (string.IsNullOrWhiteSpace(Path))
         {
             throw new ConfigException($"{path}.Path", "Disk storage path is required");
         }

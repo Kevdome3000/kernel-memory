@@ -13,6 +13,7 @@ public interface IVectorIndex : ISearchIndex
     /// </summary>
     int VectorDimensions { get; }
 
+
     /// <summary>
     /// Indexes content with vector embedding.
     /// Generates embedding using configured generator, normalizes it, then stores.
@@ -21,6 +22,7 @@ public interface IVectorIndex : ISearchIndex
     /// <param name="text">Text to generate embedding for.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     new Task IndexAsync(string contentId, string text, CancellationToken cancellationToken = default);
+
 
     /// <summary>
     /// Searches the vector index for similar content using dot product on normalized vectors.

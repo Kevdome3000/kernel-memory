@@ -20,6 +20,7 @@ public sealed class NodeConfigTests
         Assert.Equal(1.0f, config.Weight);
     }
 
+
     [Fact]
     public void Weight_CanBeSet()
     {
@@ -29,6 +30,7 @@ public sealed class NodeConfigTests
         // Assert
         Assert.Equal(0.5f, config.Weight);
     }
+
 
     [Fact]
     public void Validate_NegativeWeight_Throws()
@@ -47,6 +49,7 @@ public sealed class NodeConfigTests
         Assert.Contains("non-negative", ex.Message);
     }
 
+
     [Fact]
     public void Validate_ZeroWeight_IsValid()
     {
@@ -61,6 +64,7 @@ public sealed class NodeConfigTests
         // Act & Assert - should not throw
         config.Validate("Test");
     }
+
 
     [Fact]
     public void Validate_PositiveWeight_IsValid()

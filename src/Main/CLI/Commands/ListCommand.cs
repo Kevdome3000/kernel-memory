@@ -27,20 +27,22 @@ public class ListCommandSettings : GlobalOptions
     [DefaultValue(20)]
     public int Take { get; init; } = Constants.App.DefaultPageSize;
 
+
     public override ValidationResult Validate()
     {
         var baseResult = base.Validate();
+
         if (!baseResult.Successful)
         {
             return baseResult;
         }
 
-        if (this.Skip < 0)
+        if (Skip < 0)
         {
             return ValidationResult.Error("Skip must be >= 0");
         }
 
-        if (this.Take <= 0)
+        if (Take <= 0)
         {
             return ValidationResult.Error("Take must be > 0");
         }
@@ -48,6 +50,7 @@ public class ListCommandSettings : GlobalOptions
         return ValidationResult.Success();
     }
 }
+
 
 /// <summary>
 /// Command to list all content with pagination.
@@ -63,16 +66,17 @@ public class ListCommand : BaseCommand<ListCommandSettings>
     {
     }
 
+
     public override async Task<int> ExecuteAsync(
         CommandContext context,
         ListCommandSettings settings,
         CancellationToken cancellationToken)
     {
-        var (config, node, formatter) = this.Initialize(settings);
+        var (config, node, formatter) = Initialize(settings);
 
         try
         {
-            using var service = this.CreateContentService(node, readonlyMode: true);
+            using var service = CreateContentService(node, true);
 
             // Get total count
             var totalCount = await service.CountAsync(CancellationToken.None).ConfigureAwait(false);
@@ -85,21 +89,25 @@ public class ListCommand : BaseCommand<ListCommandSettings>
                 ContentDtoWithNode.FromContentDto(item, node.Id));
 
             // Format list with pagination info
-            formatter.FormatList(itemsWithNode, totalCount, settings.Skip, settings.Take);
+            formatter.FormatList(itemsWithNode,
+                totalCount,
+                settings.Skip,
+                settings.Take);
 
             return Constants.App.ExitCodeSuccess;
         }
         catch (DatabaseNotFoundException)
         {
             // First-run scenario: no database exists yet (expected state)
-            this.ShowFirstRunMessage(settings, node.Id);
+            ShowFirstRunMessage(settings, node.Id);
             return Constants.App.ExitCodeSuccess; // Not a user error
         }
         catch (Exception ex)
         {
-            return this.HandleError(ex, formatter);
+            return HandleError(ex, formatter);
         }
     }
+
 
     /// <summary>
     /// Shows a friendly first-run message when no database exists yet.
@@ -113,14 +121,19 @@ public class ListCommand : BaseCommand<ListCommandSettings>
         // For JSON/YAML, return empty list (valid, parseable output)
         if (!settings.Format.Equals("human", StringComparison.OrdinalIgnoreCase))
         {
-            formatter.FormatList(Array.Empty<ContentDto>(), 0, 0, settings.Take);
+            formatter.FormatList(Array.Empty<ContentDto>(),
+                0,
+                0,
+                settings.Take);
             return;
         }
 
         // Human format: friendly welcome message
         // Include --node parameter if not using the first (default) node
-        var isDefaultNode = nodeId == this.Config.Nodes.Keys.First();
-        var nodeParam = isDefaultNode ? "" : $" --node {nodeId}";
+        var isDefaultNode = nodeId == Config.Nodes.Keys.First();
+        var nodeParam = isDefaultNode
+            ? ""
+            : $" --node {nodeId}";
 
         AnsiConsole.WriteLine();
         AnsiConsole.MarkupLine("[bold green]Welcome to Kernel Memory! 🚀[/]");

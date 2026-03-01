@@ -15,6 +15,7 @@ public interface ISearchIndex
     /// <param name="cancellationToken">Cancellation token.</param>
     Task IndexAsync(string contentId, string text, CancellationToken cancellationToken = default);
 
+
     /// <summary>
     /// Removes content from this index.
     /// Idempotent - no error if content doesn't exist.
@@ -22,6 +23,7 @@ public interface ISearchIndex
     /// <param name="contentId">The content ID to remove.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     Task RemoveAsync(string contentId, CancellationToken cancellationToken = default);
+
 
     /// <summary>
     /// Clears all entries from this index.

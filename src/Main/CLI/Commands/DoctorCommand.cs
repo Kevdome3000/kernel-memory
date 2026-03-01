@@ -29,6 +29,7 @@ public enum DiagnosticLevels
     Error
 }
 
+
 /// <summary>
 /// Result of a single diagnostic check.
 /// Includes component name, status, message, and optional node association.
@@ -57,6 +58,7 @@ public sealed record DiagnosticResult
     public string? NodeId { get; init; }
 }
 
+
 /// <summary>
 /// Command to validate configuration and check system health.
 /// Checks config file, content indexes, search indexes (FTS/vector), and caches.
@@ -77,6 +79,7 @@ public sealed class DoctorCommand : AsyncCommand<DoctorCommandSettings>, IDispos
     private readonly ConfigPathService _configPathService;
     private readonly HttpClient _httpClient;
 
+
     /// <summary>
     /// Initializes a new instance of the <see cref="DoctorCommand"/> class.
     /// </summary>
@@ -88,12 +91,13 @@ public sealed class DoctorCommand : AsyncCommand<DoctorCommandSettings>, IDispos
         ILoggerFactory loggerFactory,
         ConfigPathService configPathService)
     {
-        this._config = config ?? throw new ArgumentNullException(nameof(config));
-        this._loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
-        this._logger = loggerFactory.CreateLogger<DoctorCommand>();
-        this._configPathService = configPathService ?? throw new ArgumentNullException(nameof(configPathService));
-        this._httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+        _config = config ?? throw new ArgumentNullException(nameof(config));
+        _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
+        _logger = loggerFactory.CreateLogger<DoctorCommand>();
+        _configPathService = configPathService ?? throw new ArgumentNullException(nameof(configPathService));
+        _httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
     }
+
 
     /// <summary>
     /// Constructor for testing without ConfigPathService.
@@ -106,15 +110,18 @@ public sealed class DoctorCommand : AsyncCommand<DoctorCommandSettings>, IDispos
     {
     }
 
+
     /// <summary>
     /// Disposes the HTTP client.
     /// </summary>
     public void Dispose()
     {
-        this._httpClient.Dispose();
+        _httpClient.Dispose();
     }
 
-    [SuppressMessage("Design", "CA1031:Do not catch general exception types",
+
+    [SuppressMessage("Design",
+        "CA1031:Do not catch general exception types",
         Justification = "Top-level command handler must catch all exceptions to return appropriate exit codes")]
     public override async Task<int> ExecuteAsync(
         CommandContext context,
@@ -126,38 +133,38 @@ public sealed class DoctorCommand : AsyncCommand<DoctorCommandSettings>, IDispos
         try
         {
             // Global check: Config file
-            results.Add(this.CheckConfigFile());
+            results.Add(CheckConfigFile());
 
             // Per-node checks
-            foreach (var (nodeId, nodeConfig) in this._config.Nodes)
+            foreach (var (nodeId, nodeConfig) in _config.Nodes)
             {
                 // Content index check
-                results.Add(this.CheckContentIndex(nodeId, nodeConfig.ContentIndex));
+                results.Add(CheckContentIndex(nodeId, nodeConfig.ContentIndex));
 
                 // Search index checks
                 foreach (var searchIndex in nodeConfig.SearchIndexes)
                 {
-                    var indexResult = await this.CheckSearchIndexAsync(nodeId, searchIndex, cancellationToken)
+                    var indexResult = await CheckSearchIndexAsync(nodeId, searchIndex, cancellationToken)
                         .ConfigureAwait(false);
                     results.Add(indexResult);
                 }
             }
 
             // Global check: Embeddings cache
-            if (this._config.EmbeddingsCache != null)
+            if (_config.EmbeddingsCache != null)
             {
-                results.Add(this.CheckCache("Embeddings cache", this._config.EmbeddingsCache));
+                results.Add(CheckCache("Embeddings cache", _config.EmbeddingsCache));
             }
 
             // Global check: LLM cache
-            if (this._config.LLMCache != null)
+            if (_config.LLMCache != null)
             {
-                results.Add(this.CheckCache("LLM cache", this._config.LLMCache));
+                results.Add(CheckCache("LLM cache", _config.LLMCache));
             }
         }
         catch (Exception ex)
         {
-            this._logger.LogError(ex, "Unexpected error during doctor checks");
+            _logger.LogError(ex, "Unexpected error during doctor checks");
             results.Add(new DiagnosticResult
             {
                 Component = "Doctor command",
@@ -167,19 +174,22 @@ public sealed class DoctorCommand : AsyncCommand<DoctorCommandSettings>, IDispos
         }
 
         // Display results
-        this.DisplayResults(results, settings);
+        DisplayResults(results, settings);
 
         // Return appropriate exit code
         var hasErrors = results.Any(r => r.Level == DiagnosticLevels.Error);
-        return hasErrors ? Constants.App.ExitCodeUserError : Constants.App.ExitCodeSuccess;
+        return hasErrors
+            ? Constants.App.ExitCodeUserError
+            : Constants.App.ExitCodeSuccess;
     }
+
 
     /// <summary>
     /// Checks the configuration file accessibility.
     /// </summary>
     private DiagnosticResult CheckConfigFile()
     {
-        var configPath = this._configPathService.Path;
+        var configPath = _configPathService.Path;
 
         if (!File.Exists(configPath))
         {
@@ -235,6 +245,7 @@ public sealed class DoctorCommand : AsyncCommand<DoctorCommandSettings>, IDispos
             };
         }
     }
+
 
     /// <summary>
     /// Checks the content index (SQLite database) accessibility.
@@ -331,7 +342,8 @@ public sealed class DoctorCommand : AsyncCommand<DoctorCommandSettings>, IDispos
             }
 
             // Directory exists - test write permissions by creating a temp file
-            var canWrite = this.CanWriteToDirectory(dirPath);
+            var canWrite = CanWriteToDirectory(dirPath);
+
             if (canWrite)
             {
                 return new DiagnosticResult
@@ -361,6 +373,7 @@ public sealed class DoctorCommand : AsyncCommand<DoctorCommandSettings>, IDispos
         };
     }
 
+
     /// <summary>
     /// Checks a search index configuration and connectivity.
     /// </summary>
@@ -371,8 +384,8 @@ public sealed class DoctorCommand : AsyncCommand<DoctorCommandSettings>, IDispos
     {
         return config switch
         {
-            FtsSearchIndexConfig ftsConfig => this.CheckFtsIndex(nodeId, ftsConfig),
-            VectorSearchIndexConfig vectorConfig => await this.CheckVectorIndexAsync(nodeId, vectorConfig, cancellationToken)
+            FtsSearchIndexConfig ftsConfig => CheckFtsIndex(nodeId, ftsConfig),
+            VectorSearchIndexConfig vectorConfig => await CheckVectorIndexAsync(nodeId, vectorConfig, cancellationToken)
                 .ConfigureAwait(false),
             _ => new DiagnosticResult
             {
@@ -384,12 +397,14 @@ public sealed class DoctorCommand : AsyncCommand<DoctorCommandSettings>, IDispos
         };
     }
 
+
     /// <summary>
     /// Checks an FTS index (SQLite FTS5 database) accessibility.
     /// </summary>
     private DiagnosticResult CheckFtsIndex(string nodeId, FtsSearchIndexConfig config)
     {
         var dbPath = config.Path;
+
         if (string.IsNullOrEmpty(dbPath))
         {
             return new DiagnosticResult
@@ -466,7 +481,8 @@ public sealed class DoctorCommand : AsyncCommand<DoctorCommandSettings>, IDispos
                 }
             }
 
-            var canWrite = this.CanWriteToDirectory(dirPath);
+            var canWrite = CanWriteToDirectory(dirPath);
+
             if (canWrite)
             {
                 return new DiagnosticResult
@@ -496,6 +512,7 @@ public sealed class DoctorCommand : AsyncCommand<DoctorCommandSettings>, IDispos
         };
     }
 
+
     /// <summary>
     /// Checks a vector index, including embeddings provider connectivity.
     /// </summary>
@@ -506,6 +523,7 @@ public sealed class DoctorCommand : AsyncCommand<DoctorCommandSettings>, IDispos
     {
         // First check database accessibility
         var dbPath = config.Path;
+
         if (string.IsNullOrEmpty(dbPath))
         {
             return new DiagnosticResult
@@ -531,9 +549,17 @@ public sealed class DoctorCommand : AsyncCommand<DoctorCommandSettings>, IDispos
 
         return config.Embeddings switch
         {
-            OllamaEmbeddingsConfig ollamaConfig => await this.CheckOllamaEmbeddingsAsync(
-                nodeId, config.Id, ollamaConfig, config.Dimensions, cancellationToken).ConfigureAwait(false),
-            OpenAIEmbeddingsConfig openAiConfig => this.CheckOpenAIEmbeddings(nodeId, config.Id, openAiConfig, config.Dimensions),
+            OllamaEmbeddingsConfig ollamaConfig => await CheckOllamaEmbeddingsAsync(
+                    nodeId,
+                    config.Id,
+                    ollamaConfig,
+                    config.Dimensions,
+                    cancellationToken)
+                .ConfigureAwait(false),
+            OpenAIEmbeddingsConfig openAiConfig => CheckOpenAIEmbeddings(nodeId,
+                config.Id,
+                openAiConfig,
+                config.Dimensions),
             _ => new DiagnosticResult
             {
                 Component = $"Vector index '{config.Id}'",
@@ -543,6 +569,7 @@ public sealed class DoctorCommand : AsyncCommand<DoctorCommandSettings>, IDispos
             }
         };
     }
+
 
     /// <summary>
     /// Checks Ollama embeddings provider by actually calling the API.
@@ -560,7 +587,7 @@ public sealed class DoctorCommand : AsyncCommand<DoctorCommandSettings>, IDispos
             var endpoint = $"{config.BaseUrl.TrimEnd('/')}/api/embed";
             var request = new { model = config.Model, input = "test" };
 
-            using var response = await this._httpClient.PostAsJsonAsync(endpoint, request, cancellationToken)
+            using var response = await _httpClient.PostAsJsonAsync(endpoint, request, cancellationToken)
                 .ConfigureAwait(false);
 
             if (!response.IsSuccessStatusCode)
@@ -579,8 +606,7 @@ public sealed class DoctorCommand : AsyncCommand<DoctorCommandSettings>, IDispos
             var responseJson = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
             using var doc = JsonDocument.Parse(responseJson);
 
-            if (doc.RootElement.TryGetProperty("embeddings", out var embeddingsArray) &&
-                embeddingsArray.GetArrayLength() > 0)
+            if (doc.RootElement.TryGetProperty("embeddings", out var embeddingsArray) && embeddingsArray.GetArrayLength() > 0)
             {
                 var firstEmbedding = embeddingsArray[0];
                 var actualDimensions = firstEmbedding.GetArrayLength();
@@ -645,6 +671,7 @@ public sealed class DoctorCommand : AsyncCommand<DoctorCommandSettings>, IDispos
         }
     }
 
+
     /// <summary>
     /// Checks OpenAI embeddings configuration (API key presence, not connectivity).
     /// </summary>
@@ -697,6 +724,7 @@ public sealed class DoctorCommand : AsyncCommand<DoctorCommandSettings>, IDispos
             NodeId = nodeId
         };
     }
+
 
     /// <summary>
     /// Checks cache configuration and accessibility.
@@ -765,7 +793,8 @@ public sealed class DoctorCommand : AsyncCommand<DoctorCommandSettings>, IDispos
                 }
             }
 
-            var canWrite = this.CanWriteToDirectory(dirPath);
+            var canWrite = CanWriteToDirectory(dirPath);
+
             if (canWrite)
             {
                 return new DiagnosticResult
@@ -792,6 +821,7 @@ public sealed class DoctorCommand : AsyncCommand<DoctorCommandSettings>, IDispos
         };
     }
 
+
     /// <summary>
     /// Tests if a directory is writable by creating and deleting a temp file.
     /// </summary>
@@ -810,6 +840,7 @@ public sealed class DoctorCommand : AsyncCommand<DoctorCommandSettings>, IDispos
         }
     }
 
+
     /// <summary>
     /// Displays results, grouped by node for clarity.
     /// </summary>
@@ -818,13 +849,14 @@ public sealed class DoctorCommand : AsyncCommand<DoctorCommandSettings>, IDispos
         // JSON output
         if (settings.Format.Equals("json", StringComparison.OrdinalIgnoreCase))
         {
-            this.DisplayResultsAsJson(results);
+            DisplayResultsAsJson(results);
             return;
         }
 
         // Human-readable output
-        this.DisplayResultsGroupedByNode(results, settings);
+        DisplayResultsGroupedByNode(results, settings);
     }
+
 
     /// <summary>
     /// Displays results in JSON format.
@@ -834,12 +866,13 @@ public sealed class DoctorCommand : AsyncCommand<DoctorCommandSettings>, IDispos
         var output = new
         {
             results = results.Select(r => new
-            {
-                component = r.Component,
-                level = r.Level.ToString().ToLowerInvariant(),
-                message = r.Message,
-                nodeId = r.NodeId
-            }).ToList(),
+                {
+                    component = r.Component,
+                    level = r.Level.ToString().ToLowerInvariant(),
+                    message = r.Message,
+                    nodeId = r.NodeId
+                })
+                .ToList(),
             summary = new
             {
                 total = results.Count,
@@ -852,6 +885,7 @@ public sealed class DoctorCommand : AsyncCommand<DoctorCommandSettings>, IDispos
         var json = JsonSerializer.Serialize(output, s_jsonOptions);
         Console.WriteLine(json);
     }
+
 
     /// <summary>
     /// Displays results grouped by node with visual formatting.
@@ -872,9 +906,10 @@ public sealed class DoctorCommand : AsyncCommand<DoctorCommandSettings>, IDispos
 
         // Display global checks first (config file)
         var configCheck = globalChecks.FirstOrDefault(r => r.Component == "Config file");
+
         if (configCheck != null)
         {
-            this.DisplayCheck(configCheck, indent: 0, useColor);
+            DisplayCheck(configCheck, 0, useColor);
             AnsiConsole.WriteLine();
         }
 
@@ -894,7 +929,7 @@ public sealed class DoctorCommand : AsyncCommand<DoctorCommandSettings>, IDispos
             // Indented checks for this node
             foreach (var check in nodeGroup)
             {
-                this.DisplayCheck(check, indent: 2, useColor);
+                DisplayCheck(check, 2, useColor);
             }
 
             AnsiConsole.WriteLine();
@@ -903,7 +938,7 @@ public sealed class DoctorCommand : AsyncCommand<DoctorCommandSettings>, IDispos
         // Display remaining global checks (caches)
         foreach (var check in globalChecks.Where(r => r.Component != "Config file"))
         {
-            this.DisplayCheck(check, indent: 0, useColor);
+            DisplayCheck(check, 0, useColor);
         }
 
         // Summary line
@@ -911,9 +946,14 @@ public sealed class DoctorCommand : AsyncCommand<DoctorCommandSettings>, IDispos
         var warningCount = results.Count(r => r.Level == DiagnosticLevels.Warning);
 
         AnsiConsole.WriteLine();
+
         if (useColor)
         {
-            var summaryColor = errorCount > 0 ? "red" : (warningCount > 0 ? "yellow" : "green");
+            var summaryColor = errorCount > 0
+                ? "red"
+                : warningCount > 0
+                    ? "yellow"
+                    : "green";
             AnsiConsole.MarkupLine($"[{summaryColor}]Summary: {warningCount} warning(s), {errorCount} error(s)[/]");
         }
         else
@@ -921,6 +961,7 @@ public sealed class DoctorCommand : AsyncCommand<DoctorCommandSettings>, IDispos
             Console.WriteLine($"Summary: {warningCount} warning(s), {errorCount} error(s)");
         }
     }
+
 
     /// <summary>
     /// Displays a single check result with appropriate formatting.
@@ -930,9 +971,9 @@ public sealed class DoctorCommand : AsyncCommand<DoctorCommandSettings>, IDispos
         var prefix = new string(' ', indent);
         var (symbol, color) = result.Level switch
         {
-            DiagnosticLevels.OK => ("V", "green"),      // checkmark
+            DiagnosticLevels.OK => ("V", "green"), // checkmark
             DiagnosticLevels.Warning => ("!", "yellow"), // warning
-            DiagnosticLevels.Error => ("X", "red"),      // error
+            DiagnosticLevels.Error => ("X", "red"), // error
             _ => ("?", "grey")
         };
 
@@ -945,6 +986,7 @@ public sealed class DoctorCommand : AsyncCommand<DoctorCommandSettings>, IDispos
             Console.WriteLine($"{prefix}{symbol} {result.Component}: {result.Message}");
         }
     }
+
 
     /// <summary>
     /// Gets the default config path.

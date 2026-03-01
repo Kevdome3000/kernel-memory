@@ -30,21 +30,22 @@ public sealed class FtsSearchIndexConfig : SearchIndexConfig
     [JsonPropertyName("enableStemming")]
     public bool EnableStemming { get; set; } = true;
 
+
     /// <inheritdoc />
     public override void Validate(string path)
     {
         // Validate ID is provided
-        if (string.IsNullOrWhiteSpace(this.Id))
+        if (string.IsNullOrWhiteSpace(Id))
         {
             throw new ConfigException($"{path}.Id", "Search index ID is required");
         }
 
-        this.Embeddings?.Validate($"{path}.Embeddings");
+        Embeddings?.Validate($"{path}.Embeddings");
 
-        var isSqlite = this.Type == SearchIndexTypes.SqliteFTS;
-        var isPostgres = this.Type == SearchIndexTypes.PostgresFTS;
-        var hasPath = !string.IsNullOrWhiteSpace(this.Path);
-        var hasConnectionString = !string.IsNullOrWhiteSpace(this.ConnectionString);
+        var isSqlite = Type == SearchIndexTypes.SqliteFTS;
+        var isPostgres = Type == SearchIndexTypes.PostgresFTS;
+        var hasPath = !string.IsNullOrWhiteSpace(Path);
+        var hasConnectionString = !string.IsNullOrWhiteSpace(ConnectionString);
 
         if (isSqlite && !hasPath)
         {

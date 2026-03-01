@@ -11,6 +11,7 @@ public class ConfigException : Exception
     /// </summary>
     public string ConfigPath { get; }
 
+
     /// <summary>
     /// Creates a new configuration exception
     /// </summary>
@@ -19,8 +20,9 @@ public class ConfigException : Exception
     public ConfigException(string configPath, string message)
         : base($"Configuration error at '{configPath}': {message}")
     {
-        this.ConfigPath = configPath;
+        ConfigPath = configPath;
     }
+
 
     /// <summary>
     /// Creates a new configuration exception with inner exception
@@ -31,21 +33,24 @@ public class ConfigException : Exception
     public ConfigException(string configPath, string message, Exception innerException)
         : base($"Configuration error at '{configPath}': {message}", innerException)
     {
-        this.ConfigPath = configPath;
+        ConfigPath = configPath;
     }
 
-    public ConfigException() : base()
+
+    public ConfigException()
     {
-        this.ConfigPath = string.Empty;
+        ConfigPath = string.Empty;
     }
+
 
     public ConfigException(string? message) : base(message)
     {
-        this.ConfigPath = string.Empty;
+        ConfigPath = string.Empty;
     }
+
 
     public ConfigException(string? message, Exception? innerException) : base(message, innerException)
     {
-        this.ConfigPath = string.Empty;
+        ConfigPath = string.Empty;
     }
 }

@@ -22,6 +22,7 @@ public sealed class StorageExceptionsTests
         Assert.Equal(message, exception.Message);
     }
 
+
     [Fact]
     public void ContentStorageException_WithMessageAndInnerException_CreatesException()
     {
@@ -36,6 +37,7 @@ public sealed class StorageExceptionsTests
         Assert.Equal(message, exception.Message);
         Assert.Same(innerException, exception.InnerException);
     }
+
 
     [Fact]
     public void ContentNotFoundException_WithContentId_CreatesException()
@@ -52,6 +54,7 @@ public sealed class StorageExceptionsTests
         Assert.IsAssignableFrom<ContentStorageException>(exception);
     }
 
+
     [Fact]
     public void ContentNotFoundException_WithContentIdAndCustomMessage_CreatesException()
     {
@@ -67,6 +70,7 @@ public sealed class StorageExceptionsTests
         Assert.Equal(contentId, exception.ContentId);
     }
 
+
     [Fact]
     public void ContentNotFoundException_WithMessageAndInnerException_CreatesException()
     {
@@ -81,6 +85,7 @@ public sealed class StorageExceptionsTests
         Assert.Equal(message, exception.Message);
         Assert.Same(innerException, exception.InnerException);
     }
+
 
     [Fact]
     public void OperationFailedException_WithOperationIdAndMessage_CreatesException()
@@ -98,6 +103,7 @@ public sealed class StorageExceptionsTests
         Assert.IsAssignableFrom<ContentStorageException>(exception);
     }
 
+
     [Fact]
     public void OperationFailedException_WithOperationIdMessageAndInnerException_CreatesException()
     {
@@ -114,6 +120,7 @@ public sealed class StorageExceptionsTests
         Assert.Equal(operationId, exception.OperationId);
         Assert.Same(innerException, exception.InnerException);
     }
+
 
     [Fact]
     public void OperationFailedException_WithMessage_CreatesExceptionWithEmptyOperationId()

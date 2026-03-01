@@ -1,5 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 
+using Serilog.Events;
+
 namespace KernelMemory.Core.Tests.Logging;
 
 /// <summary>
@@ -22,6 +24,7 @@ public sealed class LoggingConstantsTests
         Assert.Equal(expectedBytes, Constants.LoggingDefaults.DefaultFileSizeLimitBytes);
     }
 
+
     /// <summary>
     /// Verifies retained file count is 30 (approximately 1 month of daily logs).
     /// This balances disk usage with diagnostic history requirements.
@@ -33,6 +36,7 @@ public sealed class LoggingConstantsTests
         Assert.Equal(30, Constants.LoggingDefaults.DefaultRetainedFileCountLimit);
     }
 
+
     /// <summary>
     /// Verifies default log level for file output is Information.
     /// This provides useful diagnostics without excessive verbosity.
@@ -41,8 +45,9 @@ public sealed class LoggingConstantsTests
     public void DefaultFileLogLevel_ShouldBeInformation()
     {
         // Assert
-        Assert.Equal(Serilog.Events.LogEventLevel.Information, Constants.LoggingDefaults.DefaultFileLogLevel);
+        Assert.Equal(LogEventLevel.Information, Constants.LoggingDefaults.DefaultFileLogLevel);
     }
+
 
     /// <summary>
     /// Verifies default log level for console stderr is Warning.
@@ -52,8 +57,9 @@ public sealed class LoggingConstantsTests
     public void DefaultConsoleLogLevel_ShouldBeWarning()
     {
         // Assert
-        Assert.Equal(Serilog.Events.LogEventLevel.Warning, Constants.LoggingDefaults.DefaultConsoleLogLevel);
+        Assert.Equal(LogEventLevel.Warning, Constants.LoggingDefaults.DefaultConsoleLogLevel);
     }
+
 
     /// <summary>
     /// Verifies environment variable name for .NET environment detection.
@@ -65,6 +71,7 @@ public sealed class LoggingConstantsTests
         Assert.Equal("DOTNET_ENVIRONMENT", Constants.LoggingDefaults.DotNetEnvironmentVariable);
     }
 
+
     /// <summary>
     /// Verifies fallback environment variable name for ASP.NET Core.
     /// </summary>
@@ -74,6 +81,7 @@ public sealed class LoggingConstantsTests
         // Assert
         Assert.Equal("ASPNETCORE_ENVIRONMENT", Constants.LoggingDefaults.AspNetCoreEnvironmentVariable);
     }
+
 
     /// <summary>
     /// Verifies default environment is Development when none is set.
@@ -85,6 +93,7 @@ public sealed class LoggingConstantsTests
         Assert.Equal("Development", Constants.LoggingDefaults.DefaultEnvironment);
     }
 
+
     /// <summary>
     /// Verifies Production environment name constant.
     /// </summary>
@@ -95,6 +104,7 @@ public sealed class LoggingConstantsTests
         Assert.Equal("Production", Constants.LoggingDefaults.ProductionEnvironment);
     }
 
+
     /// <summary>
     /// Verifies the redacted placeholder text for sensitive data scrubbing.
     /// </summary>
@@ -104,6 +114,7 @@ public sealed class LoggingConstantsTests
         // Assert
         Assert.Equal("[REDACTED]", Constants.LoggingDefaults.RedactedPlaceholder);
     }
+
 
     /// <summary>
     /// Verifies the output template for human-readable logs.

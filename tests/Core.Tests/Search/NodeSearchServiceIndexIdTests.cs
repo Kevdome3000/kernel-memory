@@ -3,6 +3,7 @@
 using KernelMemory.Core.Search.Models;
 using KernelMemory.Core.Search.Query.Ast;
 using KernelMemory.Core.Storage;
+using KernelMemory.Core.Storage.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -22,32 +23,34 @@ public sealed class NodeSearchServiceIndexIdTests : IDisposable
     private readonly List<ContentStorageDbContext> _contexts = [];
     private readonly List<SqliteFtsIndex> _ftsIndexes = [];
 
+
     public NodeSearchServiceIndexIdTests()
     {
-        this._tempDir = Path.Combine(Path.GetTempPath(), $"km-index-id-test-{Guid.NewGuid():N}");
-        Directory.CreateDirectory(this._tempDir);
-        this._mockFtsLogger = new Mock<ILogger<SqliteFtsIndex>>();
-        this._mockStorageLogger = new Mock<ILogger<ContentStorageService>>();
+        _tempDir = Path.Combine(Path.GetTempPath(), $"km-index-id-test-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(_tempDir);
+        _mockFtsLogger = new Mock<ILogger<SqliteFtsIndex>>();
+        _mockStorageLogger = new Mock<ILogger<ContentStorageService>>();
     }
+
 
     public void Dispose()
     {
         // Dispose all tracked resources
-        foreach (var ftsIndex in this._ftsIndexes)
+        foreach (var ftsIndex in _ftsIndexes)
         {
             ftsIndex.Dispose();
         }
 
-        foreach (var context in this._contexts)
+        foreach (var context in _contexts)
         {
             context.Dispose();
         }
 
         try
         {
-            if (Directory.Exists(this._tempDir))
+            if (Directory.Exists(_tempDir))
             {
-                Directory.Delete(this._tempDir, true);
+                Directory.Delete(_tempDir, true);
             }
         }
         catch (IOException)
@@ -55,6 +58,7 @@ public sealed class NodeSearchServiceIndexIdTests : IDisposable
             // Ignore cleanup errors
         }
     }
+
 
     /// <summary>
     /// Tests that NodeSearchService uses the provided index ID in search results.
@@ -67,17 +71,22 @@ public sealed class NodeSearchServiceIndexIdTests : IDisposable
         const string customIndexId = "custom-fts-index";
         const string nodeId = "test-node";
 
-        var (ftsIndex, storage) = this.CreateIndexAndStorage("custom_index");
+        var (ftsIndex, storage) = CreateIndexAndStorage("custom_index");
 
         // Insert content
-        await storage.UpsertAsync(new KernelMemory.Core.Storage.Models.UpsertRequest
-        {
-            Content = "Test content for custom index ID verification",
-            MimeType = "text/plain"
-        }, CancellationToken.None).ConfigureAwait(false);
+        await storage.UpsertAsync(new UpsertRequest
+                {
+                    Content = "Test content for custom index ID verification",
+                    MimeType = "text/plain"
+                },
+                CancellationToken.None)
+            .ConfigureAwait(false);
 
         // Create NodeSearchService with custom index ID
-        var nodeService = new NodeSearchService(nodeId, ftsIndex, storage, customIndexId);
+        var nodeService = new NodeSearchService(nodeId,
+            ftsIndex,
+            storage,
+            customIndexId);
 
         var request = new SearchRequest
         {
@@ -89,14 +98,16 @@ public sealed class NodeSearchServiceIndexIdTests : IDisposable
         // Act - SearchIndexResult is returned by NodeSearchService.SearchAsync
         var queryNode = new TextSearchNode { SearchText = "content" };
         var (results, _) = await nodeService.SearchAsync(
-            queryNode,
-            request,
-            CancellationToken.None).ConfigureAwait(false);
+                queryNode,
+                request,
+                CancellationToken.None)
+            .ConfigureAwait(false);
 
         // Assert - SearchIndexResult has IndexId property
         Assert.NotEmpty(results);
         Assert.All(results, r => Assert.Equal(customIndexId, r.IndexId));
     }
+
 
     /// <summary>
     /// Tests that the default index ID constant is used when not specified.
@@ -108,14 +119,16 @@ public sealed class NodeSearchServiceIndexIdTests : IDisposable
         // Arrange
         const string nodeId = "test-node";
 
-        var (ftsIndex, storage) = this.CreateIndexAndStorage("default_index");
+        var (ftsIndex, storage) = CreateIndexAndStorage("default_index");
 
         // Insert content
-        await storage.UpsertAsync(new KernelMemory.Core.Storage.Models.UpsertRequest
-        {
-            Content = "Test content for default index ID verification",
-            MimeType = "text/plain"
-        }, CancellationToken.None).ConfigureAwait(false);
+        await storage.UpsertAsync(new UpsertRequest
+                {
+                    Content = "Test content for default index ID verification",
+                    MimeType = "text/plain"
+                },
+                CancellationToken.None)
+            .ConfigureAwait(false);
 
         // Create NodeSearchService WITHOUT specifying index ID (uses default)
         var nodeService = new NodeSearchService(nodeId, ftsIndex, storage);
@@ -130,14 +143,16 @@ public sealed class NodeSearchServiceIndexIdTests : IDisposable
         // Act
         var queryNode = new TextSearchNode { SearchText = "content" };
         var (results, _) = await nodeService.SearchAsync(
-            queryNode,
-            request,
-            CancellationToken.None).ConfigureAwait(false);
+                queryNode,
+                request,
+                CancellationToken.None)
+            .ConfigureAwait(false);
 
         // Assert
         Assert.NotEmpty(results);
         Assert.All(results, r => Assert.Equal(Constants.SearchDefaults.DefaultFtsIndexId, r.IndexId));
     }
+
 
     /// <summary>
     /// Tests that different nodes can have different index IDs.
@@ -152,25 +167,35 @@ public sealed class NodeSearchServiceIndexIdTests : IDisposable
         const string node2Id = "node2";
         const string node2IndexId = "node2-fts-index";
 
-        var (ftsIndex1, storage1) = this.CreateIndexAndStorage("node1_db");
-        var (ftsIndex2, storage2) = this.CreateIndexAndStorage("node2_db");
+        var (ftsIndex1, storage1) = CreateIndexAndStorage("node1_db");
+        var (ftsIndex2, storage2) = CreateIndexAndStorage("node2_db");
 
         // Insert content into both nodes
-        await storage1.UpsertAsync(new KernelMemory.Core.Storage.Models.UpsertRequest
-        {
-            Content = "Content in first node with custom index",
-            MimeType = "text/plain"
-        }, CancellationToken.None).ConfigureAwait(false);
+        await storage1.UpsertAsync(new UpsertRequest
+                {
+                    Content = "Content in first node with custom index",
+                    MimeType = "text/plain"
+                },
+                CancellationToken.None)
+            .ConfigureAwait(false);
 
-        await storage2.UpsertAsync(new KernelMemory.Core.Storage.Models.UpsertRequest
-        {
-            Content = "Content in second node with different index",
-            MimeType = "text/plain"
-        }, CancellationToken.None).ConfigureAwait(false);
+        await storage2.UpsertAsync(new UpsertRequest
+                {
+                    Content = "Content in second node with different index",
+                    MimeType = "text/plain"
+                },
+                CancellationToken.None)
+            .ConfigureAwait(false);
 
         // Create NodeSearchServices with different index IDs
-        var node1Service = new NodeSearchService(node1Id, ftsIndex1, storage1, node1IndexId);
-        var node2Service = new NodeSearchService(node2Id, ftsIndex2, storage2, node2IndexId);
+        var node1Service = new NodeSearchService(node1Id,
+            ftsIndex1,
+            storage1,
+            node1IndexId);
+        var node2Service = new NodeSearchService(node2Id,
+            ftsIndex2,
+            storage2,
+            node2IndexId);
 
         var queryNode = new TextSearchNode { SearchText = "content" };
         var request = new SearchRequest
@@ -191,6 +216,7 @@ public sealed class NodeSearchServiceIndexIdTests : IDisposable
         Assert.All(results2, r => Assert.Equal(node2IndexId, r.IndexId));
     }
 
+
     /// <summary>
     /// Tests that Constants.SearchDefaults.DefaultFtsIndexId constant has the expected value.
     /// Validates the constant is properly defined.
@@ -202,6 +228,7 @@ public sealed class NodeSearchServiceIndexIdTests : IDisposable
         Assert.Equal("fts-main", Constants.SearchDefaults.DefaultFtsIndexId);
     }
 
+
     /// <summary>
     /// Helper method to create FTS index and storage for testing.
     /// Tracks created resources for proper disposal.
@@ -210,22 +237,25 @@ public sealed class NodeSearchServiceIndexIdTests : IDisposable
     /// <returns>Tuple of FTS index and storage service.</returns>
     private (SqliteFtsIndex ftsIndex, ContentStorageService storage) CreateIndexAndStorage(string dbPrefix)
     {
-        var ftsDbPath = Path.Combine(this._tempDir, $"{dbPrefix}_fts.db");
-        var contentDbPath = Path.Combine(this._tempDir, $"{dbPrefix}_content.db");
+        var ftsDbPath = Path.Combine(_tempDir, $"{dbPrefix}_fts.db");
+        var contentDbPath = Path.Combine(_tempDir, $"{dbPrefix}_content.db");
 
-        var ftsIndex = new SqliteFtsIndex(ftsDbPath, enableStemming: true, this._mockFtsLogger.Object);
-        this._ftsIndexes.Add(ftsIndex);
+        var ftsIndex = new SqliteFtsIndex(ftsDbPath, true, _mockFtsLogger.Object);
+        _ftsIndexes.Add(ftsIndex);
 
         var options = new DbContextOptionsBuilder<ContentStorageDbContext>()
             .UseSqlite($"Data Source={contentDbPath}")
             .Options;
         var context = new ContentStorageDbContext(options);
-        this._contexts.Add(context);
+        _contexts.Add(context);
         context.Database.EnsureCreated();
 
         var cuidGenerator = new CuidGenerator();
         var searchIndexes = new Dictionary<string, ISearchIndex> { ["fts"] = ftsIndex };
-        var storage = new ContentStorageService(context, cuidGenerator, this._mockStorageLogger.Object, (IReadOnlyDictionary<string, Core.Search.ISearchIndex>)searchIndexes);
+        var storage = new ContentStorageService(context,
+            cuidGenerator,
+            _mockStorageLogger.Object,
+            searchIndexes);
 
         return (ftsIndex, storage);
     }

@@ -32,29 +32,29 @@ public sealed class OpenAIEmbeddingsConfig : EmbeddingsConfig
     [JsonPropertyName("baseUrl")]
     public string? BaseUrl { get; set; }
 
+
     /// <inheritdoc />
     public override void Validate(string path)
     {
-        if (string.IsNullOrWhiteSpace(this.Model))
+        if (string.IsNullOrWhiteSpace(Model))
         {
             throw new ConfigException($"{path}.Model", "OpenAI model name is required");
         }
 
-        if (string.IsNullOrWhiteSpace(this.ApiKey))
+        if (string.IsNullOrWhiteSpace(ApiKey))
         {
             throw new ConfigException($"{path}.ApiKey", "OpenAI API key is required");
         }
 
-        if (this.BatchSize < 1)
+        if (BatchSize < 1)
         {
             throw new ConfigException($"{path}.BatchSize", "BatchSize must be >= 1");
         }
 
-        if (!string.IsNullOrWhiteSpace(this.BaseUrl) &&
-            !Uri.TryCreate(this.BaseUrl, UriKind.Absolute, out _))
+        if (!string.IsNullOrWhiteSpace(BaseUrl) && !Uri.TryCreate(BaseUrl, UriKind.Absolute, out _))
         {
             throw new ConfigException($"{path}.BaseUrl",
-                $"Invalid OpenAI base URL: {this.BaseUrl}");
+                $"Invalid OpenAI base URL: {BaseUrl}");
         }
     }
 }

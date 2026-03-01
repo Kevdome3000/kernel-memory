@@ -12,14 +12,16 @@ public sealed class TypeResolver : ITypeResolver, IDisposable
 {
     private readonly IServiceProvider _provider;
 
+
     /// <summary>
     /// Initializes a new instance of the <see cref="TypeResolver"/> class.
     /// </summary>
     /// <param name="provider">The service provider to wrap.</param>
     public TypeResolver(IServiceProvider provider)
     {
-        this._provider = provider ?? throw new ArgumentNullException(nameof(provider));
+        _provider = provider ?? throw new ArgumentNullException(nameof(provider));
     }
+
 
     /// <summary>
     /// Resolves a service from the DI container.
@@ -33,15 +35,16 @@ public sealed class TypeResolver : ITypeResolver, IDisposable
             return null;
         }
 
-        return this._provider.GetService(type);
+        return _provider.GetService(type);
     }
+
 
     /// <summary>
     /// Disposes the service provider if it implements IDisposable.
     /// </summary>
     public void Dispose()
     {
-        if (this._provider is IDisposable disposable)
+        if (_provider is IDisposable disposable)
         {
             disposable.Dispose();
         }

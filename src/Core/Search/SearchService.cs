@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved.
 using System.Diagnostics;
+using KernelMemory.Core.Search.Exceptions;
 using KernelMemory.Core.Search.Models;
+using KernelMemory.Core.Search.Query.Ast;
 using KernelMemory.Core.Search.Query.Parsers;
 using KernelMemory.Core.Search.Reranking;
 
@@ -17,6 +19,7 @@ public sealed class SearchService : ISearchService
     private readonly Dictionary<string, Dictionary<string, float>>? _indexWeights;
     private readonly ISearchReranker _reranker;
 
+
     /// <summary>
     /// Initialize a new SearchService.
     /// </summary>
@@ -32,10 +35,11 @@ public sealed class SearchService : ISearchService
         Dictionary<string, Dictionary<string, float>>? indexWeights = null,
         ISearchReranker? reranker = null)
     {
-        this._nodeServices = nodeServices;
-        this._indexWeights = indexWeights;
-        this._reranker = reranker ?? new WeightedDiminishingReranker();
+        _nodeServices = nodeServices;
+        _indexWeights = indexWeights;
+        _reranker = reranker ?? new WeightedDiminishingReranker();
     }
+
 
     /// <summary>
     /// Execute a search query across configured nodes and indexes.
@@ -50,30 +54,34 @@ public sealed class SearchService : ISearchService
         var queryNode = QueryParserFactory.Parse(request.Query);
 
         // Determine which nodes to search
-        var nodesToSearch = this.DetermineNodesToSearch(request);
+        var nodesToSearch = DetermineNodesToSearch(request);
 
         // Validate nodes exist and are accessible
-        this.ValidateNodes(nodesToSearch);
+        ValidateNodes(nodesToSearch);
 
         // Execute searches in parallel across all nodes
         var searchTasks = nodesToSearch.Select(nodeId =>
-            this.SearchNodeAsync(nodeId, queryNode, request, cancellationToken));
+            SearchNodeAsync(nodeId,
+                queryNode,
+                request,
+                cancellationToken));
 
         var nodeResults = await Task.WhenAll(searchTasks).ConfigureAwait(false);
 
         // Collect all results and timings
         var allResults = nodeResults.SelectMany(r => r.Results).ToArray();
         var nodeTimings = nodeResults.Select(r => new NodeTiming
-        {
-            NodeId = r.NodeId,
-            SearchTime = r.SearchTime
-        }).ToArray();
+            {
+                NodeId = r.NodeId,
+                SearchTime = r.SearchTime
+            })
+            .ToArray();
 
         // Build reranking config
-        var rerankingConfig = this.BuildRerankingConfig(request, nodesToSearch);
+        var rerankingConfig = BuildRerankingConfig(request, nodesToSearch);
 
         // Rerank results
-        var rerankedResults = this._reranker.Rerank(allResults, rerankingConfig);
+        var rerankedResults = _reranker.Rerank(allResults, rerankingConfig);
 
         // Apply min relevance filter
         var filtered = rerankedResults
@@ -104,6 +112,7 @@ public sealed class SearchService : ISearchService
             }
         };
     }
+
 
     /// <summary>
     /// Validate a query without executing it.
@@ -147,19 +156,21 @@ public sealed class SearchService : ISearchService
         }
     }
 
+
     /// <summary>
     /// Search a single node.
     /// </summary>
     private async Task<(string NodeId, SearchIndexResult[] Results, TimeSpan SearchTime)> SearchNodeAsync(
         string nodeId,
-        Query.Ast.QueryNode queryNode,
+        QueryNode queryNode,
         SearchRequest request,
         CancellationToken cancellationToken)
     {
-        var nodeService = this._nodeServices[nodeId];
+        var nodeService = _nodeServices[nodeId];
         var (results, searchTime) = await nodeService.SearchAsync(queryNode, request, cancellationToken).ConfigureAwait(false);
         return (nodeId, results, searchTime);
     }
+
 
     /// <summary>
     /// Determine which nodes to search based on request and defaults.
@@ -170,26 +181,29 @@ public sealed class SearchService : ISearchService
         if (request.Nodes.Length > 0)
         {
             var nodes = request.Nodes.Except(request.ExcludeNodes).ToArray();
+
             if (nodes.Length == 0)
             {
-                throw new Exceptions.SearchException(
+                throw new SearchException(
                     "No nodes to search after applying exclusions",
-                    Exceptions.SearchErrorType.InvalidConfiguration);
+                    SearchErrorType.InvalidConfiguration);
             }
             return nodes;
         }
 
         // Otherwise, use all configured nodes minus exclusions
-        var allNodes = this._nodeServices.Keys.Except(request.ExcludeNodes).ToArray();
+        var allNodes = _nodeServices.Keys.Except(request.ExcludeNodes).ToArray();
+
         if (allNodes.Length == 0)
         {
-            throw new Exceptions.SearchException(
+            throw new SearchException(
                 "No nodes to search - all nodes excluded",
-                Exceptions.SearchErrorType.InvalidConfiguration);
+                SearchErrorType.InvalidConfiguration);
         }
 
         return allNodes;
     }
+
 
     /// <summary>
     /// Validate that requested nodes exist and are accessible.
@@ -198,15 +212,16 @@ public sealed class SearchService : ISearchService
     {
         foreach (var nodeId in nodeIds)
         {
-            if (!this._nodeServices.ContainsKey(nodeId))
+            if (!_nodeServices.ContainsKey(nodeId))
             {
-                throw new Exceptions.SearchException(
+                throw new SearchException(
                     $"Node '{nodeId}' not found in configuration",
-                    Exceptions.SearchErrorType.NodeNotFound,
+                    SearchErrorType.NodeNotFound,
                     nodeId);
             }
         }
     }
+
 
     /// <summary>
     /// Build reranking configuration from request, configured index weights, and defaults.
@@ -215,6 +230,7 @@ public sealed class SearchService : ISearchService
     {
         // Node weights: use request overrides or defaults
         var nodeWeights = new Dictionary<string, float>();
+
         foreach (var nodeId in nodeIds)
         {
             if (request.NodeWeights?.TryGetValue(nodeId, out var weight) == true)
@@ -229,10 +245,11 @@ public sealed class SearchService : ISearchService
 
         // Index weights: use configured weights, fall back to defaults for missing entries
         var indexWeights = new Dictionary<string, Dictionary<string, float>>();
+
         foreach (var nodeId in nodeIds)
         {
             // Check if we have configured index weights for this node
-            if (this._indexWeights?.TryGetValue(nodeId, out var configuredNodeIndexWeights) == true
+            if (_indexWeights?.TryGetValue(nodeId, out var configuredNodeIndexWeights) == true
                 && configuredNodeIndexWeights.Count > 0)
             {
                 // Use configured weights, but ensure defaults for missing indexes

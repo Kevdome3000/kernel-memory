@@ -14,29 +14,32 @@ public sealed class CliApplicationBuilderTests : IDisposable
     private readonly string _tempDir;
     private readonly string _tempConfigPath;
 
+
     public CliApplicationBuilderTests()
     {
         // Create isolated temp directory for each test to avoid ~/.km access
-        this._tempDir = Path.Combine(Path.GetTempPath(), $"km-test-{Guid.NewGuid():N}");
-        Directory.CreateDirectory(this._tempDir);
-        this._tempConfigPath = Path.Combine(this._tempDir, "config.json");
+        _tempDir = Path.Combine(Path.GetTempPath(), $"km-test-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(_tempDir);
+        _tempConfigPath = Path.Combine(_tempDir, "config.json");
     }
+
 
     public void Dispose()
     {
         // Clean up temp directory after test
-        if (Directory.Exists(this._tempDir))
+        if (Directory.Exists(_tempDir))
         {
-            Directory.Delete(this._tempDir, recursive: true);
+            Directory.Delete(_tempDir, true);
         }
     }
+
 
     [Fact]
     public void Build_CreatesCommandApp()
     {
         // Arrange: Use temp config path to avoid accessing ~/.km
         var builder = new CliApplicationBuilder();
-        var args = new[] { "--config", this._tempConfigPath };
+        var args = new[] { "--config", _tempConfigPath };
 
         // Act
         var app = builder.Build(args);
@@ -45,12 +48,13 @@ public sealed class CliApplicationBuilderTests : IDisposable
         Assert.NotNull(app);
     }
 
+
     [Fact]
     public void Configure_SetsApplicationName()
     {
         // Arrange: Use temp config path to avoid accessing ~/.km
         var builder = new CliApplicationBuilder();
-        var args = new[] { "--config", this._tempConfigPath };
+        var args = new[] { "--config", _tempConfigPath };
 
         // Act
         var app = builder.Build(args);
