@@ -1,0 +1,191 @@
+// Copyright (c) Microsoft. All rights reserved.
+
+using System.Diagnostics.CodeAnalysis;
+using KernelMemory.Core;
+using KernelMemory.Core.Config;
+using KernelMemory.Core.Config.ContentIndex;
+using KernelMemory.Core.Config.Enums;
+using KernelMemory.Core.Embeddings.Cache;
+using KernelMemory.Core.Storage;
+using KernelMemory.Main.CLI.Exceptions;
+using KernelMemory.Main.CLI.OutputFormatters;
+using KernelMemory.Main.Services;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Spectre.Console.Cli;
+
+namespace KernelMemory.Main.CLI.Commands;
+
+/// <summary>
+/// Base class for all CLI commands providing shared initialization logic.
+/// Config and LoggerFactory are injected via constructor (loaded once in CliApplicationBuilder).
+/// </summary>
+/// <typeparam name="TSettings">The command settings type, must inherit from GlobalOptions.</typeparam>
+public abstract class BaseCommand<TSettings> : AsyncCommand<TSettings>
+    where TSettings : GlobalOptions
+{
+    private readonly AppConfig _config;
+    private readonly ILoggerFactory _loggerFactory;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="BaseCommand{TSettings}"/> class.
+    /// </summary>
+    /// <param name="config">Application configuration (injected by DI).</param>
+    /// <param name="loggerFactory">Logger factory for creating loggers (injected by DI).</param>
+    protected BaseCommand(AppConfig config, ILoggerFactory loggerFactory)
+    {
+        this._config = config ?? throw new ArgumentNullException(nameof(config));
+        this._loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
+    }
+
+    /// <summary>
+    /// Gets the injected application configuration.
+    /// </summary>
+    protected AppConfig Config => this._config;
+
+    /// <summary>
+    /// Gets the injected logger factory.
+    /// </summary>
+    protected ILoggerFactory LoggerFactory => this._loggerFactory;
+
+    /// <summary>
+    /// Initializes command dependencies: node and formatter.
+    /// Config is already injected via constructor (no file I/O).
+    /// </summary>
+    /// <param name="settings">The command settings.</param>
+    /// <returns>Tuple of (config, node, formatter).</returns>
+    protected (AppConfig config, NodeConfig node, IOutputFormatter formatter)
+        Initialize(TSettings settings)
+    {
+        // Config already loaded and injected via constructor
+        var config = this._config;
+
+        // Select node
+        if (config.Nodes.Count == 0)
+        {
+            throw new InvalidOperationException("No nodes configured. Please create a configuration file.");
+        }
+
+        var nodeName = settings.NodeName ?? config.Nodes.Keys.First();
+        if (!config.Nodes.TryGetValue(nodeName, out var node))
+        {
+            throw new InvalidOperationException($"Node '{nodeName}' not found in configuration.");
+        }
+
+        // Create formatter
+        var formatter = OutputFormatterFactory.Create(settings);
+
+        return (config, node, formatter);
+    }
+
+    /// <summary>
+    /// Creates a ContentService instance for the specified node.
+    /// </summary>
+    /// <param name="node">The node configuration.</param>
+    /// <param name="readonlyMode">If true, will not create directories or database. Will fail if database doesn't exist.</param>
+    /// <returns>A ContentService instance.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when database doesn't exist in readonly mode.</exception>
+    [SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope",
+        Justification = "DbContext ownership is transferred to ContentStorageService which handles disposal")]
+    protected ContentService CreateContentService(NodeConfig node, bool readonlyMode = false)
+    {
+        // Get SQLite database path from node config
+        if (node.ContentIndex is not SqliteContentIndexConfig sqliteConfig)
+        {
+            throw new InvalidOperationException($"Node '{node.Id}' does not use SQLite content index.");
+        }
+
+        var dbPath = sqliteConfig.Path;
+
+        // In readonly mode, verify database exists without creating it
+        if (readonlyMode)
+        {
+            if (!File.Exists(dbPath))
+            {
+                throw new DatabaseNotFoundException(dbPath);
+            }
+        }
+        else
+        {
+            // Write mode: Ensure directory exists
+            var dbDir = Path.GetDirectoryName(dbPath);
+            if (!string.IsNullOrEmpty(dbDir) && !Directory.Exists(dbDir))
+            {
+                Directory.CreateDirectory(dbDir);
+            }
+        }
+
+        // Create connection string
+        var connectionString = "Data Source=" + dbPath;
+
+        // Create DbContext
+        var optionsBuilder = new DbContextOptionsBuilder<ContentStorageDbContext>();
+        optionsBuilder.UseSqlite(connectionString);
+        var context = new ContentStorageDbContext(optionsBuilder.Options);
+
+        // In write mode, ensure database is created
+        // In readonly mode, the database must already exist (checked above)
+        if (!readonlyMode)
+        {
+            context.Database.EnsureCreated();
+        }
+
+        // Create dependencies
+        var cuidGenerator = new CuidGenerator();
+        var logger = this._loggerFactory.CreateLogger<ContentStorageService>();
+        var httpClient = new HttpClient();
+
+        // Create embedding cache if configured
+        IEmbeddingCache? embeddingCache = null;
+        if (this._config.EmbeddingsCache != null)
+        {
+            var cachePath = this._config.EmbeddingsCache.Path
+                ?? throw new InvalidOperationException("Embeddings cache path is required");
+            var cacheLogger = this._loggerFactory.CreateLogger<SqliteEmbeddingCache>();
+
+            // Determine cache mode from allowRead/allowWrite flags
+            var cacheMode = (this._config.EmbeddingsCache.AllowRead, this._config.EmbeddingsCache.AllowWrite) switch
+            {
+                (true, true) => CacheModes.ReadWrite,
+                (true, false) => CacheModes.ReadOnly,
+                (false, true) => CacheModes.WriteOnly,
+                (false, false) => throw new InvalidOperationException("Embeddings cache must allow at least read or write")
+            };
+
+            embeddingCache = new SqliteEmbeddingCache(cachePath, cacheMode, cacheLogger);
+        }
+
+        // Create all search indexes from node configuration
+        var searchIndexes = SearchIndexFactory.CreateIndexes(
+            node.SearchIndexes,
+            httpClient,
+            embeddingCache,
+            this._loggerFactory);
+
+        // Create storage service with search indexes
+        var storage = new ContentStorageService(context, cuidGenerator, logger, searchIndexes);
+
+        // Create and return content service, passing search indexes for proper disposal
+        return new ContentService(storage, node.Id, searchIndexes);
+    }
+
+    /// <summary>
+    /// Handles exceptions and returns appropriate exit code.
+    /// </summary>
+    /// <param name="ex">The exception to handle.</param>
+    /// <param name="formatter">The output formatter for error messages.</param>
+    /// <returns>Exit code (1 for user errors, 2 for system errors).</returns>
+    protected int HandleError(Exception ex, IOutputFormatter formatter)
+    {
+        formatter.FormatError(ex.Message);
+
+        // User errors: InvalidOperationException, ArgumentException
+        if (ex is InvalidOperationException or ArgumentException)
+        {
+            return Constants.App.ExitCodeUserError;
+        }
+
+        // System errors: everything else
+        return Constants.App.ExitCodeSystemError;
+    }
+}
